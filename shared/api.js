@@ -5,7 +5,7 @@
  */
 
 const CONFIG = {
-  API_URL: 'PASTE_URL_WEB_APP_DI_SINI' // contoh: https://script.google.com/macros/s/XXXX/exec
+  API_URL: 'https://script.google.com/macros/s/AKfycbxg89FSeJg0VxpAuRfJn8FiDZE72loPoqML4O3B7cCkyJl8KBjqJRup8hVD-2PVdKyXrQ/exec'
 };
 
 function getPassword() {
