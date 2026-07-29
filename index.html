@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLN GI Suite — Beranda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/ui.css">
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="shell">
+    <section class="hero-strip">
+      <div class="hero-copy">
+        <p class="eyebrow">Ringkasan Operasional</p>
+        <h1>Pemantauan Gardu Induk</h1>
+        <p class="hero-sub">Dokumen, kondisi peralatan, dan anomali dalam satu tempat.</p>
+      </div>
+      <div class="summary-cards">
+        <div class="summary-card">
+          <span class="summary-value" id="count-gi">–</span>
+          <span class="summary-label">Gardu Induk terdaftar</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-value" id="count-anomali">–</span>
+          <span class="summary-label">Anomali terbuka</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-value" id="count-file">–</span>
+          <span class="summary-label">File tersimpan</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="module-grid">
+      <article class="module-card is-ready">
+        <span class="module-status">Fondasi siap</span>
+        <h2>Backend &amp; Shared Layer</h2>
+        <p>Apps Script + Google Sheets/Drive sudah terhubung sebagai sumber data.</p>
+      </article>
+      <article class="module-card">
+        <span class="module-status">Segera</span>
+        <h2>Profil Gardu Induk</h2>
+        <p>Data referensi tiap GI: lokasi, tegangan, tahun operasi.</p>
+      </article>
+      <article class="module-card">
+        <span class="module-status">Segera</span>
+        <h2>File WP / BA / Peralatan</h2>
+        <p>Penyimpanan dokumen per GI, terhubung ke Google Drive.</p>
+      </article>
+      <article class="module-card">
+        <span class="module-status">Segera</span>
+        <h2>Kondisi Peralatan &amp; Tower</h2>
+        <p>Riwayat kondisi, posisi asset, dan anomali per peralatan.</p>
+      </article>
+    </section>
+  </main>
+
+  <script src="shared/store.js"></script>
+  <script src="shared/format.js"></script>
+  <script src="shared/api.js"></script>
+  <script src="shared/header.js"></script>
+  <script>
+    renderHeader('beranda');
+    loadSummary();
+
+    async function loadSummary() {
+      try {
+        const gi = await apiLoad('profil_gi');
+        document.getElementById('count-gi').textContent = formatNumber(gi.length);
+      } catch (e) {
+        document.getElementById('count-gi').textContent = '–';
+      }
+      try {
+        const anomali = await apiLoad('anomali_log');
+        const open = anomali.filter((a) => a.status !== 'resolved').length;
+        document.getElementById('count-anomali').textContent = formatNumber(open);
+      } catch (e) {
+        document.getElementById('count-anomali').textContent = '–';
+      }
+      document.getElementById('count-file').textContent = '–'; // menyusul saat File Manager dibangun
+    }
+  </script>
+</body>
+</html>
