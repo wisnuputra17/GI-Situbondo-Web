@@ -389,10 +389,14 @@
       document.getElementById('seed-confirm').addEventListener('click', async (e) => {
         e.target.disabled = true; e.target.textContent = 'Mengunggah…';
         try {
-          const n = await seedTowers();
+          const res = await seedTowers();
           closeModal();
           await refreshAll();
-          toast(`${n} tower berhasil diimpor`, 4000);
+          if (!res.schemaOk) {
+            showError('Data terkirim (' + res.written + ' baris), TAPI kolom penghantar/nomor/alamat/ground_patrol hilang karena Code.gs di Apps Script masih memakai skema lama. Perbarui baris tower_master di Code.gs, lalu impor ulang.');
+          } else {
+            toast(res.count + ' tower berhasil diimpor', 4000);
+          }
         } catch (err) {
           e.target.disabled = false; e.target.textContent = 'Ya, impor sekarang';
           alert('Gagal impor: ' + err.message);

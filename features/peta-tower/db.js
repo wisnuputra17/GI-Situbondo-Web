@@ -28,8 +28,19 @@ async function loadTowers() {
   const rows = await apiLoad('tower_master');
   return rows
     .filter((t) => t.id_tower)
-    .map((t) => ({ ...t, nomor: Number(t.nomor) || 0, lat: Number(t.lat), lng: Number(t.lng) }))
-    .sort((a, b) => a.penghantar.localeCompare(b.penghantar) || a.nomor - b.nomor);
+    .map((t) => ({
+      ...t,
+      // `jalur` = nama kolom skema lama; dipertahankan sebagai fallback supaya
+      // sheet dengan header lama tidak membuat halaman gagal total.
+      penghantar: t.penghantar || t.jalur || '(tanpa penghantar)',
+      alamat: t.alamat || '',
+      ground_patrol: t.ground_patrol || '',
+      status: t.status || 'normal',
+      nomor: Number(t.nomor) || 0,
+      lat: Number(t.lat),
+      lng: Number(t.lng)
+    }))
+    .sort((a, b) => String(a.penghantar).localeCompare(String(b.penghantar)) || a.nomor - b.nomor);
 }
 
 /**
@@ -41,7 +52,13 @@ async function seedTowers() {
   if (typeof TOWER_SEED === 'undefined') throw new Error('tower-seed.js belum ter-load');
   const stamped = TOWER_SEED.map((t) => ({ ...t, updated_at: new Date().toISOString() }));
   await apiSave('tower_master', stamped);
-  return stamped.length;
+
+  // Verifikasi: Apps Script menulis berdasarkan SHEET_HEADERS miliknya sendiri.
+  // Kalau Code.gs masih skema lama, kolom penghantar/nomor/alamat/ground_patrol
+  // akan hilang TANPA memunculkan error — jadi harus dicek eksplisit.
+  const after = await apiLoad('tower_master');
+  const schemaOk = after.length > 0 && Object.prototype.hasOwnProperty.call(after[0], 'penghantar');
+  return { count: stamped.length, written: after.length, schemaOk };
 }
 
 async function updateTowerStatus(idTower, newStatus) {
