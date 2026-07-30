@@ -17,11 +17,20 @@ shared/                → kode dipakai bersama semua modul
   api.js                → wrapper fetch ke Apps Script Web App
   store.js              → state store ringan lintas modul
   format.js             → format tanggal/angka gaya Indonesia
-  header.js             → navigasi + status koneksi
-  ui.css                → design tokens & komponen dasar
-features/               → satu modul per folder (menyusul: profil-gi, dst.)
-index.html              → halaman beranda
+  tailwind-config.js    → token desain (warna/font) — sumber tunggal untuk semua halaman
+  shell.js              → render sidebar + topbar (dipakai ulang di semua modul)
+  header.js, ui.css     → DEPRECATED — tema lama (dark/SLD), sudah tidak dipakai, hanya referensi
+features/               → satu modul per folder
+  peta-tower/            → ✅ modul aktif pertama (peta Leaflet+OSM, marker GI & tower)
+    index.html            → tampilan (Tailwind + Leaflet)
+    db.js                 → logic data (load/save/append lewat shared/api.js)
+index.html              → halaman beranda (⚠️ masih tema lama, belum dimigrasi ke shell baru)
 ```
+
+Pemisahan tetap sama seperti IHSG Suite: **UI** (markup di `index.html` tiap modul),
+**logic data** (`db.js` tiap modul, isinya cuma panggil `shared/api.js`), dan
+**token desain bersama** (`shared/tailwind-config.js`) — tiga hal ini sengaja
+dipisah supaya ganti tampilan tidak perlu bongkar logic data, dan sebaliknya.
 
 ## Setup backend (Google Apps Script)
 
@@ -62,7 +71,7 @@ berikut:
 
 | Sheet | Kolom |
 |---|---|
-| `profil_gi` | id_gi, nama_gi, lokasi, tegangan, tahun_operasi, catatan, updated_at |
+| `profil_gi` | id_gi, nama_gi, lokasi, lat, lng, tegangan, tahun_operasi, catatan, updated_at |
 | `peralatan_master` | id_peralatan, id_gi, jenis, merk, tahun_pasang, status, updated_at |
 | `kondisi_log` | timestamp, id_peralatan, kondisi, catatan, oleh |
 | `tower_master` | id_tower, jalur, lat, lng, status, updated_at |
@@ -92,13 +101,18 @@ path tersebut (lihat `getOrCreateFolderByPath` di `Code.gs`).
 
 | Modul | Status |
 |---|---|
-| Backend & shared layer | ✅ Selesai (tahap ini) |
-| Profil Gardu Induk | ⏳ Berikutnya |
+| Backend & shared layer | ✅ Selesai |
+| Peta & Tower | ✅ Fungsional (Leaflet+OSM, load/save real ke Sheets) |
+| Beranda (root index.html) | ⚠️ Masih tema lama, perlu dimigrasi ke shell baru |
+| Profil GI (halaman detail terpisah) | ⏳ Belum — untuk saat ini profil GI dikelola dari tombol "Edit profil GI" di Peta & Tower |
 | File Manager (WP/BA/Peralatan) | ⏳ Menyusul |
 | Kondisi Peralatan | ⏳ Menyusul |
-| Asset Tower | ⏳ Menyusul |
-| Counter Peralatan | ⏳ Menyusul |
 | Anomali Peralatan | ⏳ Menyusul |
+
+**Catatan skema:** kolom `lat` dan `lng` ditambahkan ke `profil_gi` (untuk marker
+GI di peta). Kalau sheet `profil_gi` sudah pernah dipakai sebelumnya dengan
+skema lama, hapus isi sheet itu dulu (biarkan backend buat ulang otomatis
+dengan header baru) — atau tambah kolom `lat`/`lng` manual di Sheets.
 
 ## Catatan keamanan
 

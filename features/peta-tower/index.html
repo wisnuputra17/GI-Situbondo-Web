@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLN GI Suite — Peta &amp; Tower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../../shared/tailwind-config.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+  body { font-family: 'Inter', sans-serif; }
+  h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+  #map { width: 100%; height: 100%; background: #e5eeff; }
+  .leaflet-popup-content-wrapper { border-radius: 10px; padding: 0; }
+  .leaflet-popup-content { margin: 0; width: 240px !important; }
+  .gi-marker, .tower-marker { display: flex; align-items: center; justify-content: center; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(11,28,48,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+</style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex overflow-hidden">
+
+  <div id="app-shell" class="flex w-full"></div>
+
+  <template id="map-content-template">
+    <div class="relative flex-grow">
+      <div id="map"></div>
+
+      <div id="summary-card" class="absolute top-6 left-6 w-72 bg-surface-container-lowest/95 backdrop-blur-md rounded-lg shadow-md border border-outline-variant/10 p-5 z-[500]">
+        <p class="text-[10px] font-bold text-tertiary uppercase tracking-wider mb-1">Data referensi</p>
+        <h2 id="summary-nama" class="font-headline font-bold text-lg text-on-surface mb-3">Memuat…</h2>
+        <div class="grid grid-cols-3 gap-3">
+          <div><span id="summary-tower-count" class="block font-headline font-extrabold text-xl text-on-surface">–</span><span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Tower</span></div>
+          <div><span id="summary-anomali-count" class="block font-headline font-extrabold text-xl text-error">–</span><span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Anomali</span></div>
+          <div><span id="summary-tegangan" class="block font-headline font-extrabold text-xl text-on-surface">–</span><span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Tegangan</span></div>
+        </div>
+        <button id="btn-edit-profil" class="mt-4 w-full text-xs font-bold text-primary border border-outline-variant/40 rounded py-2 hover:bg-surface-container-high">Edit profil GI</button>
+      </div>
+
+      <button id="btn-add-tower" class="absolute top-6 right-6 bg-primary text-on-primary rounded-lg shadow-md px-5 py-3 flex items-center gap-2 text-sm font-bold z-[500]">
+        <span class="material-symbols-outlined text-base">add_location_alt</span>
+        Tambah tower
+      </button>
+
+      <div class="absolute bottom-6 left-6 bg-surface-container-lowest/95 backdrop-blur-md rounded-lg shadow-md border border-outline-variant/10 px-4 py-3 flex gap-5 text-xs z-[500]">
+        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded bg-tertiary"></span><span class="text-on-surface-variant font-medium">Gardu Induk</span></div>
+        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-secondary"></span><span class="text-on-surface-variant font-medium">Tower normal</span></div>
+        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-error"></span><span class="text-on-surface-variant font-medium">Tower anomali</span></div>
+        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-outline"></span><span class="text-on-surface-variant font-medium">Offline</span></div>
+      </div>
+    </div>
+  </template>
+
+  <div id="modal-root"></div>
+
+  <script src="../../shared/store.js"></script>
+  <script src="../../shared/format.js"></script>
+  <script src="../../shared/api.js"></script>
+  <script src="../../shared/shell.js"></script>
+  <script src="./db.js"></script>
+  <script>
+    const FALLBACK_CENTER = [-7.7069, 114.0059]; // titik tengah Kab. Situbondo — dipakai hanya sebelum profil GI diisi
+    let map, giMarker, towerMarkers = {};
+
+    function giIcon() {
+      return L.divIcon({
+        className: '',
+        html: `<div class="gi-marker" style="width:28px;height:28px;background:#8a5300;border:2px solid white;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.3);color:white;font-size:10px;font-weight:700;">GI</div>`,
+        iconSize: [28, 28], iconAnchor: [14, 28]
+      });
+    }
+    function towerIcon(status) {
+      const color = status === 'anomali' ? '#ba1a1a' : (status === 'offline' ? '#747878' : '#006d35');
+      return L.divIcon({
+        className: '',
+        html: `<div class="tower-marker" style="width:16px;height:16px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>`,
+        iconSize: [16, 16], iconAnchor: [8, 16]
+      });
+    }
+
+    function towerPopupHtml(t) {
+      const badgeColor = t.status === 'anomali' ? 'bg-red-100 text-red-800' : (t.status === 'offline' ? 'bg-gray-200 text-gray-700' : 'bg-green-100 text-green-800');
+      return `
+        <div class="p-4">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-bold text-sm text-[#0b1c30]">Tower ${t.id_tower}</h3>
+            <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded ${badgeColor}">${t.status || '-'}</span>
+          </div>
+          <div class="space-y-1 text-xs text-gray-600 mb-3">
+            <div class="flex justify-between"><span>Jalur</span><span class="text-[#0b1c30] font-medium">${t.jalur || '-'}</span></div>
+            <div class="flex justify-between"><span>Update</span><span class="text-[#0b1c30] font-medium">${formatDate(t.updated_at)}</span></div>
+          </div>
+          <select data-tower-id="${t.id_tower}" class="tower-status-select w-full text-xs border border-gray-300 rounded py-1.5 px-2">
+            <option value="normal" ${t.status === 'normal' ? 'selected' : ''}>Normal</option>
+            <option value="anomali" ${t.status === 'anomali' ? 'selected' : ''}>Anomali</option>
+            <option value="offline" ${t.status === 'offline' ? 'selected' : ''}>Offline</option>
+          </select>
+        </div>`;
+    }
+
+    async function refreshTowers() {
+      const towers = await loadTowers();
+      Object.values(towerMarkers).forEach((m) => map.removeLayer(m));
+      towerMarkers = {};
+
+      towers.forEach((t) => {
+        if (!t.lat || !t.lng) return;
+        const marker = L.marker([Number(t.lat), Number(t.lng)], { icon: towerIcon(t.status) }).addTo(map);
+        marker.bindPopup(towerPopupHtml(t));
+        marker.on('popupopen', () => {
+          const select = document.querySelector(`.tower-status-select[data-tower-id="${t.id_tower}"]`);
+          if (select) {
+            select.addEventListener('change', async (e) => {
+              await updateTowerStatus(t.id_tower, e.target.value);
+              await refreshTowers();
+              await refreshSummary();
+            });
+          }
+        });
+        towerMarkers[t.id_tower] = marker;
+      });
+
+      return towers;
+    }
+
+    async function refreshSummary() {
+      const towers = await loadTowers();
+      const anomaliCount = towers.filter((t) => t.status === 'anomali').length;
+      document.getElementById('summary-tower-count').textContent = formatNumber(towers.length);
+      document.getElementById('summary-anomali-count').textContent = formatNumber(anomaliCount);
+    }
+
+    function showGISetupModal(existing) {
+      const root = document.getElementById('modal-root');
+      root.innerHTML = `
+        <div class="modal-backdrop">
+          <div class="bg-white rounded-lg shadow-xl w-[420px] p-6">
+            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-1">${existing ? 'Edit profil GI' : 'Lengkapi profil GI Situbondo'}</h2>
+            <p class="text-xs text-gray-500 mb-4">${existing ? '' : 'Diperlukan sekali untuk menampilkan marker GI di peta.'}</p>
+            <form id="gi-form" class="space-y-3">
+              <div>
+                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Nama GI</label>
+                <input name="nama_gi" value="${existing ? existing.nama_gi : 'GI Situbondo'}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Lokasi</label>
+                <input name="lokasi" value="${existing ? (existing.lokasi || '') : ''}" placeholder="Kec. Situbondo" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Latitude</label>
+                  <input name="lat" type="number" step="any" value="${existing ? existing.lat : ''}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Longitude</label>
+                  <input name="lng" type="number" step="any" value="${existing ? existing.lng : ''}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Tegangan</label>
+                  <select name="tegangan" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                    ${['20 kV', '70 kV', '150 kV', '500 kV'].map((v) => `<option ${existing && existing.tegangan === v ? 'selected' : ''}>${v}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Tahun operasi</label>
+                  <input name="tahun_operasi" value="${existing ? (existing.tahun_operasi || '') : ''}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                </div>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Catatan</label>
+                <textarea name="catatan" rows="2" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">${existing ? (existing.catatan || '') : ''}</textarea>
+              </div>
+              <div class="flex gap-2 pt-2">
+                <button type="button" id="gi-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium ${existing ? '' : 'hidden'}">Batal</button>
+                <button type="submit" class="flex-1 bg-[#0b1c30] text-white rounded py-2 text-sm font-bold">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>`;
+
+      document.getElementById('gi-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const data = Object.fromEntries(fd.entries());
+        await saveGIProfile({ ...existing, ...data });
+        root.innerHTML = '';
+        await bootstrapMap();
+      });
+      const cancelBtn = document.getElementById('gi-cancel');
+      if (cancelBtn) cancelBtn.addEventListener('click', () => { root.innerHTML = ''; });
+    }
+
+    function showAddTowerModal() {
+      const root = document.getElementById('modal-root');
+      root.innerHTML = `
+        <div class="modal-backdrop">
+          <div class="bg-white rounded-lg shadow-xl w-[380px] p-6">
+            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-4">Tambah tower</h2>
+            <form id="tower-form" class="space-y-3">
+              <div>
+                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">ID Tower</label>
+                <input name="id_tower" placeholder="T-01" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Jalur</label>
+                <input name="jalur" placeholder="Situbondo–Besuki" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Latitude</label>
+                  <input name="lat" type="number" step="any" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Longitude</label>
+                  <input name="lng" type="number" step="any" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
+                </div>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Status</label>
+                <select name="status" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                  <option value="normal">Normal</option>
+                  <option value="anomali">Anomali</option>
+                  <option value="offline">Offline</option>
+                </select>
+              </div>
+              <div class="flex gap-2 pt-2">
+                <button type="button" id="tower-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
+                <button type="submit" class="flex-1 bg-[#0b1c30] text-white rounded py-2 text-sm font-bold">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>`;
+
+      document.getElementById('tower-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const data = Object.fromEntries(fd.entries());
+        await addTower(data);
+        root.innerHTML = '';
+        await refreshTowers();
+        await refreshSummary();
+      });
+      document.getElementById('tower-cancel').addEventListener('click', () => { root.innerHTML = ''; });
+    }
+
+    async function bootstrapMap() {
+      const profile = await loadGIProfile();
+      const content = document.getElementById('page-content');
+      content.innerHTML = '';
+      content.appendChild(document.getElementById('map-content-template').content.cloneNode(true));
+
+      const center = (profile && profile.lat && profile.lng) ? [Number(profile.lat), Number(profile.lng)] : FALLBACK_CENTER;
+      map = L.map('map', { zoomControl: false }).setView(center, 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }).addTo(map);
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      if (profile && profile.lat && profile.lng) {
+        giMarker = L.marker([Number(profile.lat), Number(profile.lng)], { icon: giIcon() }).addTo(map);
+        giMarker.bindPopup(`<div class="p-3"><h3 class="font-bold text-sm">${profile.nama_gi}</h3><p class="text-xs text-gray-500">${profile.lokasi || ''}</p></div>`);
+        document.getElementById('summary-nama').textContent = profile.nama_gi;
+        document.getElementById('summary-tegangan').textContent = profile.tegangan || '-';
+      } else {
+        document.getElementById('summary-nama').textContent = 'Belum diatur';
+        document.getElementById('summary-tegangan').textContent = '-';
+      }
+
+      await refreshTowers();
+      await refreshSummary();
+
+      document.getElementById('btn-add-tower').addEventListener('click', showAddTowerModal);
+      document.getElementById('btn-edit-profil').addEventListener('click', () => showGISetupModal(profile));
+
+      if (!profile || !profile.lat || !profile.lng) {
+        showGISetupModal(profile);
+      }
+    }
+
+    renderShell({ activeId: 'peta-tower', pageTitle: 'Peta & Tower', rootPrefix: '../../', searchPlaceholder: 'Cari tower...' });
+    bootstrapMap();
+  </script>
+</body>
+</html>
