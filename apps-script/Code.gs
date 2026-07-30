@@ -21,7 +21,7 @@ const SHEET_HEADERS = {
   profil_gi: ['id_gi', 'nama_gi', 'lokasi', 'lat', 'lng', 'tegangan', 'tahun_operasi', 'catatan', 'updated_at'],
   peralatan_master: ['id_peralatan', 'id_gi', 'jenis', 'merk', 'tahun_pasang', 'status', 'updated_at'],
   kondisi_log: ['timestamp', 'id_peralatan', 'kondisi', 'catatan', 'oleh'],
-  tower_master: ['id_tower', 'jalur', 'lat', 'lng', 'status', 'updated_at'],
+  tower_master: ['id_tower', 'penghantar', 'nomor', 'lat', 'lng', 'alamat', 'ground_patrol', 'status', 'updated_at'],
   tower_anomali_log: ['timestamp', 'id_tower', 'jenis_anomali', 'catatan', 'status', 'oleh'],
   counter_log: ['timestamp', 'id_peralatan', 'jenis_counter', 'nilai', 'oleh'],
   anomali_log: ['timestamp', 'id_peralatan', 'deskripsi', 'status', 'oleh']

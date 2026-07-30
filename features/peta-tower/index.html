@@ -10,16 +10,21 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script src="../../shared/tailwind-config.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
   body { font-family: 'Inter', sans-serif; }
   h1, h2, h3 { font-family: 'Manrope', sans-serif; }
   #map { width: 100%; height: 100%; background: #e5eeff; }
   .leaflet-popup-content-wrapper { border-radius: 10px; padding: 0; }
-  .leaflet-popup-content { margin: 0; width: 240px !important; }
-  .gi-marker, .tower-marker { display: flex; align-items: center; justify-content: center; }
-  .modal-backdrop { position: fixed; inset: 0; background: rgba(11,28,48,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .leaflet-popup-content { margin: 0; width: 250px !important; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(11,28,48,0.45); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
+  .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgba(11,28,48,0.2); }
+  .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background: #0b1c30; color: #fff; font-family: 'Inter'; font-weight: 600; }
+  .cluster-has-anomali div { background: #ba1a1a !important; }
 </style>
 </head>
 <body class="bg-background text-on-surface min-h-screen flex overflow-hidden">
@@ -30,28 +35,42 @@
     <div class="relative flex-grow">
       <div id="map"></div>
 
-      <div id="summary-card" class="absolute top-6 left-6 w-72 bg-surface-container-lowest/95 backdrop-blur-md rounded-lg shadow-md border border-outline-variant/10 p-5 z-[500]">
-        <p class="text-[10px] font-bold text-tertiary uppercase tracking-wider mb-1">Data referensi</p>
-        <h2 id="summary-nama" class="font-headline font-bold text-lg text-on-surface mb-3">Memuat…</h2>
-        <div class="grid grid-cols-3 gap-3">
-          <div><span id="summary-tower-count" class="block font-headline font-extrabold text-xl text-on-surface">–</span><span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Tower</span></div>
-          <div><span id="summary-anomali-count" class="block font-headline font-extrabold text-xl text-error">–</span><span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Anomali</span></div>
-          <div><span id="summary-tegangan" class="block font-headline font-extrabold text-xl text-on-surface">–</span><span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Tegangan</span></div>
+      <div class="absolute top-6 left-6 w-80 z-[500] space-y-3">
+        <div class="bg-surface-container-lowest/95 backdrop-blur-md rounded-lg shadow-md border border-outline-variant/10 p-5">
+          <p class="text-[10px] font-bold text-tertiary uppercase tracking-wider mb-1">Data referensi</p>
+          <h2 id="summary-nama" class="font-headline font-bold text-lg text-on-surface mb-3">Memuat…</h2>
+          <div class="grid grid-cols-3 gap-3">
+            <div><span id="summary-tower-count" class="block font-headline font-extrabold text-xl text-on-surface">–</span><span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Tower</span></div>
+            <div><span id="summary-anomali-count" class="block font-headline font-extrabold text-xl text-error">–</span><span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Anomali</span></div>
+            <div><span id="summary-tegangan" class="block font-headline font-extrabold text-xl text-on-surface">–</span><span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Tegangan</span></div>
+          </div>
         </div>
-        <button id="btn-edit-profil" class="mt-4 w-full text-xs font-bold text-primary border border-outline-variant/40 rounded py-2 hover:bg-surface-container-high">Edit profil GI</button>
+
+        <div id="penghantar-filter" class="bg-surface-container-lowest/95 backdrop-blur-md rounded-lg shadow-md border border-outline-variant/10 p-4">
+          <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Penghantar</p>
+          <div id="penghantar-list" class="space-y-1.5"></div>
+        </div>
       </div>
 
-      <button id="btn-add-tower" class="absolute top-6 right-6 bg-primary text-on-primary rounded-lg shadow-md px-5 py-3 flex items-center gap-2 text-sm font-bold z-[500]">
-        <span class="material-symbols-outlined text-base">add_location_alt</span>
-        Tambah tower
-      </button>
+      <div class="absolute top-6 right-6 flex gap-2 z-[500]">
+        <button id="btn-seed" class="hidden bg-tertiary text-white rounded-lg shadow-md px-4 py-3 items-center gap-2 text-sm font-bold">
+          <span class="material-symbols-outlined text-base">cloud_upload</span>
+          Impor 417 tower
+        </button>
+        <button id="btn-list" class="bg-surface-container-lowest text-on-surface border border-outline-variant/30 rounded-lg shadow-md px-4 py-3 flex items-center gap-2 text-sm font-bold">
+          <span class="material-symbols-outlined text-base">list</span>
+          Daftar tower
+        </button>
+      </div>
 
       <div class="absolute bottom-6 left-6 bg-surface-container-lowest/95 backdrop-blur-md rounded-lg shadow-md border border-outline-variant/10 px-4 py-3 flex gap-5 text-xs z-[500]">
         <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded bg-tertiary"></span><span class="text-on-surface-variant font-medium">Gardu Induk</span></div>
-        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-secondary"></span><span class="text-on-surface-variant font-medium">Tower normal</span></div>
-        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-error"></span><span class="text-on-surface-variant font-medium">Tower anomali</span></div>
+        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-secondary"></span><span class="text-on-surface-variant font-medium">Normal</span></div>
+        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-error"></span><span class="text-on-surface-variant font-medium">Anomali</span></div>
         <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-outline"></span><span class="text-on-surface-variant font-medium">Offline</span></div>
       </div>
+
+      <div id="toast" class="hidden absolute bottom-24 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-sm px-4 py-2.5 rounded-lg shadow-lg z-[1500]"></div>
     </div>
   </template>
 
@@ -61,226 +80,375 @@
   <script src="../../shared/format.js"></script>
   <script src="../../shared/api.js"></script>
   <script src="../../shared/shell.js"></script>
+  <script src="./tower-seed.js"></script>
   <script src="./db.js"></script>
   <script>
-    const FALLBACK_CENTER = [-7.7069, 114.0059]; // titik tengah Kab. Situbondo — dipakai hanya sebelum profil GI diisi
-    let map, giMarker, towerMarkers = {};
+    const GI_FALLBACK = [-7.717441, 114.0191368]; // koordinat GI Situbondo (dikonfirmasi Wisnu)
+    const PENGHANTAR_COLOR = {
+      'STBDO-PITON': '#1565c0',
+      'STBDO-BWNGI': '#6a1b9a',
+      'BDWSO-STBDO': '#00695c'
+    };
+
+    let map, clusterGroup, lineLayers = {}, allTowers = [], openAnomalies = {};
+    let activePenghantar = new Set();
+
+    // ---------- helpers UI ----------
+    function toast(msg, ms = 2600) {
+      const el = document.getElementById('toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), ms);
+    }
 
     function giIcon() {
       return L.divIcon({
         className: '',
-        html: `<div class="gi-marker" style="width:28px;height:28px;background:#8a5300;border:2px solid white;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.3);color:white;font-size:10px;font-weight:700;">GI</div>`,
-        iconSize: [28, 28], iconAnchor: [14, 28]
+        html: `<div style="width:30px;height:30px;background:#8a5300;border:2px solid #fff;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.35);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">GI</div>`,
+        iconSize: [30, 30], iconAnchor: [15, 30]
       });
     }
     function towerIcon(status) {
       const color = status === 'anomali' ? '#ba1a1a' : (status === 'offline' ? '#747878' : '#006d35');
+      const size = status === 'anomali' ? 18 : 13;
       return L.divIcon({
         className: '',
-        html: `<div class="tower-marker" style="width:16px;height:16px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>`,
-        iconSize: [16, 16], iconAnchor: [8, 16]
+        html: `<div style="width:${size}px;height:${size}px;background:${color};border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);"></div>`,
+        iconSize: [size, size], iconAnchor: [size / 2, size / 2]
       });
+    }
+
+    function statusBadge(status) {
+      if (status === 'anomali') return '<span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded" style="background:#ffdad6;color:#93000a">Anomali</span>';
+      if (status === 'offline') return '<span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded" style="background:#e5e5e5;color:#555">Offline</span>';
+      return '<span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded" style="background:#c9f5d4;color:#007439">Normal</span>';
     }
 
     function towerPopupHtml(t) {
-      const badgeColor = t.status === 'anomali' ? 'bg-red-100 text-red-800' : (t.status === 'offline' ? 'bg-gray-200 text-gray-700' : 'bg-green-100 text-green-800');
+      const anomalies = openAnomalies[t.id_tower] || [];
+      const anomaliBlock = anomalies.length
+        ? `<div class="mt-2 pt-2 border-t border-gray-200">
+             <p class="text-[10px] font-bold text-red-700 uppercase mb-1">Anomali terbuka (${anomalies.length})</p>
+             ${anomalies.slice(0, 3).map((a) => `<p class="text-[11px] text-gray-700">• ${a.jenis_anomali}${a.catatan ? ' — ' + a.catatan : ''} <span class="text-gray-400">(${formatDate(a.timestamp)})</span></p>`).join('')}
+           </div>` : '';
       return `
         <div class="p-4">
           <div class="flex justify-between items-start mb-2">
-            <h3 class="font-bold text-sm text-[#0b1c30]">Tower ${t.id_tower}</h3>
-            <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded ${badgeColor}">${t.status || '-'}</span>
+            <div>
+              <h3 class="font-bold text-sm text-[#0b1c30]">Tower ${t.nomor}</h3>
+              <p class="text-[10px] text-gray-500 font-mono">${t.id_tower}</p>
+            </div>
+            ${statusBadge(t.status)}
           </div>
-          <div class="space-y-1 text-xs text-gray-600 mb-3">
-            <div class="flex justify-between"><span>Jalur</span><span class="text-[#0b1c30] font-medium">${t.jalur || '-'}</span></div>
-            <div class="flex justify-between"><span>Update</span><span class="text-[#0b1c30] font-medium">${formatDate(t.updated_at)}</span></div>
+          <div class="space-y-1 text-xs text-gray-600">
+            <div class="flex justify-between gap-2"><span>Penghantar</span><span class="text-[#0b1c30] font-medium text-right">${t.penghantar}</span></div>
+            <div class="flex justify-between gap-2"><span>Kecamatan</span><span class="text-[#0b1c30] font-medium text-right">${t.alamat || '-'}</span></div>
+            <div class="flex justify-between gap-2"><span>Ground patrol</span><span class="text-[#0b1c30] font-medium text-right">${t.ground_patrol || '-'}</span></div>
+            <div class="flex justify-between gap-2"><span>Koordinat</span><span class="text-[#0b1c30] font-mono text-[10px] text-right">${Number(t.lat).toFixed(5)}, ${Number(t.lng).toFixed(5)}</span></div>
           </div>
-          <select data-tower-id="${t.id_tower}" class="tower-status-select w-full text-xs border border-gray-300 rounded py-1.5 px-2">
-            <option value="normal" ${t.status === 'normal' ? 'selected' : ''}>Normal</option>
-            <option value="anomali" ${t.status === 'anomali' ? 'selected' : ''}>Anomali</option>
-            <option value="offline" ${t.status === 'offline' ? 'selected' : ''}>Offline</option>
-          </select>
+          ${anomaliBlock}
+          <div class="flex gap-2 mt-3">
+            ${t.status === 'anomali'
+              ? `<button data-resolve="${t.id_tower}" class="flex-1 bg-[#006d35] text-white text-[11px] font-bold uppercase tracking-wide py-2 rounded">Tandai selesai</button>`
+              : `<button data-anomali="${t.id_tower}" class="flex-1 bg-[#ba1a1a] text-white text-[11px] font-bold uppercase tracking-wide py-2 rounded">Catat anomali</button>`}
+            <a href="https://www.google.com/maps?q=${t.lat},${t.lng}" target="_blank" rel="noopener" class="px-3 py-2 border border-gray-300 rounded text-[11px] font-bold text-gray-600">Maps</a>
+          </div>
         </div>`;
     }
 
-    async function refreshTowers() {
-      const towers = await loadTowers();
-      Object.values(towerMarkers).forEach((m) => map.removeLayer(m));
-      towerMarkers = {};
+    // ---------- render peta ----------
+    function drawTowers() {
+      if (clusterGroup) map.removeLayer(clusterGroup);
+      Object.values(lineLayers).forEach((l) => map.removeLayer(l));
+      lineLayers = {};
 
-      towers.forEach((t) => {
-        if (!t.lat || !t.lng) return;
-        const marker = L.marker([Number(t.lat), Number(t.lng)], { icon: towerIcon(t.status) }).addTo(map);
-        marker.bindPopup(towerPopupHtml(t));
-        marker.on('popupopen', () => {
-          const select = document.querySelector(`.tower-status-select[data-tower-id="${t.id_tower}"]`);
-          if (select) {
-            select.addEventListener('change', async (e) => {
-              await updateTowerStatus(t.id_tower, e.target.value);
-              await refreshTowers();
-              await refreshSummary();
-            });
-          }
-        });
-        towerMarkers[t.id_tower] = marker;
+      clusterGroup = L.markerClusterGroup({
+        maxClusterRadius: 45,
+        iconCreateFunction: (cluster) => {
+          const children = cluster.getAllChildMarkers();
+          const hasAnomali = children.some((m) => m.options.towerStatus === 'anomali');
+          const count = cluster.getChildCount();
+          return L.divIcon({
+            html: `<div><span>${count}</span></div>`,
+            className: 'marker-cluster marker-cluster-small' + (hasAnomali ? ' cluster-has-anomali' : ''),
+            iconSize: L.point(36, 36)
+          });
+        }
       });
 
-      return towers;
+      const visible = allTowers.filter((t) => activePenghantar.has(t.penghantar));
+
+      // garis penghantar (urut nomor tower)
+      Object.keys(PENGHANTAR_COLOR).forEach((ph) => {
+        if (!activePenghantar.has(ph)) return;
+        const pts = visible.filter((t) => t.penghantar === ph).sort((a, b) => a.nomor - b.nomor).map((t) => [t.lat, t.lng]);
+        if (pts.length > 1) {
+          lineLayers[ph] = L.polyline(pts, { color: PENGHANTAR_COLOR[ph], weight: 2.5, opacity: 0.65 }).addTo(map);
+        }
+      });
+
+      visible.forEach((t) => {
+        if (!t.lat || !t.lng) return;
+        const marker = L.marker([t.lat, t.lng], { icon: towerIcon(t.status), towerStatus: t.status });
+        marker.bindPopup(towerPopupHtml(t));
+        marker.on('popupopen', () => bindPopupActions(t));
+        clusterGroup.addLayer(marker);
+      });
+
+      map.addLayer(clusterGroup);
     }
 
-    async function refreshSummary() {
-      const towers = await loadTowers();
-      const anomaliCount = towers.filter((t) => t.status === 'anomali').length;
-      document.getElementById('summary-tower-count').textContent = formatNumber(towers.length);
-      document.getElementById('summary-anomali-count').textContent = formatNumber(anomaliCount);
+    function bindPopupActions(t) {
+      const anomaliBtn = document.querySelector(`[data-anomali="${t.id_tower}"]`);
+      if (anomaliBtn) anomaliBtn.addEventListener('click', () => showAnomaliModal(t));
+      const resolveBtn = document.querySelector(`[data-resolve="${t.id_tower}"]`);
+      if (resolveBtn) resolveBtn.addEventListener('click', async () => {
+        resolveBtn.disabled = true; resolveBtn.textContent = 'Menyimpan…';
+        await resolveTowerAnomalies(t.id_tower);
+        map.closePopup();
+        await refreshAll();
+        toast(`Anomali ${t.id_tower} ditandai selesai`);
+      });
     }
 
-    function showGISetupModal(existing) {
-      const root = document.getElementById('modal-root');
-      root.innerHTML = `
+    function renderPenghantarFilter() {
+      const box = document.getElementById('penghantar-list');
+      const counts = {};
+      allTowers.forEach((t) => {
+        if (!counts[t.penghantar]) counts[t.penghantar] = { total: 0, anomali: 0 };
+        counts[t.penghantar].total++;
+        if (t.status === 'anomali') counts[t.penghantar].anomali++;
+      });
+
+      box.innerHTML = Object.keys(counts).map((ph) => `
+        <label class="flex items-center gap-2 cursor-pointer text-xs">
+          <input type="checkbox" value="${ph}" ${activePenghantar.has(ph) ? 'checked' : ''} class="ph-toggle rounded border-gray-300">
+          <span class="w-2.5 h-1 rounded" style="background:${PENGHANTAR_COLOR[ph] || '#999'}"></span>
+          <span class="flex-grow text-on-surface font-medium">${ph}</span>
+          <span class="text-on-surface-variant">${counts[ph].total}</span>
+          ${counts[ph].anomali ? `<span class="text-error font-bold">(${counts[ph].anomali})</span>` : ''}
+        </label>`).join('');
+
+      box.querySelectorAll('.ph-toggle').forEach((cb) => {
+        cb.addEventListener('change', (e) => {
+          if (e.target.checked) activePenghantar.add(e.target.value);
+          else activePenghantar.delete(e.target.value);
+          drawTowers();
+        });
+      });
+    }
+
+    // ---------- modal ----------
+    function closeModal() { document.getElementById('modal-root').innerHTML = ''; }
+
+    function showAnomaliModal(t) {
+      document.getElementById('modal-root').innerHTML = `
         <div class="modal-backdrop">
-          <div class="bg-white rounded-lg shadow-xl w-[420px] p-6">
-            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-1">${existing ? 'Edit profil GI' : 'Lengkapi profil GI Situbondo'}</h2>
-            <p class="text-xs text-gray-500 mb-4">${existing ? '' : 'Diperlukan sekali untuk menampilkan marker GI di peta.'}</p>
-            <form id="gi-form" class="space-y-3">
+          <div class="bg-white rounded-lg shadow-xl w-[400px] p-6">
+            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-1">Catat anomali</h2>
+            <p class="text-xs text-gray-500 mb-4 font-mono">${t.id_tower} — ${t.penghantar} #${t.nomor}</p>
+            <form id="anomali-form" class="space-y-3">
               <div>
-                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Nama GI</label>
-                <input name="nama_gi" value="${existing ? existing.nama_gi : 'GI Situbondo'}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Lokasi</label>
-                <input name="lokasi" value="${existing ? (existing.lokasi || '') : ''}" placeholder="Kec. Situbondo" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Latitude</label>
-                  <input name="lat" type="number" step="any" value="${existing ? existing.lat : ''}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
-                </div>
-                <div>
-                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Longitude</label>
-                  <input name="lng" type="number" step="any" value="${existing ? existing.lng : ''}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
-                </div>
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Tegangan</label>
-                  <select name="tegangan" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-                    ${['20 kV', '70 kV', '150 kV', '500 kV'].map((v) => `<option ${existing && existing.tegangan === v ? 'selected' : ''}>${v}</option>`).join('')}
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Tahun operasi</label>
-                  <input name="tahun_operasi" value="${existing ? (existing.tahun_operasi || '') : ''}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-                </div>
+                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Jenis anomali</label>
+                <select name="jenis_anomali" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
+                  <option value="">— pilih —</option>
+                  <option>Isolator retak/pecah</option>
+                  <option>Korosi struktur</option>
+                  <option>Baut hilang/kendor</option>
+                  <option>Pentanahan (grounding) bermasalah</option>
+                  <option>Vegetasi/ROW terlalu dekat</option>
+                  <option>Konduktor bermasalah</option>
+                  <option>Pondasi tergerus</option>
+                  <option>Nomor/rambu hilang</option>
+                  <option>Lain-lain</option>
+                </select>
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Catatan</label>
-                <textarea name="catatan" rows="2" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">${existing ? (existing.catatan || '') : ''}</textarea>
+                <textarea name="catatan" rows="3" placeholder="Detail temuan…" class="w-full border border-gray-300 rounded px-3 py-2 text-sm"></textarea>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Dicatat oleh</label>
+                <input name="oleh" value="Wisnu" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
               </div>
               <div class="flex gap-2 pt-2">
-                <button type="button" id="gi-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium ${existing ? '' : 'hidden'}">Batal</button>
-                <button type="submit" class="flex-1 bg-[#0b1c30] text-white rounded py-2 text-sm font-bold">Simpan</button>
+                <button type="button" id="modal-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
+                <button type="submit" class="flex-1 bg-[#ba1a1a] text-white rounded py-2 text-sm font-bold">Simpan</button>
               </div>
             </form>
           </div>
         </div>`;
 
-      document.getElementById('gi-form').addEventListener('submit', async (e) => {
+      document.getElementById('modal-cancel').addEventListener('click', closeModal);
+      document.getElementById('anomali-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const fd = new FormData(e.target);
-        const data = Object.fromEntries(fd.entries());
-        await saveGIProfile({ ...existing, ...data });
-        root.innerHTML = '';
-        await bootstrapMap();
+        const btn = e.target.querySelector('[type=submit]');
+        btn.disabled = true; btn.textContent = 'Menyimpan…';
+        const data = Object.fromEntries(new FormData(e.target).entries());
+        try {
+          await addTowerAnomaly({ id_tower: t.id_tower, ...data });
+          closeModal();
+          map.closePopup();
+          await refreshAll();
+          toast(`Anomali ${t.id_tower} tersimpan`);
+        } catch (err) {
+          btn.disabled = false; btn.textContent = 'Simpan';
+          alert('Gagal menyimpan: ' + err.message);
+        }
       });
-      const cancelBtn = document.getElementById('gi-cancel');
-      if (cancelBtn) cancelBtn.addEventListener('click', () => { root.innerHTML = ''; });
     }
 
-    function showAddTowerModal() {
-      const root = document.getElementById('modal-root');
-      root.innerHTML = `
+    function showTowerListModal() {
+      const rows = allTowers.map((t) => `
+        <tr class="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" data-goto="${t.id_tower}">
+          <td class="px-3 py-2 font-mono text-[11px]">${t.id_tower}</td>
+          <td class="px-3 py-2 text-xs">${t.alamat || '-'}</td>
+          <td class="px-3 py-2 text-xs">${t.ground_patrol || '-'}</td>
+          <td class="px-3 py-2">${statusBadge(t.status)}</td>
+        </tr>`).join('');
+
+      document.getElementById('modal-root').innerHTML = `
         <div class="modal-backdrop">
-          <div class="bg-white rounded-lg shadow-xl w-[380px] p-6">
-            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-4">Tambah tower</h2>
-            <form id="tower-form" class="space-y-3">
+          <div class="bg-white rounded-lg shadow-xl w-[760px] max-h-[85vh] flex flex-col">
+            <div class="p-5 border-b border-gray-200 flex justify-between items-center">
               <div>
-                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">ID Tower</label>
-                <input name="id_tower" placeholder="T-01" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
+                <h2 class="font-headline font-bold text-lg text-[#0b1c30]">Daftar tower</h2>
+                <p class="text-xs text-gray-500">${allTowers.length} tower — klik baris untuk menuju lokasinya di peta</p>
               </div>
-              <div>
-                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Jalur</label>
-                <input name="jalur" placeholder="Situbondo–Besuki" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Latitude</label>
-                  <input name="lat" type="number" step="any" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
-                </div>
-                <div>
-                  <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Longitude</label>
-                  <input name="lng" type="number" step="any" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
-                </div>
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Status</label>
-                <select name="status" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-                  <option value="normal">Normal</option>
-                  <option value="anomali">Anomali</option>
-                  <option value="offline">Offline</option>
-                </select>
-              </div>
-              <div class="flex gap-2 pt-2">
-                <button type="button" id="tower-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
-                <button type="submit" class="flex-1 bg-[#0b1c30] text-white rounded py-2 text-sm font-bold">Simpan</button>
-              </div>
-            </form>
+              <button id="modal-cancel" class="text-gray-400 hover:text-gray-700"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="p-4 border-b border-gray-200">
+              <input id="list-search" placeholder="Cari ID, kecamatan, atau petugas…" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+            </div>
+            <div class="overflow-y-auto flex-grow">
+              <table class="w-full text-left">
+                <thead class="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th class="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase">ID Tower</th>
+                    <th class="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase">Kecamatan</th>
+                    <th class="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase">Ground Patrol</th>
+                    <th class="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="list-body">${rows}</tbody>
+              </table>
+            </div>
           </div>
         </div>`;
 
-      document.getElementById('tower-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        const data = Object.fromEntries(fd.entries());
-        await addTower(data);
-        root.innerHTML = '';
-        await refreshTowers();
-        await refreshSummary();
+      document.getElementById('modal-cancel').addEventListener('click', closeModal);
+      document.getElementById('list-search').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        document.querySelectorAll('#list-body tr').forEach((tr) => {
+          tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
       });
-      document.getElementById('tower-cancel').addEventListener('click', () => { root.innerHTML = ''; });
+      document.querySelectorAll('[data-goto]').forEach((tr) => {
+        tr.addEventListener('click', () => {
+          const t = allTowers.find((x) => x.id_tower === tr.dataset.goto);
+          if (!t) return;
+          closeModal();
+          activePenghantar.add(t.penghantar);
+          renderPenghantarFilter();
+          drawTowers();
+          map.setView([t.lat, t.lng], 16);
+        });
+      });
+    }
+
+    function showSeedConfirmModal() {
+      document.getElementById('modal-root').innerHTML = `
+        <div class="modal-backdrop">
+          <div class="bg-white rounded-lg shadow-xl w-[420px] p-6">
+            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-2">Impor data tower</h2>
+            <p class="text-sm text-gray-600 mb-3">Akan mengisi sheet <span class="font-mono text-xs">tower_master</span> dengan <strong>${typeof TOWER_SEED !== 'undefined' ? TOWER_SEED.length : 0} tower</strong> hasil ekstraksi file KML:</p>
+            <ul class="text-xs text-gray-600 space-y-1 mb-3 pl-4 list-disc">
+              <li>STBDO–PITON: 157 tower</li>
+              <li>STBDO–BWNGI: 151 tower</li>
+              <li>BDWSO–STBDO: 109 tower</li>
+            </ul>
+            <p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2.5 mb-4">Perhatian: proses ini <strong>menimpa seluruh isi</strong> sheet tower_master. Status anomali yang sudah dicatat lewat web akan ter-reset ke normal.</p>
+            <div class="flex gap-2">
+              <button type="button" id="modal-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
+              <button type="button" id="seed-confirm" class="flex-1 bg-[#8a5300] text-white rounded py-2 text-sm font-bold">Ya, impor sekarang</button>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('modal-cancel').addEventListener('click', closeModal);
+      document.getElementById('seed-confirm').addEventListener('click', async (e) => {
+        e.target.disabled = true; e.target.textContent = 'Mengunggah…';
+        try {
+          const n = await seedTowers();
+          closeModal();
+          await refreshAll();
+          toast(`${n} tower berhasil diimpor`, 4000);
+        } catch (err) {
+          e.target.disabled = false; e.target.textContent = 'Ya, impor sekarang';
+          alert('Gagal impor: ' + err.message);
+        }
+      });
+    }
+
+    // ---------- bootstrap ----------
+    async function refreshAll() {
+      const [towers, anomalies] = await Promise.all([loadTowers(), loadTowerAnomalies()]);
+      allTowers = towers;
+      openAnomalies = groupOpenAnomalies(anomalies);
+
+      if (!activePenghantar.size) {
+        allTowers.forEach((t) => activePenghantar.add(t.penghantar));
+      }
+
+      document.getElementById('summary-tower-count').textContent = formatNumber(allTowers.length);
+      document.getElementById('summary-anomali-count').textContent = formatNumber(allTowers.filter((t) => t.status === 'anomali').length);
+
+      const seedBtn = document.getElementById('btn-seed');
+      if (allTowers.length === 0) seedBtn.classList.remove('hidden'), seedBtn.classList.add('flex');
+      else seedBtn.classList.add('hidden'), seedBtn.classList.remove('flex');
+
+      renderPenghantarFilter();
+      drawTowers();
     }
 
     async function bootstrapMap() {
-      const profile = await loadGIProfile();
       const content = document.getElementById('page-content');
       content.innerHTML = '';
       content.appendChild(document.getElementById('map-content-template').content.cloneNode(true));
 
-      const center = (profile && profile.lat && profile.lng) ? [Number(profile.lat), Number(profile.lng)] : FALLBACK_CENTER;
-      map = L.map('map', { zoomControl: false }).setView(center, 14);
+      let profile = null;
+      try { profile = await loadGIProfile(); } catch (e) { /* sheet mungkin belum ada */ }
+
+      const center = (profile && profile.lat && profile.lng) ? [Number(profile.lat), Number(profile.lng)] : GI_FALLBACK;
+
+      map = L.map('map', { zoomControl: false }).setView(center, 11);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
       }).addTo(map);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-      if (profile && profile.lat && profile.lng) {
-        giMarker = L.marker([Number(profile.lat), Number(profile.lng)], { icon: giIcon() }).addTo(map);
-        giMarker.bindPopup(`<div class="p-3"><h3 class="font-bold text-sm">${profile.nama_gi}</h3><p class="text-xs text-gray-500">${profile.lokasi || ''}</p></div>`);
-        document.getElementById('summary-nama').textContent = profile.nama_gi;
-        document.getElementById('summary-tegangan').textContent = profile.tegangan || '-';
-      } else {
-        document.getElementById('summary-nama').textContent = 'Belum diatur';
-        document.getElementById('summary-tegangan').textContent = '-';
-      }
+      const giName = (profile && profile.nama_gi) || 'GI Situbondo';
+      L.marker(center, { icon: giIcon() }).addTo(map)
+        .bindPopup(`<div class="p-3"><h3 class="font-bold text-sm">${giName}</h3><p class="text-xs text-gray-500">${(profile && profile.lokasi) || 'Situbondo, Jawa Timur'}</p><p class="text-[10px] font-mono text-gray-400 mt-1">${center[0].toFixed(6)}, ${center[1].toFixed(6)}</p></div>`);
 
-      await refreshTowers();
-      await refreshSummary();
+      document.getElementById('summary-nama').textContent = giName;
+      document.getElementById('summary-tegangan').textContent = (profile && profile.tegangan) || '150 kV';
 
-      document.getElementById('btn-add-tower').addEventListener('click', showAddTowerModal);
-      document.getElementById('btn-edit-profil').addEventListener('click', () => showGISetupModal(profile));
+      document.getElementById('btn-seed').addEventListener('click', showSeedConfirmModal);
+      document.getElementById('btn-list').addEventListener('click', showTowerListModal);
 
-      if (!profile || !profile.lat || !profile.lng) {
-        showGISetupModal(profile);
+      await refreshAll();
+
+      // simpan profil GI otomatis kalau belum ada, pakai koordinat terkonfirmasi
+      if (!profile || !profile.lat) {
+        try {
+          await saveGIProfile({
+            lokasi: 'Situbondo, Jawa Timur',
+            lat: GI_FALLBACK[0], lng: GI_FALLBACK[1],
+            tegangan: '150 kV', tahun_operasi: '', catatan: ''
+          });
+        } catch (e) { /* tidak fatal */ }
       }
     }
 

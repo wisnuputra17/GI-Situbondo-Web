@@ -1,12 +1,12 @@
 /**
  * features/peta-tower/db.js
- * Logic akses data untuk modul Peta & Tower.
- * Semua fungsi di sini cuma memanggil kontrak shared/api.js — tidak ada
- * markup/DOM di file ini, supaya UI (index.html) dan data terpisah rapi.
+ * Logic akses data modul Peta & Tower. Tidak ada markup/DOM di file ini —
+ * semua lewat kontrak shared/api.js.
  */
 
 const GI_ID_DEFAULT = 'GI-STB-01';
 
+// ---------- Profil GI ----------
 async function loadGIProfile() {
   const rows = await apiLoad('profil_gi');
   return rows[0] || null; // proyek ini hanya untuk 1 GI (GI Situbondo)
@@ -19,19 +19,29 @@ async function saveGIProfile(data) {
     ...data,
     updated_at: new Date().toISOString()
   };
-  // hanya 1 baris yang diharapkan → overwrite penuh lebih aman daripada append berulang
   await apiSave('profil_gi', [payload]);
   return payload;
 }
 
+// ---------- Tower ----------
 async function loadTowers() {
-  return apiLoad('tower_master');
+  const rows = await apiLoad('tower_master');
+  return rows
+    .filter((t) => t.id_tower)
+    .map((t) => ({ ...t, nomor: Number(t.nomor) || 0, lat: Number(t.lat), lng: Number(t.lng) }))
+    .sort((a, b) => a.penghantar.localeCompare(b.penghantar) || a.nomor - b.nomor);
 }
 
-async function addTower(tower) {
-  const payload = { ...tower, updated_at: new Date().toISOString() };
-  await apiAppend('tower_master', payload);
-  return payload;
+/**
+ * Isi tower_master dari TOWER_SEED (tower-seed.js) — dipakai sekali saat
+ * setup awal, supaya tidak perlu menyentuh spreadsheet secara manual.
+ * Menimpa seluruh isi sheet, jadi konfirmasi dulu di UI sebelum dipanggil.
+ */
+async function seedTowers() {
+  if (typeof TOWER_SEED === 'undefined') throw new Error('tower-seed.js belum ter-load');
+  const stamped = TOWER_SEED.map((t) => ({ ...t, updated_at: new Date().toISOString() }));
+  await apiSave('tower_master', stamped);
+  return stamped.length;
 }
 
 async function updateTowerStatus(idTower, newStatus) {
@@ -41,4 +51,43 @@ async function updateTowerStatus(idTower, newStatus) {
   );
   await apiSave('tower_master', updated);
   return updated;
+}
+
+// ---------- Anomali tower ----------
+async function loadTowerAnomalies() {
+  return apiLoad('tower_anomali_log');
+}
+
+async function addTowerAnomaly({ id_tower, jenis_anomali, catatan, oleh }) {
+  const row = {
+    timestamp: new Date().toISOString(),
+    id_tower,
+    jenis_anomali,
+    catatan: catatan || '',
+    status: 'open',
+    oleh: oleh || 'Wisnu'
+  };
+  await apiAppend('tower_anomali_log', row);
+  await updateTowerStatus(id_tower, 'anomali');
+  return row;
+}
+
+async function resolveTowerAnomalies(idTower) {
+  const logs = await loadTowerAnomalies();
+  const updated = logs.map((l) =>
+    l.id_tower === idTower && l.status === 'open' ? { ...l, status: 'resolved' } : l
+  );
+  await apiSave('tower_anomali_log', updated);
+  await updateTowerStatus(idTower, 'normal');
+  return updated;
+}
+
+/** Riwayat anomali terbuka, dikelompokkan per id_tower. */
+function groupOpenAnomalies(logs) {
+  const map = {};
+  logs.filter((l) => l.status === 'open').forEach((l) => {
+    if (!map[l.id_tower]) map[l.id_tower] = [];
+    map[l.id_tower].push(l);
+  });
+  return map;
 }
