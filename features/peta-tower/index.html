@@ -53,9 +53,9 @@
       </div>
 
       <div class="absolute top-6 right-6 flex gap-2 z-[500]">
-        <button id="btn-seed" class="hidden bg-tertiary text-white rounded-lg shadow-md px-4 py-3 items-center gap-2 text-sm font-bold">
+        <button id="btn-seed" class="bg-tertiary text-white rounded-lg shadow-md px-4 py-3 flex items-center gap-2 text-sm font-bold">
           <span class="material-symbols-outlined text-base">cloud_upload</span>
-          Impor 417 tower
+          Impor data tower
         </button>
         <button id="btn-list" class="bg-surface-container-lowest text-on-surface border border-outline-variant/30 rounded-lg shadow-md px-4 py-3 flex items-center gap-2 text-sm font-bold">
           <span class="material-symbols-outlined text-base">list</span>
@@ -71,6 +71,16 @@
       </div>
 
       <div id="toast" class="hidden absolute bottom-24 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-sm px-4 py-2.5 rounded-lg shadow-lg z-[1500]"></div>
+
+      <div id="error-banner" class="hidden absolute top-6 left-1/2 -translate-x-1/2 bg-error text-white text-sm px-4 py-3 rounded-lg shadow-lg z-[1500] max-w-lg">
+        <div class="flex items-start gap-2">
+          <span class="material-symbols-outlined text-base">error</span>
+          <div>
+            <p class="font-bold text-xs uppercase tracking-wide mb-0.5">Gagal memuat data</p>
+            <p id="error-message" class="text-xs opacity-90"></p>
+          </div>
+        </div>
+      </div>
     </div>
   </template>
 
@@ -391,10 +401,29 @@
     }
 
     // ---------- bootstrap ----------
+    function showError(msg) {
+      const banner = document.getElementById('error-banner');
+      const text = document.getElementById('error-message');
+      if (!banner || !text) return;
+      text.textContent = msg;
+      banner.classList.remove('hidden');
+    }
+    function hideError() {
+      const banner = document.getElementById('error-banner');
+      if (banner) banner.classList.add('hidden');
+    }
+
     async function refreshAll() {
-      const [towers, anomalies] = await Promise.all([loadTowers(), loadTowerAnomalies()]);
-      allTowers = towers;
-      openAnomalies = groupOpenAnomalies(anomalies);
+      try {
+        const [towers, anomalies] = await Promise.all([loadTowers(), loadTowerAnomalies()]);
+        allTowers = towers;
+        openAnomalies = groupOpenAnomalies(anomalies);
+        hideError();
+      } catch (err) {
+        allTowers = [];
+        openAnomalies = {};
+        showError(err.message + ' — tombol "Impor data tower" tetap bisa dicoba.');
+      }
 
       if (!activePenghantar.size) {
         allTowers.forEach((t) => activePenghantar.add(t.penghantar));
@@ -402,10 +431,6 @@
 
       document.getElementById('summary-tower-count').textContent = formatNumber(allTowers.length);
       document.getElementById('summary-anomali-count').textContent = formatNumber(allTowers.filter((t) => t.status === 'anomali').length);
-
-      const seedBtn = document.getElementById('btn-seed');
-      if (allTowers.length === 0) seedBtn.classList.remove('hidden'), seedBtn.classList.add('flex');
-      else seedBtn.classList.add('hidden'), seedBtn.classList.remove('flex');
 
       renderPenghantarFilter();
       drawTowers();
