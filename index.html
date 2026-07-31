@@ -3,299 +3,157 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PLN GI Suite — Dashboard</title>
+<title>PLN GI Suite — Masuk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script src="shared/tailwind-config.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
-  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
-  body { font-family: 'Inter', sans-serif; }
-  h1, h2, h3 { font-family: 'Manrope', sans-serif; }
-  #mini-map { width: 100%; height: 100%; background: #e5eeff; }
-  .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background: #0b1c30; color: #fff; font-family: 'Inter'; font-weight: 600; }
-  .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgba(11,28,48,0.2); }
-  .cluster-has-anomali div { background: #ba1a1a !important; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+
+.scene {
+  position: relative; width: 100%; height: 100vh;
+  background:
+    var(--photo, none) center/cover no-repeat,
+    linear-gradient(180deg, #1a2740 0%, #3a3050 35%, #a3542f 68%, #d98d4a 85%, #f0b26b 100%);
+  overflow: hidden;
+}
+.scene svg.silhouette { position: absolute; bottom: 0; left: 0; width: 100%; height: 62%; }
+.overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,14,20,0.2) 0%, rgba(10,14,20,0.55) 70%, rgba(10,14,20,0.88) 100%); }
+
+.hotspot { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.75); cursor: pointer; }
+.hotspot::after { content: ''; position: absolute; inset: 6px; border-radius: 50%; background: #fff; animation: pulse 2.2s infinite; }
+@keyframes pulse { 0%,100% { opacity: .45; transform: scale(.85); } 50% { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .hotspot::after { animation: none; } }
+.tooltip {
+  position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%) translateY(6px);
+  background: rgba(15,20,28,0.96); color: #fff; padding: 10px 13px; border-radius: 8px;
+  white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .16s ease, transform .16s ease;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.hotspot:hover .tooltip, .hotspot:focus-visible .tooltip { opacity: 1; transform: translateX(-50%) translateY(0); }
+.tooltip strong { display: block; font-size: 13px; margin-bottom: 3px; font-family: 'Manrope', sans-serif; font-weight: 600; }
+.tooltip span { color: #9fb0bd; font-size: 11.5px; }
+
+.brand-mark { position: absolute; top: 34px; left: 44px; color: #fff; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
+.brand-mark span { display: block; font-family: 'Inter', sans-serif; font-weight: 400; font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-top: 3px; }
+
+.login-card {
+  position: absolute; bottom: 64px; left: 44px; width: 340px;
+  background: rgba(18,22,29,0.78); backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 26px; color: #fff;
+}
+.login-card h1 { font-family: 'Manrope', sans-serif; font-size: 21px; font-weight: 800; margin: 0 0 4px; }
+.login-card p.sub { font-size: 12.5px; color: rgba(255,255,255,0.55); margin: 0 0 20px; }
+.login-card label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.5); display: block; margin-bottom: 7px; font-weight: 600; }
+.login-card input {
+  width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 8px; padding: 11px 13px; color: #fff; font-size: 14px; font-family: 'Inter', sans-serif;
+}
+.login-card input:focus { outline: 2px solid rgba(255,255,255,0.4); outline-offset: 1px; }
+.login-card input::placeholder { color: rgba(255,255,255,0.3); }
+.login-card button {
+  width: 100%; margin-top: 16px; background: #fff; color: #17212f; border: none; border-radius: 8px;
+  padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
+}
+.login-card button:disabled { opacity: .6; cursor: default; }
+.login-card .hint { margin-top: 14px; font-size: 11px; color: rgba(255,255,255,0.4); text-align: center; }
+.err { margin-top: 12px; font-size: 12px; color: #ffb4ab; background: rgba(186,26,26,0.18); border: 1px solid rgba(255,180,171,0.3); border-radius: 8px; padding: 9px 11px; display: none; }
+
+@media (max-width: 720px) {
+  .login-card { left: 16px; right: 16px; width: auto; bottom: 24px; }
+  .brand-mark { left: 20px; top: 24px; }
+  .hotspot { display: none; }
+}
 </style>
 </head>
-<body class="bg-background text-on-surface min-h-screen flex overflow-hidden">
+<body>
+<div class="scene" id="scene">
+  <!-- Siluet gardu induk & menara transmisi.
+       Untuk mengganti dengan foto asli GI Situbondo: set CSS var --photo pada .scene,
+       mis. style="--photo: url('assets/gi-situbondo.jpg')", lalu hapus <svg class="silhouette">. -->
+  <svg class="silhouette" viewBox="0 0 1200 500" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g stroke="#0a1018" stroke-width="3" fill="none" opacity="0.92">
+      <path d="M180 500 L220 260 L260 500 M180 500 L260 500 M195 420 L245 420 M200 360 L240 360 M205 310 L235 310"/>
+      <line x1="130" y1="270" x2="310" y2="270"/>
+      <line x1="150" y1="292" x2="290" y2="292"/>
+    </g>
+    <g stroke="#0a1018" stroke-width="3" fill="none" opacity="0.88">
+      <path d="M700 500 L745 240 L790 500 M700 500 L790 500 M715 430 L775 430 M722 365 L768 365 M728 305 L762 305"/>
+      <line x1="640" y1="250" x2="850" y2="250"/>
+    </g>
+    <g stroke="#0a1018" stroke-width="3" fill="none" opacity="0.82">
+      <path d="M980 500 L1015 300 L1050 500 M980 500 L1050 500 M990 420 L1040 420 M995 360 L1035 360"/>
+    </g>
+    <rect x="380" y="360" width="92" height="140" fill="#0a1018" opacity="0.92"/>
+    <rect x="396" y="330" width="14" height="30" fill="#0a1018" opacity="0.92"/>
+    <rect x="442" y="330" width="14" height="30" fill="#0a1018" opacity="0.92"/>
+    <circle cx="520" cy="410" r="26" fill="none" stroke="#0a1018" stroke-width="3" opacity="0.88"/>
+    <line x1="0" y1="500" x2="1200" y2="500" stroke="#0a1018" stroke-width="60" opacity="0.55"/>
+  </svg>
+  <div class="overlay"></div>
 
-  <div id="app-shell" class="flex w-full"></div>
+  <div class="brand-mark">PLN GI Suite<span>GI Situbondo</span></div>
 
-  <template id="dashboard-template">
-    <div class="p-8 space-y-8 max-w-[1600px] mx-auto w-full">
+  <div id="hotspot-layer"></div>
 
-      <div id="error-banner" class="hidden bg-error-container border border-error/30 text-on-error-container rounded-lg px-4 py-3 flex items-start gap-2">
-        <span class="material-symbols-outlined text-base">error</span>
-        <div>
-          <p class="font-bold text-xs uppercase tracking-wide mb-0.5">Gagal memuat data</p>
-          <p id="error-message" class="text-xs"></p>
-        </div>
-      </div>
+  <div class="login-card">
+    <h1>Masuk</h1>
+    <p class="sub">Monitoring &amp; dokumen GI Situbondo</p>
+    <form id="login-form">
+      <label for="pw">Kode akses</label>
+      <input id="pw" type="password" placeholder="••••••••" autocomplete="current-password" autofocus>
+      <button type="submit" id="btn-login">Masuk</button>
+    </form>
+    <div class="err" id="err"></div>
+    <div class="hint">Akses terbatas tim internal</div>
+  </div>
+</div>
 
-      <!-- Kartu metrik -->
-      <div class="grid grid-cols-4 gap-6">
-        <div class="bg-surface-container-lowest p-6 rounded shadow-sm border-l-4 border-primary">
-          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Total tower</span>
-          <div class="mt-1"><span id="m-total" class="text-4xl font-headline font-extrabold text-on-surface">–</span></div>
-          <p id="m-total-sub" class="text-[11px] text-on-surface-variant mt-1">&nbsp;</p>
-        </div>
-        <div class="bg-surface-container-lowest p-6 rounded shadow-sm border-l-4 border-error">
-          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Anomali terbuka</span>
-          <div class="mt-1"><span id="m-anomali" class="text-4xl font-headline font-extrabold text-on-surface">–</span></div>
-          <p id="m-anomali-sub" class="text-[11px] text-on-surface-variant mt-1">&nbsp;</p>
-        </div>
-        <div class="bg-surface-container-lowest p-6 rounded shadow-sm border-l-4 border-secondary">
-          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Kondisi normal</span>
-          <div class="mt-1"><span id="m-normal" class="text-4xl font-headline font-extrabold text-on-surface">–</span></div>
-          <p id="m-normal-sub" class="text-[11px] text-on-surface-variant mt-1">&nbsp;</p>
-        </div>
-        <div class="bg-surface-container-lowest p-6 rounded shadow-sm border-l-4 border-tertiary">
-          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Gardu Induk</span>
-          <div class="mt-1"><span id="m-gi" class="text-2xl font-headline font-extrabold text-on-surface">–</span></div>
-          <p id="m-gi-sub" class="text-[11px] text-on-surface-variant mt-1">&nbsp;</p>
-        </div>
-      </div>
+<script src="shared/api.js"></script>
+<script>
+  // Titik interaktif di background. Posisi dalam persen (kiri, atas) supaya
+  // ikut menyesuaikan saat ukuran layar berubah.
+  const HOTSPOTS = [
+    { left: 35, top: 63, title: 'Trafo daya', desc: 'Peralatan utama gardu induk' },
+    { left: 43, top: 78, title: 'Bay penghantar', desc: 'Titik sambung ke jalur transmisi' },
+    { left: 62, top: 45, title: 'Menara transmisi', desc: '417 tower termonitor' },
+    { left: 84, top: 57, title: 'Jalur SUTT 150 kV', desc: '3 penghantar aktif' }
+  ];
 
-      <!-- Peta ringkas + rincian penghantar -->
-      <div class="grid grid-cols-12 gap-6 h-[420px]">
-        <div class="col-span-8 bg-surface-container-lowest rounded shadow-sm overflow-hidden relative">
-          <div id="mini-map"></div>
-          <a href="features/peta-tower/index.html" class="absolute bottom-4 left-4 z-[500] bg-primary text-on-primary rounded shadow-md px-4 py-2.5 flex items-center gap-2 text-xs font-bold">
-            <span class="material-symbols-outlined text-sm">open_in_full</span>
-            Buka peta lengkap
-          </a>
-        </div>
+  const layer = document.getElementById('hotspot-layer');
+  layer.innerHTML = HOTSPOTS.map((h) => `
+    <div class="hotspot" style="left:${h.left}%; top:${h.top}%;" tabindex="0" role="button" aria-label="${h.title}">
+      <div class="tooltip"><strong>${h.title}</strong><span>${h.desc}</span></div>
+    </div>`).join('');
 
-        <div class="col-span-4 bg-surface-container-lowest rounded shadow-sm p-6 flex flex-col">
-          <h2 class="font-headline font-bold text-base text-on-surface mb-4">Rincian per penghantar</h2>
-          <div id="penghantar-breakdown" class="space-y-4 flex-grow overflow-y-auto">
-            <p class="text-xs text-on-surface-variant">Memuat…</p>
-          </div>
-        </div>
-      </div>
+  // Kalau sudah punya kode akses di sesi ini, langsung ke dashboard.
+  if (getPassword()) window.location.replace('dashboard.html');
 
-      <!-- Tabel anomali -->
-      <section class="bg-surface-container-lowest rounded shadow-sm border border-outline-variant/10 overflow-hidden">
-        <div class="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-low/30">
-          <div>
-            <h2 class="font-headline font-bold text-lg text-on-surface">Anomali terbuka</h2>
-            <p class="text-xs text-on-surface-variant mt-0.5">Temuan yang belum ditandai selesai</p>
-          </div>
-          <a href="features/peta-tower/index.html" class="text-xs font-bold text-primary border border-outline-variant/40 rounded px-3 py-2 hover:bg-surface-container-high">Kelola di peta</a>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-surface-container-low/50">
-                <th class="px-6 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Tower</th>
-                <th class="px-6 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Jenis anomali</th>
-                <th class="px-6 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Lokasi</th>
-                <th class="px-6 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Dicatat</th>
-              </tr>
-            </thead>
-            <tbody id="anomali-body" class="divide-y divide-outline-variant/10"></tbody>
-          </table>
-        </div>
-        <div id="anomali-footer" class="p-4 border-t border-outline-variant/10 text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter bg-surface-container-low/20"></div>
-      </section>
-    </div>
-  </template>
+  const form = document.getElementById('login-form');
+  const btn = document.getElementById('btn-login');
+  const errBox = document.getElementById('err');
 
-  <script src="shared/store.js"></script>
-  <script src="shared/format.js"></script>
-  <script src="shared/api.js"></script>
-  <script src="shared/shell.js"></script>
-  <script src="shared/gi-data.js"></script>
-  <script>
-    const PENGHANTAR_COLOR = {
-      'STBDO-PITON': '#1565c0',
-      'STBDO-BWNGI': '#6a1b9a',
-      'BDWSO-STBDO': '#00695c'
-    };
-    const GI_FALLBACK = [-7.717441, 114.0191368];
-
-    function showError(msg) {
-      const b = document.getElementById('error-banner');
-      document.getElementById('error-message').textContent = msg;
-      b.classList.remove('hidden');
-    }
-
-    function renderMetrics(towers, openMap, profile) {
-      const anomaliTowers = towers.filter((t) => t.status === 'anomali');
-      const normal = towers.filter((t) => t.status === 'normal').length;
-      const penghantarCount = Object.keys(summarizeByPenghantar(towers)).length;
-
-      document.getElementById('m-total').textContent = formatNumber(towers.length);
-      document.getElementById('m-total-sub').textContent = `${penghantarCount} penghantar`;
-
-      document.getElementById('m-anomali').textContent = formatNumber(anomaliTowers.length);
-      const totalOpen = Object.values(openMap).reduce((s, arr) => s + arr.length, 0);
-      document.getElementById('m-anomali-sub').textContent = totalOpen
-        ? `${totalOpen} catatan pada ${anomaliTowers.length} tower`
-        : 'Tidak ada temuan terbuka';
-
-      document.getElementById('m-normal').textContent = formatNumber(normal);
-      const pct = towers.length ? Math.round((normal / towers.length) * 100) : 0;
-      document.getElementById('m-normal-sub').textContent = `${pct}% dari total tower`;
-
-      document.getElementById('m-gi').textContent = (profile && profile.nama_gi) || 'GI Situbondo';
-      document.getElementById('m-gi-sub').textContent = (profile && profile.tegangan) ? `${profile.tegangan} · ${profile.lokasi || ''}` : '150 kV';
-    }
-
-    function renderBreakdown(towers) {
-      const box = document.getElementById('penghantar-breakdown');
-      const summary = summarizeByPenghantar(towers);
-      const keys = Object.keys(summary);
-      if (!keys.length) {
-        box.innerHTML = '<p class="text-xs text-on-surface-variant">Belum ada data tower.</p>';
-        return;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pw = document.getElementById('pw').value;
+    errBox.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Memeriksa…';
+    try {
+      const res = await verifyPassword(pw);
+      if (res.ok) {
+        setPassword(pw);
+        window.location.href = 'dashboard.html';
+      } else {
+        errBox.textContent = res.error;
+        errBox.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Masuk';
       }
-      box.innerHTML = keys.map((ph) => {
-        const s = summary[ph];
-        const normal = s.total - s.anomali;
-        const pctNormal = s.total ? (normal / s.total) * 100 : 0;
-        return `
-          <div>
-            <div class="flex justify-between items-baseline mb-1.5">
-              <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded" style="background:${PENGHANTAR_COLOR[ph] || '#999'}"></span>
-                <span class="text-xs font-bold text-on-surface">${ph}</span>
-              </div>
-              <span class="text-xs text-on-surface-variant">${s.total} tower</span>
-            </div>
-            <div class="h-2 w-full bg-surface-container-high rounded overflow-hidden flex">
-              <div style="width:${pctNormal}%" class="bg-secondary h-full"></div>
-              <div style="width:${100 - pctNormal}%" class="bg-error h-full"></div>
-            </div>
-            <p class="text-[11px] text-on-surface-variant mt-1">
-              ${normal} normal${s.anomali ? ` · <span class="text-error font-bold">${s.anomali} anomali</span>` : ''}
-            </p>
-          </div>`;
-      }).join('');
+    } catch (err) {
+      errBox.textContent = 'Tidak bisa menghubungi server: ' + err.message;
+      errBox.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Masuk';
     }
-
-    function renderAnomaliTable(towers, anomalies) {
-      const byId = {};
-      towers.forEach((t) => { byId[t.id_tower] = t; });
-      const open = anomalies
-        .filter((a) => a.status === 'open')
-        .sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
-
-      const body = document.getElementById('anomali-body');
-      const footer = document.getElementById('anomali-footer');
-
-      if (!open.length) {
-        body.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-sm text-on-surface-variant">Tidak ada anomali terbuka saat ini.</td></tr>`;
-        footer.textContent = '';
-        return;
-      }
-
-      const shown = open.slice(0, 15);
-      body.innerHTML = shown.map((a) => {
-        const t = byId[a.id_tower] || {};
-        return `
-          <tr class="hover:bg-surface-container-low/40 transition-colors">
-            <td class="px-6 py-3">
-              <div class="text-sm font-bold text-on-surface">${t.penghantar || ''} #${t.nomor || '?'}</div>
-              <div class="text-[10px] text-on-surface-variant font-mono">${a.id_tower}</div>
-            </td>
-            <td class="px-6 py-3">
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-error-container text-on-error-container text-[11px] font-bold rounded">${a.jenis_anomali || '-'}</span>
-              ${a.catatan ? `<p class="text-[11px] text-on-surface-variant mt-1">${a.catatan}</p>` : ''}
-            </td>
-            <td class="px-6 py-3 text-sm text-on-surface-variant">${t.alamat || '-'}</td>
-            <td class="px-6 py-3">
-              <div class="text-xs text-on-surface">${formatDate(a.timestamp)}</div>
-              <div class="text-[10px] text-on-surface-variant">${a.oleh || '-'}</div>
-            </td>
-          </tr>`;
-      }).join('');
-      footer.textContent = `Menampilkan ${shown.length} dari ${open.length} anomali terbuka`;
-    }
-
-    function renderMiniMap(towers, profile) {
-      const center = (profile && profile.lat && profile.lng) ? [Number(profile.lat), Number(profile.lng)] : GI_FALLBACK;
-      const map = L.map('mini-map', { zoomControl: false, attributionControl: false }).setView(center, 10);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-
-      L.marker(center, {
-        icon: L.divIcon({
-          className: '',
-          html: `<div style="width:26px;height:26px;background:#8a5300;border:2px solid #fff;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.35);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">GI</div>`,
-          iconSize: [26, 26], iconAnchor: [13, 26]
-        })
-      }).addTo(map);
-
-      // garis penghantar
-      const summary = summarizeByPenghantar(towers);
-      Object.keys(summary).forEach((ph) => {
-        const pts = towers.filter((t) => t.penghantar === ph && t.lat && t.lng)
-          .sort((a, b) => a.nomor - b.nomor).map((t) => [t.lat, t.lng]);
-        if (pts.length > 1) L.polyline(pts, { color: PENGHANTAR_COLOR[ph] || '#999', weight: 2, opacity: 0.6 }).addTo(map);
-      });
-
-      const cluster = L.markerClusterGroup({
-        maxClusterRadius: 50,
-        iconCreateFunction: (c) => {
-          const hasAnomali = c.getAllChildMarkers().some((m) => m.options.towerStatus === 'anomali');
-          return L.divIcon({
-            html: `<div><span>${c.getChildCount()}</span></div>`,
-            className: 'marker-cluster marker-cluster-small' + (hasAnomali ? ' cluster-has-anomali' : ''),
-            iconSize: L.point(34, 34)
-          });
-        }
-      });
-      towers.forEach((t) => {
-        if (!t.lat || !t.lng) return;
-        const color = t.status === 'anomali' ? '#ba1a1a' : (t.status === 'offline' ? '#747878' : '#006d35');
-        const size = t.status === 'anomali' ? 15 : 11;
-        cluster.addLayer(L.marker([t.lat, t.lng], {
-          towerStatus: t.status,
-          icon: L.divIcon({
-            className: '',
-            html: `<div style="width:${size}px;height:${size}px;background:${color};border:2px solid #fff;border-radius:50%;"></div>`,
-            iconSize: [size, size], iconAnchor: [size / 2, size / 2]
-          })
-        }));
-      });
-      map.addLayer(cluster);
-
-      if (towers.length) {
-        const bounds = L.latLngBounds(towers.filter((t) => t.lat && t.lng).map((t) => [t.lat, t.lng]));
-        if (bounds.isValid()) map.fitBounds(bounds, { padding: [30, 30] });
-      }
-    }
-
-    async function bootstrapDashboard() {
-      const content = document.getElementById('page-content');
-      content.innerHTML = '';
-      content.appendChild(document.getElementById('dashboard-template').content.cloneNode(true));
-
-      let towers = [], anomalies = [], profile = null;
-      try {
-        [towers, anomalies, profile] = await Promise.all([
-          loadTowers(), loadTowerAnomalies(), loadGIProfile()
-        ]);
-      } catch (err) {
-        showError(err.message);
-      }
-
-      const openMap = groupOpenAnomalies(anomalies);
-      renderMetrics(towers, openMap, profile);
-      renderBreakdown(towers);
-      renderAnomaliTable(towers, anomalies);
-      renderMiniMap(towers, profile);
-    }
-
-    renderShell({ activeId: 'beranda', pageTitle: 'Dashboard', rootPrefix: '', searchPlaceholder: 'Cari tower, peralatan, atau file...' });
-    bootstrapDashboard();
-  </script>
+  });
+</script>
 </body>
 </html>

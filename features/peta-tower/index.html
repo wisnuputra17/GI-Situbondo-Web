@@ -482,8 +482,10 @@
       }
     }
 
+    if (requireAuth('../../')) {
     renderShell({ activeId: 'peta-tower', pageTitle: 'Peta & Tower', rootPrefix: '../../', searchPlaceholder: 'Cari tower...' });
     bootstrapMap();
+    }
   </script>
 </body>
 </html>

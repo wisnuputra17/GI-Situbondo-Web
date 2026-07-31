@@ -24,7 +24,8 @@ features/               → satu modul per folder
   peta-tower/            → ✅ modul aktif pertama (peta Leaflet+OSM, marker GI & tower)
     index.html            → tampilan (Tailwind + Leaflet)
     db.js                 → logic data (load/save/append lewat shared/api.js)
-index.html              → Dashboard (metrik, peta ringkas, tabel anomali terbuka)
+index.html              → Landing + login (gerbang masuk)
+dashboard.html          → Dashboard (metrik, peta ringkas, tabel anomali terbuka)
 ```
 
 Pemisahan tetap sama seperti IHSG Suite: **UI** (markup di `index.html` tiap modul),
@@ -103,7 +104,8 @@ path tersebut (lihat `getOrCreateFolderByPath` di `Code.gs`).
 |---|---|
 | Backend & shared layer | ✅ Selesai |
 | Peta & Tower | ✅ Fungsional — 417 tower, clustering, garis penghantar, catat/selesaikan anomali |
-| Dashboard (root index.html) | ✅ Selesai — metrik, peta ringkas, rincian penghantar, tabel anomali |
+| Landing + login (index.html) | ✅ Selesai — form kode akses, diverifikasi ke backend |
+| Dashboard (dashboard.html) | ✅ Selesai — metrik, peta ringkas, rincian penghantar, tabel anomali |
 | Profil GI (halaman detail terpisah) | ⏳ Belum — untuk saat ini profil GI dikelola dari tombol "Edit profil GI" di Peta & Tower |
 | File Manager (WP/BA/Peralatan) | ⏳ Menyusul |
 | Kondisi Peralatan | ⏳ Menyusul |
@@ -117,8 +119,14 @@ dengan header baru) — atau tambah kolom `lat`/`lng` manual di Sheets.
 ## Catatan keamanan
 
 - Autentikasi saat ini: kode akses tunggal (`ACCESS_PASSWORD`) dicek di
-  backend, dikombinasikan dengan URL yang tidak disebarluaskan. Cocok untuk
-  tim kecil (2–5 orang) dengan tingkat kepercayaan tinggi.
+  backend, lewat halaman login (`index.html`). Cocok untuk tim kecil (2–5
+  orang) dengan tingkat kepercayaan tinggi.
+- Kode akses disimpan di `sessionStorage`, jadi hilang saat tab ditutup.
+- **Penting:** ini bukan autentikasi kelas produksi. Kode HTML/JS di GitHub
+  Pages tetap bisa dibaca siapa pun; yang benar-benar terlindungi hanyalah
+  DATA, karena setiap permintaan ke backend wajib menyertakan kode akses.
+  Kalau `ACCESS_PASSWORD` dikosongkan di Script Properties, backend akan
+  melewati pengecekan dan data bisa dibaca/ditulis siapa saja yang tahu URL.
 - Kode akses **tidak** disimpan di kode sumber (bukan di GitHub) — hanya di
   Script Properties Apps Script, supaya tidak ikut ter-commit.
 - `saveSheet`/`clearSheet` menimpa seluruh isi sheet — dipakai untuk operasi

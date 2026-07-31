@@ -11,7 +11,7 @@
  */
 
 const NAV_ITEMS = [
-  { id: 'beranda', label: 'Dashboard', icon: 'dashboard', path: 'index.html', ready: true },
+  { id: 'beranda', label: 'Dashboard', icon: 'dashboard', path: 'dashboard.html', ready: true },
   { id: 'peta-tower', label: 'Peta & Tower', icon: 'map', path: 'features/peta-tower/index.html', ready: true },
   { id: 'profil-gi', label: 'Profil GI', icon: 'badge', path: 'features/profil-gi/index.html', ready: false },
   { id: 'file-manager', label: 'File WP/BA/Peralatan', icon: 'folder_open', path: '#', ready: false },
@@ -22,6 +22,7 @@ const NAV_ITEMS = [
 function renderShell({ activeId, pageTitle, rootPrefix = '', searchPlaceholder = 'Cari...' }) {
   const el = document.getElementById('app-shell');
   if (!el) return;
+  window.__rootPrefix = rootPrefix;
 
   const navLinks = NAV_ITEMS.map((item) => {
     const isActive = item.id === activeId;
@@ -45,10 +46,13 @@ function renderShell({ activeId, pageTitle, rootPrefix = '', searchPlaceholder =
       <nav class="mt-4 flex-grow px-3 space-y-1">${navLinks}</nav>
       <div class="p-4 border-t border-outline-variant/20 flex items-center gap-3">
         <div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-xs font-bold">W</div>
-        <div class="flex flex-col">
+        <div class="flex flex-col flex-grow">
           <span class="text-sm font-bold text-on-surface">Wisnu</span>
           <span class="text-[10px] text-on-surface-variant">Teknisi GI</span>
         </div>
+        <button id="btn-logout" title="Keluar" class="p-1 text-on-surface-variant hover:text-error transition-colors">
+          <span class="material-symbols-outlined text-base">logout</span>
+        </button>
       </div>
     </aside>
 
@@ -77,6 +81,9 @@ function renderShell({ activeId, pageTitle, rootPrefix = '', searchPlaceholder =
       <div id="page-content" class="flex-grow flex flex-col overflow-y-auto"></div>
     </div>
   `;
+
+  const logoutBtn = document.getElementById('btn-logout');
+  if (logoutBtn) logoutBtn.addEventListener('click', () => logout(rootPrefix));
 
   checkShellConnection();
 }
