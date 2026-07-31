@@ -3,86 +3,299 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PLN GI Suite — Beranda</title>
+<title>PLN GI Suite — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared/ui.css">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="shared/tailwind-config.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+  body { font-family: 'Inter', sans-serif; }
+  h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+  #mini-map { width: 100%; height: 100%; background: #e5eeff; }
+  .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background: #0b1c30; color: #fff; font-family: 'Inter'; font-weight: 600; }
+  .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgba(11,28,48,0.2); }
+  .cluster-has-anomali div { background: #ba1a1a !important; }
+</style>
 </head>
-<body>
-  <div id="app-header"></div>
+<body class="bg-background text-on-surface min-h-screen flex overflow-hidden">
 
-  <main class="shell">
-    <section class="hero-strip">
-      <div class="hero-copy">
-        <p class="eyebrow">Ringkasan Operasional</p>
-        <h1>Pemantauan Gardu Induk</h1>
-        <p class="hero-sub">Dokumen, kondisi peralatan, dan anomali dalam satu tempat.</p>
-      </div>
-      <div class="summary-cards">
-        <div class="summary-card">
-          <span class="summary-value" id="count-gi">–</span>
-          <span class="summary-label">Gardu Induk terdaftar</span>
-        </div>
-        <div class="summary-card">
-          <span class="summary-value" id="count-anomali">–</span>
-          <span class="summary-label">Anomali terbuka</span>
-        </div>
-        <div class="summary-card">
-          <span class="summary-value" id="count-file">–</span>
-          <span class="summary-label">File tersimpan</span>
+  <div id="app-shell" class="flex w-full"></div>
+
+  <template id="dashboard-template">
+    <div class="p-8 space-y-8 max-w-[1600px] mx-auto w-full">
+
+      <div id="error-banner" class="hidden bg-error-container border border-error/30 text-on-error-container rounded-lg px-4 py-3 flex items-start gap-2">
+        <span class="material-symbols-outlined text-base">error</span>
+        <div>
+          <p class="font-bold text-xs uppercase tracking-wide mb-0.5">Gagal memuat data</p>
+          <p id="error-message" class="text-xs"></p>
         </div>
       </div>
-    </section>
 
-    <section class="module-grid">
-      <article class="module-card is-ready">
-        <span class="module-status">Fondasi siap</span>
-        <h2>Backend &amp; Shared Layer</h2>
-        <p>Apps Script + Google Sheets/Drive sudah terhubung sebagai sumber data.</p>
-      </article>
-      <article class="module-card">
-        <span class="module-status">Segera</span>
-        <h2>Profil Gardu Induk</h2>
-        <p>Data referensi tiap GI: lokasi, tegangan, tahun operasi.</p>
-      </article>
-      <article class="module-card">
-        <span class="module-status">Segera</span>
-        <h2>File WP / BA / Peralatan</h2>
-        <p>Penyimpanan dokumen per GI, terhubung ke Google Drive.</p>
-      </article>
-      <article class="module-card">
-        <span class="module-status">Segera</span>
-        <h2>Kondisi Peralatan &amp; Tower</h2>
-        <p>Riwayat kondisi, posisi asset, dan anomali per peralatan.</p>
-      </article>
-    </section>
-  </main>
+      <!-- Kartu metrik -->
+      <div class="grid grid-cols-4 gap-6">
+        <div class="bg-surface-container-lowest p-6 rounded shadow-sm border-l-4 border-primary">
+          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Total tower</span>
+          <div class="mt-1"><span id="m-total" class="text-4xl font-headline font-extrabold text-on-surface">–</span></div>
+          <p id="m-total-sub" class="text-[11px] text-on-surface-variant mt-1">&nbsp;</p>
+        </div>
+        <div class="bg-surface-container-lowest p-6 rounded shadow-sm border-l-4 border-error">
+          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Anomali terbuka</span>
+          <div class="mt-1"><span id="m-anomali" class="text-4xl font-headline font-extrabold text-on-surface">–</span></div>
+          <p id="m-anomali-sub" class="text-[11px] text-on-surface-variant mt-1">&nbsp;</p>
+        </div>
+        <div class="bg-surface-container-lowest p-6 rounded shadow-sm border-l-4 border-secondary">
+          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Kondisi normal</span>
+          <div class="mt-1"><span id="m-normal" class="text-4xl font-headline font-extrabold text-on-surface">–</span></div>
+          <p id="m-normal-sub" class="text-[11px] text-on-surface-variant mt-1">&nbsp;</p>
+        </div>
+        <div class="bg-surface-container-lowest p-6 rounded shadow-sm border-l-4 border-tertiary">
+          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Gardu Induk</span>
+          <div class="mt-1"><span id="m-gi" class="text-2xl font-headline font-extrabold text-on-surface">–</span></div>
+          <p id="m-gi-sub" class="text-[11px] text-on-surface-variant mt-1">&nbsp;</p>
+        </div>
+      </div>
+
+      <!-- Peta ringkas + rincian penghantar -->
+      <div class="grid grid-cols-12 gap-6 h-[420px]">
+        <div class="col-span-8 bg-surface-container-lowest rounded shadow-sm overflow-hidden relative">
+          <div id="mini-map"></div>
+          <a href="features/peta-tower/index.html" class="absolute bottom-4 left-4 z-[500] bg-primary text-on-primary rounded shadow-md px-4 py-2.5 flex items-center gap-2 text-xs font-bold">
+            <span class="material-symbols-outlined text-sm">open_in_full</span>
+            Buka peta lengkap
+          </a>
+        </div>
+
+        <div class="col-span-4 bg-surface-container-lowest rounded shadow-sm p-6 flex flex-col">
+          <h2 class="font-headline font-bold text-base text-on-surface mb-4">Rincian per penghantar</h2>
+          <div id="penghantar-breakdown" class="space-y-4 flex-grow overflow-y-auto">
+            <p class="text-xs text-on-surface-variant">Memuat…</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabel anomali -->
+      <section class="bg-surface-container-lowest rounded shadow-sm border border-outline-variant/10 overflow-hidden">
+        <div class="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-low/30">
+          <div>
+            <h2 class="font-headline font-bold text-lg text-on-surface">Anomali terbuka</h2>
+            <p class="text-xs text-on-surface-variant mt-0.5">Temuan yang belum ditandai selesai</p>
+          </div>
+          <a href="features/peta-tower/index.html" class="text-xs font-bold text-primary border border-outline-variant/40 rounded px-3 py-2 hover:bg-surface-container-high">Kelola di peta</a>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-surface-container-low/50">
+                <th class="px-6 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Tower</th>
+                <th class="px-6 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Jenis anomali</th>
+                <th class="px-6 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Lokasi</th>
+                <th class="px-6 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Dicatat</th>
+              </tr>
+            </thead>
+            <tbody id="anomali-body" class="divide-y divide-outline-variant/10"></tbody>
+          </table>
+        </div>
+        <div id="anomali-footer" class="p-4 border-t border-outline-variant/10 text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter bg-surface-container-low/20"></div>
+      </section>
+    </div>
+  </template>
 
   <script src="shared/store.js"></script>
   <script src="shared/format.js"></script>
   <script src="shared/api.js"></script>
-  <script src="shared/header.js"></script>
+  <script src="shared/shell.js"></script>
+  <script src="shared/gi-data.js"></script>
   <script>
-    renderHeader('beranda');
-    loadSummary();
+    const PENGHANTAR_COLOR = {
+      'STBDO-PITON': '#1565c0',
+      'STBDO-BWNGI': '#6a1b9a',
+      'BDWSO-STBDO': '#00695c'
+    };
+    const GI_FALLBACK = [-7.717441, 114.0191368];
 
-    async function loadSummary() {
-      try {
-        const gi = await apiLoad('profil_gi');
-        document.getElementById('count-gi').textContent = formatNumber(gi.length);
-      } catch (e) {
-        document.getElementById('count-gi').textContent = '–';
-      }
-      try {
-        const anomali = await apiLoad('anomali_log');
-        const open = anomali.filter((a) => a.status !== 'resolved').length;
-        document.getElementById('count-anomali').textContent = formatNumber(open);
-      } catch (e) {
-        document.getElementById('count-anomali').textContent = '–';
-      }
-      document.getElementById('count-file').textContent = '–'; // menyusul saat File Manager dibangun
+    function showError(msg) {
+      const b = document.getElementById('error-banner');
+      document.getElementById('error-message').textContent = msg;
+      b.classList.remove('hidden');
     }
+
+    function renderMetrics(towers, openMap, profile) {
+      const anomaliTowers = towers.filter((t) => t.status === 'anomali');
+      const normal = towers.filter((t) => t.status === 'normal').length;
+      const penghantarCount = Object.keys(summarizeByPenghantar(towers)).length;
+
+      document.getElementById('m-total').textContent = formatNumber(towers.length);
+      document.getElementById('m-total-sub').textContent = `${penghantarCount} penghantar`;
+
+      document.getElementById('m-anomali').textContent = formatNumber(anomaliTowers.length);
+      const totalOpen = Object.values(openMap).reduce((s, arr) => s + arr.length, 0);
+      document.getElementById('m-anomali-sub').textContent = totalOpen
+        ? `${totalOpen} catatan pada ${anomaliTowers.length} tower`
+        : 'Tidak ada temuan terbuka';
+
+      document.getElementById('m-normal').textContent = formatNumber(normal);
+      const pct = towers.length ? Math.round((normal / towers.length) * 100) : 0;
+      document.getElementById('m-normal-sub').textContent = `${pct}% dari total tower`;
+
+      document.getElementById('m-gi').textContent = (profile && profile.nama_gi) || 'GI Situbondo';
+      document.getElementById('m-gi-sub').textContent = (profile && profile.tegangan) ? `${profile.tegangan} · ${profile.lokasi || ''}` : '150 kV';
+    }
+
+    function renderBreakdown(towers) {
+      const box = document.getElementById('penghantar-breakdown');
+      const summary = summarizeByPenghantar(towers);
+      const keys = Object.keys(summary);
+      if (!keys.length) {
+        box.innerHTML = '<p class="text-xs text-on-surface-variant">Belum ada data tower.</p>';
+        return;
+      }
+      box.innerHTML = keys.map((ph) => {
+        const s = summary[ph];
+        const normal = s.total - s.anomali;
+        const pctNormal = s.total ? (normal / s.total) * 100 : 0;
+        return `
+          <div>
+            <div class="flex justify-between items-baseline mb-1.5">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded" style="background:${PENGHANTAR_COLOR[ph] || '#999'}"></span>
+                <span class="text-xs font-bold text-on-surface">${ph}</span>
+              </div>
+              <span class="text-xs text-on-surface-variant">${s.total} tower</span>
+            </div>
+            <div class="h-2 w-full bg-surface-container-high rounded overflow-hidden flex">
+              <div style="width:${pctNormal}%" class="bg-secondary h-full"></div>
+              <div style="width:${100 - pctNormal}%" class="bg-error h-full"></div>
+            </div>
+            <p class="text-[11px] text-on-surface-variant mt-1">
+              ${normal} normal${s.anomali ? ` · <span class="text-error font-bold">${s.anomali} anomali</span>` : ''}
+            </p>
+          </div>`;
+      }).join('');
+    }
+
+    function renderAnomaliTable(towers, anomalies) {
+      const byId = {};
+      towers.forEach((t) => { byId[t.id_tower] = t; });
+      const open = anomalies
+        .filter((a) => a.status === 'open')
+        .sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
+
+      const body = document.getElementById('anomali-body');
+      const footer = document.getElementById('anomali-footer');
+
+      if (!open.length) {
+        body.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-sm text-on-surface-variant">Tidak ada anomali terbuka saat ini.</td></tr>`;
+        footer.textContent = '';
+        return;
+      }
+
+      const shown = open.slice(0, 15);
+      body.innerHTML = shown.map((a) => {
+        const t = byId[a.id_tower] || {};
+        return `
+          <tr class="hover:bg-surface-container-low/40 transition-colors">
+            <td class="px-6 py-3">
+              <div class="text-sm font-bold text-on-surface">${t.penghantar || ''} #${t.nomor || '?'}</div>
+              <div class="text-[10px] text-on-surface-variant font-mono">${a.id_tower}</div>
+            </td>
+            <td class="px-6 py-3">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-error-container text-on-error-container text-[11px] font-bold rounded">${a.jenis_anomali || '-'}</span>
+              ${a.catatan ? `<p class="text-[11px] text-on-surface-variant mt-1">${a.catatan}</p>` : ''}
+            </td>
+            <td class="px-6 py-3 text-sm text-on-surface-variant">${t.alamat || '-'}</td>
+            <td class="px-6 py-3">
+              <div class="text-xs text-on-surface">${formatDate(a.timestamp)}</div>
+              <div class="text-[10px] text-on-surface-variant">${a.oleh || '-'}</div>
+            </td>
+          </tr>`;
+      }).join('');
+      footer.textContent = `Menampilkan ${shown.length} dari ${open.length} anomali terbuka`;
+    }
+
+    function renderMiniMap(towers, profile) {
+      const center = (profile && profile.lat && profile.lng) ? [Number(profile.lat), Number(profile.lng)] : GI_FALLBACK;
+      const map = L.map('mini-map', { zoomControl: false, attributionControl: false }).setView(center, 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+      L.marker(center, {
+        icon: L.divIcon({
+          className: '',
+          html: `<div style="width:26px;height:26px;background:#8a5300;border:2px solid #fff;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.35);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">GI</div>`,
+          iconSize: [26, 26], iconAnchor: [13, 26]
+        })
+      }).addTo(map);
+
+      // garis penghantar
+      const summary = summarizeByPenghantar(towers);
+      Object.keys(summary).forEach((ph) => {
+        const pts = towers.filter((t) => t.penghantar === ph && t.lat && t.lng)
+          .sort((a, b) => a.nomor - b.nomor).map((t) => [t.lat, t.lng]);
+        if (pts.length > 1) L.polyline(pts, { color: PENGHANTAR_COLOR[ph] || '#999', weight: 2, opacity: 0.6 }).addTo(map);
+      });
+
+      const cluster = L.markerClusterGroup({
+        maxClusterRadius: 50,
+        iconCreateFunction: (c) => {
+          const hasAnomali = c.getAllChildMarkers().some((m) => m.options.towerStatus === 'anomali');
+          return L.divIcon({
+            html: `<div><span>${c.getChildCount()}</span></div>`,
+            className: 'marker-cluster marker-cluster-small' + (hasAnomali ? ' cluster-has-anomali' : ''),
+            iconSize: L.point(34, 34)
+          });
+        }
+      });
+      towers.forEach((t) => {
+        if (!t.lat || !t.lng) return;
+        const color = t.status === 'anomali' ? '#ba1a1a' : (t.status === 'offline' ? '#747878' : '#006d35');
+        const size = t.status === 'anomali' ? 15 : 11;
+        cluster.addLayer(L.marker([t.lat, t.lng], {
+          towerStatus: t.status,
+          icon: L.divIcon({
+            className: '',
+            html: `<div style="width:${size}px;height:${size}px;background:${color};border:2px solid #fff;border-radius:50%;"></div>`,
+            iconSize: [size, size], iconAnchor: [size / 2, size / 2]
+          })
+        }));
+      });
+      map.addLayer(cluster);
+
+      if (towers.length) {
+        const bounds = L.latLngBounds(towers.filter((t) => t.lat && t.lng).map((t) => [t.lat, t.lng]));
+        if (bounds.isValid()) map.fitBounds(bounds, { padding: [30, 30] });
+      }
+    }
+
+    async function bootstrapDashboard() {
+      const content = document.getElementById('page-content');
+      content.innerHTML = '';
+      content.appendChild(document.getElementById('dashboard-template').content.cloneNode(true));
+
+      let towers = [], anomalies = [], profile = null;
+      try {
+        [towers, anomalies, profile] = await Promise.all([
+          loadTowers(), loadTowerAnomalies(), loadGIProfile()
+        ]);
+      } catch (err) {
+        showError(err.message);
+      }
+
+      const openMap = groupOpenAnomalies(anomalies);
+      renderMetrics(towers, openMap, profile);
+      renderBreakdown(towers);
+      renderAnomaliTable(towers, anomalies);
+      renderMiniMap(towers, profile);
+    }
+
+    renderShell({ activeId: 'beranda', pageTitle: 'Dashboard', rootPrefix: '', searchPlaceholder: 'Cari tower, peralatan, atau file...' });
+    bootstrapDashboard();
   </script>
 </body>
 </html>

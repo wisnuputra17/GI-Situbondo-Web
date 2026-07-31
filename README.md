@@ -19,12 +19,12 @@ shared/                → kode dipakai bersama semua modul
   format.js             → format tanggal/angka gaya Indonesia
   tailwind-config.js    → token desain (warna/font) — sumber tunggal untuk semua halaman
   shell.js              → render sidebar + topbar (dipakai ulang di semua modul)
-  header.js, ui.css     → DEPRECATED — tema lama (dark/SLD), sudah tidak dipakai, hanya referensi
+  gi-data.js            → akses data GI/tower/anomali yang dipakai >1 modul
 features/               → satu modul per folder
   peta-tower/            → ✅ modul aktif pertama (peta Leaflet+OSM, marker GI & tower)
     index.html            → tampilan (Tailwind + Leaflet)
     db.js                 → logic data (load/save/append lewat shared/api.js)
-index.html              → halaman beranda (⚠️ masih tema lama, belum dimigrasi ke shell baru)
+index.html              → Dashboard (metrik, peta ringkas, tabel anomali terbuka)
 ```
 
 Pemisahan tetap sama seperti IHSG Suite: **UI** (markup di `index.html` tiap modul),
@@ -103,7 +103,7 @@ path tersebut (lihat `getOrCreateFolderByPath` di `Code.gs`).
 |---|---|
 | Backend & shared layer | ✅ Selesai |
 | Peta & Tower | ✅ Fungsional — 417 tower, clustering, garis penghantar, catat/selesaikan anomali |
-| Beranda (root index.html) | ⚠️ Masih tema lama, perlu dimigrasi ke shell baru |
+| Dashboard (root index.html) | ✅ Selesai — metrik, peta ringkas, rincian penghantar, tabel anomali |
 | Profil GI (halaman detail terpisah) | ⏳ Belum — untuk saat ini profil GI dikelola dari tombol "Edit profil GI" di Peta & Tower |
 | File Manager (WP/BA/Peralatan) | ⏳ Menyusul |
 | Kondisi Peralatan | ⏳ Menyusul |
