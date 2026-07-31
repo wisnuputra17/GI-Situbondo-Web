@@ -10,10 +10,7 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script src="../../shared/tailwind-config.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
   body { font-family: 'Inter', sans-serif; }
@@ -22,9 +19,6 @@
   .leaflet-popup-content-wrapper { border-radius: 10px; padding: 0; }
   .leaflet-popup-content { margin: 0; width: 250px !important; }
   .modal-backdrop { position: fixed; inset: 0; background: rgba(11,28,48,0.45); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
-  .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgba(11,28,48,0.2); }
-  .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background: #0b1c30; color: #fff; font-family: 'Inter'; font-weight: 600; }
-  .cluster-has-anomali div { background: #ba1a1a !important; }
 </style>
 </head>
 <body class="bg-background text-on-surface min-h-screen flex overflow-hidden">
@@ -101,7 +95,7 @@
       'BDWSO-STBDO': '#00695c'
     };
 
-    let map, clusterGroup, lineLayers = {}, allTowers = [], openAnomalies = {};
+    let map, towerLayer, towerMarkers = [], lineLayers = {}, allTowers = [], openAnomalies = {};
     let activePenghantar = new Set();
 
     // ---------- helpers UI ----------
@@ -120,14 +114,23 @@
         iconSize: [30, 30], iconAnchor: [15, 30]
       });
     }
-    function towerIcon(status) {
-      const color = status === 'anomali' ? '#ba1a1a' : (status === 'offline' ? '#747878' : '#006d35');
-      const size = status === 'anomali' ? 18 : 13;
-      return L.divIcon({
-        className: '',
-        html: `<div style="width:${size}px;height:${size}px;background:${color};border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);"></div>`,
-        iconSize: [size, size], iconAnchor: [size / 2, size / 2]
-      });
+    function towerColor(status) {
+      return status === 'anomali' ? '#ba1a1a' : (status === 'offline' ? '#747878' : '#006d35');
+    }
+
+    /**
+     * Ukuran titik tower mengikuti tingkat zoom: mengecil saat zoom out supaya
+     * 417 titik tetap terbaca tanpa perlu digabung jadi cluster.
+     */
+    function radiusForZoom(zoom, status) {
+      const table = { 8: 1.5, 9: 2, 10: 2.5, 11: 3, 12: 4, 13: 5, 14: 6, 15: 7 };
+      let r = zoom <= 8 ? 1.5 : (zoom >= 15 ? 8 : table[zoom]);
+      if (status === 'anomali') r += 1.5;
+      return r;
+    }
+
+    function weightForZoom(zoom) {
+      return zoom <= 10 ? 0.8 : (zoom <= 12 ? 1.2 : 2);
     }
 
     function statusBadge(status) {
@@ -170,25 +173,14 @@
 
     // ---------- render peta ----------
     function drawTowers() {
-      if (clusterGroup) map.removeLayer(clusterGroup);
+      if (towerLayer) map.removeLayer(towerLayer);
       Object.values(lineLayers).forEach((l) => map.removeLayer(l));
       lineLayers = {};
+      towerMarkers = [];
 
-      clusterGroup = L.markerClusterGroup({
-        maxClusterRadius: 45,
-        iconCreateFunction: (cluster) => {
-          const children = cluster.getAllChildMarkers();
-          const hasAnomali = children.some((m) => m.options.towerStatus === 'anomali');
-          const count = cluster.getChildCount();
-          return L.divIcon({
-            html: `<div><span>${count}</span></div>`,
-            className: 'marker-cluster marker-cluster-small' + (hasAnomali ? ' cluster-has-anomali' : ''),
-            iconSize: L.point(36, 36)
-          });
-        }
-      });
-
+      towerLayer = L.layerGroup();
       const visible = allTowers.filter((t) => activePenghantar.has(t.penghantar));
+      const zoom = map.getZoom();
 
       // garis penghantar (urut nomor tower)
       Object.keys(PENGHANTAR_COLOR).forEach((ph) => {
@@ -201,13 +193,31 @@
 
       visible.forEach((t) => {
         if (!t.lat || !t.lng) return;
-        const marker = L.marker([t.lat, t.lng], { icon: towerIcon(t.status), towerStatus: t.status });
+        const marker = L.circleMarker([t.lat, t.lng], {
+          radius: radiusForZoom(zoom, t.status),
+          fillColor: towerColor(t.status),
+          fillOpacity: 1,
+          color: '#ffffff',
+          weight: weightForZoom(zoom)
+        });
+        marker.towerData = t;
         marker.bindPopup(towerPopupHtml(t));
         marker.on('popupopen', () => bindPopupActions(t));
-        clusterGroup.addLayer(marker);
+        marker.addTo(towerLayer);
+        towerMarkers.push(marker);
       });
 
-      map.addLayer(clusterGroup);
+      towerLayer.addTo(map);
+    }
+
+    /** Perbarui ukuran titik tanpa menggambar ulang seluruh marker. */
+    function rescaleMarkers() {
+      const zoom = map.getZoom();
+      const w = weightForZoom(zoom);
+      towerMarkers.forEach((m) => {
+        m.setRadius(radiusForZoom(zoom, m.towerData.status));
+        m.setStyle({ weight: w });
+      });
     }
 
     function bindPopupActions(t) {
@@ -457,6 +467,7 @@
         maxZoom: 19
       }).addTo(map);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
+      map.on('zoomend', rescaleMarkers);
 
       const giName = (profile && profile.nama_gi) || 'GI Situbondo';
       L.marker(center, { icon: giIcon() }).addTo(map)
