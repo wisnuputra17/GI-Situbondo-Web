@@ -66,6 +66,12 @@ function doPost(e) {
       case 'uploadFile':
         const fileInfo = uploadFile(body.path, body.fileName, body.mimeType, body.base64);
         return jsonOut({ ok: true, data: fileInfo });
+      case 'deleteFile':
+        return jsonOut({ ok: true, data: deleteFile(body.fileId) });
+      case 'renameFile':
+        return jsonOut({ ok: true, data: renameFile(body.fileId, body.newName) });
+      case 'createFolder':
+        return jsonOut({ ok: true, data: createFolder(body.path, body.name) });
       default:
         return jsonOut({ ok: false, error: 'Unknown action: ' + body.action });
     }
@@ -160,6 +166,14 @@ function getOrCreateFolderByPath(path) {
 
 function listFiles(path) {
   const folder = getOrCreateFolderByPath(path);
+
+  const folders = [];
+  const fIter = folder.getFolders();
+  while (fIter.hasNext()) {
+    const sub = fIter.next();
+    folders.push({ id: sub.getId(), name: sub.getName(), url: sub.getUrl() });
+  }
+
   const files = [];
   const iter = folder.getFiles();
   while (iter.hasNext()) {
@@ -168,12 +182,39 @@ function listFiles(path) {
       id: f.getId(),
       name: f.getName(),
       url: f.getUrl(),
+      downloadUrl: 'https://drive.google.com/uc?export=download&id=' + f.getId(),
       mimeType: f.getMimeType(),
       size: f.getSize(),
       updatedAt: f.getLastUpdated()
     });
   }
-  return files;
+
+  return { path: path || '', folders: folders, files: files };
+}
+
+function createFolder(path, name) {
+  const parent = getOrCreateFolderByPath(path);
+  const existing = parent.getFoldersByName(name);
+  if (existing.hasNext()) {
+    const f = existing.next();
+    return { id: f.getId(), name: f.getName(), existed: true };
+  }
+  const f = parent.createFolder(name);
+  return { id: f.getId(), name: f.getName(), existed: false };
+}
+
+/** Pindahkan file ke Trash (bukan hapus permanen) supaya masih bisa dipulihkan. */
+function deleteFile(fileId) {
+  const file = DriveApp.getFileById(fileId);
+  const name = file.getName();
+  file.setTrashed(true);
+  return { id: fileId, name: name, trashed: true };
+}
+
+function renameFile(fileId, newName) {
+  const file = DriveApp.getFileById(fileId);
+  file.setName(newName);
+  return { id: fileId, name: newName };
 }
 
 function uploadFile(path, fileName, mimeType, base64) {

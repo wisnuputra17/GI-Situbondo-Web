@@ -92,6 +92,9 @@ const apiClear = (sheet) => apiPost('clear', { sheet });
 const apiListFiles = (path) => apiGet('listFiles', { path });
 const apiUploadFile = (path, fileName, mimeType, base64) =>
   apiPost('uploadFile', { path, fileName, mimeType, base64 });
+const apiDeleteFile = (fileId) => apiPost('deleteFile', { fileId });
+const apiRenameFile = (fileId, newName) => apiPost('renameFile', { fileId, newName });
+const apiCreateFolder = (path, name) => apiPost('createFolder', { path, name });
 
 async function apiPing() {
   try {

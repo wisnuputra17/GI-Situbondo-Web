@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLN GI Suite — File WP/BA/Peralatan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../../shared/tailwind-config.js"></script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+  body { font-family: 'Inter', sans-serif; }
+  h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(11,28,48,0.45); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
+  .drop-active { outline: 2px dashed #8a5300; outline-offset: -6px; background: #fff8ef; }
+</style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex overflow-hidden">
+
+  <div id="app-shell" class="flex w-full"></div>
+
+  <template id="fm-template">
+    <div class="p-8 space-y-6 max-w-[1400px] mx-auto w-full">
+
+      <div id="error-banner" class="hidden bg-error-container border border-error/30 text-on-error-container rounded-lg px-4 py-3 flex items-start gap-2">
+        <span class="material-symbols-outlined text-base">error</span>
+        <div>
+          <p class="font-bold text-xs uppercase tracking-wide mb-0.5">Terjadi kesalahan</p>
+          <p id="error-message" class="text-xs"></p>
+        </div>
+      </div>
+
+      <!-- Kategori -->
+      <div id="kategori-grid" class="grid grid-cols-4 gap-4"></div>
+
+      <!-- Isi folder -->
+      <section class="bg-surface-container-lowest rounded shadow-sm border border-outline-variant/10 overflow-hidden">
+        <div class="p-5 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-low/30 gap-4">
+          <nav id="breadcrumb" class="flex items-center gap-1.5 text-sm min-w-0"></nav>
+          <div class="flex gap-2 shrink-0">
+            <button id="btn-new-folder" class="text-xs font-bold text-primary border border-outline-variant/40 rounded px-3 py-2 hover:bg-surface-container-high flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">create_new_folder</span> Folder baru
+            </button>
+            <button id="btn-upload" class="text-xs font-bold bg-primary text-on-primary rounded px-4 py-2 flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">upload_file</span> Unggah berkas
+            </button>
+            <input type="file" id="file-input" multiple class="hidden">
+          </div>
+        </div>
+
+        <div id="dropzone" class="min-h-[340px]">
+          <div id="fm-body"></div>
+        </div>
+
+        <div id="fm-footer" class="p-4 border-t border-outline-variant/10 text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter bg-surface-container-low/20"></div>
+      </section>
+
+      <div id="upload-progress" class="hidden fixed bottom-6 right-6 w-80 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/20 p-4 z-[1500]">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-on-surface">Mengunggah…</span>
+          <span id="up-count" class="text-[10px] text-on-surface-variant"></span>
+        </div>
+        <div class="h-1.5 w-full bg-surface-container-high rounded overflow-hidden">
+          <div id="up-bar" class="h-full bg-tertiary transition-all" style="width:0%"></div>
+        </div>
+        <p id="up-current" class="text-[11px] text-on-surface-variant mt-2 truncate"></p>
+      </div>
+
+      <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-sm px-4 py-2.5 rounded-lg shadow-lg z-[1500]"></div>
+    </div>
+  </template>
+
+  <div id="modal-root"></div>
+
+  <script src="../../shared/store.js"></script>
+  <script src="../../shared/format.js"></script>
+  <script src="../../shared/api.js"></script>
+  <script src="../../shared/shell.js"></script>
+  <script src="./db.js"></script>
+  <script>
+    let currentPath = '';
+    let currentData = { folders: [], files: [] };
+
+    function toast(msg, ms = 2800) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), ms);
+    }
+    function showError(msg) {
+      const b = document.getElementById('error-banner');
+      document.getElementById('error-message').textContent = msg;
+      b.classList.remove('hidden');
+    }
+    function hideError() { document.getElementById('error-banner').classList.add('hidden'); }
+    function closeModal() { document.getElementById('modal-root').innerHTML = ''; }
+
+    function renderKategori() {
+      document.getElementById('kategori-grid').innerHTML = KATEGORI.map((k) => {
+        const active = currentPath.split('/')[0] === k.id;
+        return `
+          <button data-kategori="${k.id}" class="text-left p-5 rounded shadow-sm border transition-all ${active ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-lowest border-outline-variant/10 hover:border-primary/40'}">
+            <span class="material-symbols-outlined ${active ? '' : 'text-tertiary'}">${k.icon}</span>
+            <h2 class="font-headline font-bold text-base mt-2">${k.label}</h2>
+            <p class="text-[11px] ${active ? 'opacity-75' : 'text-on-surface-variant'} mt-0.5">${k.desc}</p>
+          </button>`;
+      }).join('');
+      document.querySelectorAll('[data-kategori]').forEach((b) => {
+        b.addEventListener('click', () => navigate(b.dataset.kategori));
+      });
+    }
+
+    function renderBreadcrumb() {
+      const parts = currentPath ? currentPath.split('/') : [];
+      const crumbs = [`<button data-path="" class="crumb text-on-surface-variant hover:text-primary font-medium">Root</button>`];
+      parts.forEach((p, i) => {
+        const path = parts.slice(0, i + 1).join('/');
+        const isLast = i === parts.length - 1;
+        crumbs.push(`<span class="text-outline-variant">/</span>`);
+        crumbs.push(isLast
+          ? `<span class="font-bold text-on-surface truncate">${p}</span>`
+          : `<button data-path="${path}" class="crumb text-on-surface-variant hover:text-primary font-medium truncate">${p}</button>`);
+      });
+      const el = document.getElementById('breadcrumb');
+      el.innerHTML = crumbs.join('');
+      el.querySelectorAll('.crumb').forEach((b) => b.addEventListener('click', () => navigate(b.dataset.path)));
+    }
+
+    function renderBody() {
+      const body = document.getElementById('fm-body');
+      const { folders, files } = currentData;
+
+      if (!folders.length && !files.length) {
+        body.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-20 text-center">
+            <span class="material-symbols-outlined text-5xl text-outline-variant">folder_open</span>
+            <p class="text-sm text-on-surface-variant mt-3">Folder ini masih kosong</p>
+            <p class="text-xs text-outline mt-1">Seret berkas ke sini, atau klik "Unggah berkas"</p>
+          </div>`;
+        document.getElementById('fm-footer').textContent = '';
+        return;
+      }
+
+      const folderRows = folders.map((f) => `
+        <tr class="hover:bg-surface-container-low/40 cursor-pointer" data-folder="${f.name}">
+          <td class="px-5 py-3">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-tertiary">folder</span>
+              <span class="text-sm font-medium text-on-surface">${f.name}</span>
+            </div>
+          </td>
+          <td class="px-5 py-3 text-xs text-on-surface-variant">Folder</td>
+          <td class="px-5 py-3 text-xs text-on-surface-variant">–</td>
+          <td class="px-5 py-3"></td>
+        </tr>`).join('');
+
+      const fileRows = files.map((f) => `
+        <tr class="hover:bg-surface-container-low/40">
+          <td class="px-5 py-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="material-symbols-outlined text-on-surface-variant">${fileIconFor(f.mimeType, f.name)}</span>
+              <a href="${f.url}" target="_blank" rel="noopener" class="text-sm font-medium text-on-surface hover:text-primary hover:underline truncate">${f.name}</a>
+            </div>
+          </td>
+          <td class="px-5 py-3 text-xs text-on-surface-variant">${formatBytes(f.size)}</td>
+          <td class="px-5 py-3 text-xs text-on-surface-variant">${formatDate(f.updatedAt)}</td>
+          <td class="px-5 py-3 text-right whitespace-nowrap">
+            <a href="${f.url}" target="_blank" rel="noopener" class="inline-flex p-1.5 text-on-surface-variant hover:text-primary" title="Buka"><span class="material-symbols-outlined text-base">open_in_new</span></a>
+            <button data-delete="${f.id}" data-name="${f.name}" class="inline-flex p-1.5 text-on-surface-variant hover:text-error" title="Hapus"><span class="material-symbols-outlined text-base">delete</span></button>
+          </td>
+        </tr>`).join('');
+
+      body.innerHTML = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-surface-container-low/50">
+              <th class="px-5 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Nama</th>
+              <th class="px-5 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Ukuran</th>
+              <th class="px-5 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Diubah</th>
+              <th class="px-5 py-3 border-b border-outline-variant/10"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline-variant/10">${folderRows}${fileRows}</tbody>
+        </table>`;
+
+      document.getElementById('fm-footer').textContent =
+        `${folders.length} folder · ${files.length} berkas`;
+
+      body.querySelectorAll('[data-folder]').forEach((tr) => {
+        tr.addEventListener('click', () => navigate(currentPath ? `${currentPath}/${tr.dataset.folder}` : tr.dataset.folder));
+      });
+      body.querySelectorAll('[data-delete]').forEach((b) => {
+        b.addEventListener('click', () => confirmDelete(b.dataset.delete, b.dataset.name));
+      });
+    }
+
+    function confirmDelete(fileId, name) {
+      document.getElementById('modal-root').innerHTML = `
+        <div class="modal-backdrop">
+          <div class="bg-white rounded-lg shadow-xl w-[400px] p-6">
+            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-2">Hapus berkas?</h2>
+            <p class="text-sm text-gray-600 mb-1">${name}</p>
+            <p class="text-xs text-gray-500 mb-4">Berkas dipindahkan ke Trash Google Drive dan masih bisa dipulihkan dari sana dalam 30 hari.</p>
+            <div class="flex gap-2">
+              <button id="modal-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
+              <button id="del-confirm" class="flex-1 bg-[#ba1a1a] text-white rounded py-2 text-sm font-bold">Hapus</button>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('modal-cancel').addEventListener('click', closeModal);
+      document.getElementById('del-confirm').addEventListener('click', async (e) => {
+        e.target.disabled = true; e.target.textContent = 'Menghapus…';
+        try {
+          await removeFile(fileId);
+          closeModal();
+          await refresh();
+          toast(`${name} dipindahkan ke Trash`);
+        } catch (err) {
+          closeModal();
+          showError('Gagal menghapus: ' + err.message);
+        }
+      });
+    }
+
+    function promptNewFolder() {
+      document.getElementById('modal-root').innerHTML = `
+        <div class="modal-backdrop">
+          <div class="bg-white rounded-lg shadow-xl w-[380px] p-6">
+            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-1">Folder baru</h2>
+            <p class="text-xs text-gray-500 mb-4">Dibuat di: <span class="font-mono">${currentPath || 'Root'}</span></p>
+            <form id="folder-form">
+              <input name="name" placeholder="Nama folder" class="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4" required autofocus>
+              <div class="flex gap-2">
+                <button type="button" id="modal-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
+                <button type="submit" class="flex-1 bg-[#0b1c30] text-white rounded py-2 text-sm font-bold">Buat</button>
+              </div>
+            </form>
+          </div>
+        </div>`;
+      document.getElementById('modal-cancel').addEventListener('click', closeModal);
+      document.getElementById('folder-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = new FormData(e.target).get('name');
+        const btn = e.target.querySelector('[type=submit]');
+        btn.disabled = true; btn.textContent = 'Membuat…';
+        try {
+          const res = await makeFolder(currentPath, name);
+          closeModal();
+          await refresh();
+          toast(res.existed ? `Folder "${name}" sudah ada` : `Folder "${name}" dibuat`);
+        } catch (err) {
+          closeModal();
+          showError('Gagal membuat folder: ' + err.message);
+        }
+      });
+    }
+
+    async function handleUpload(fileList) {
+      const files = Array.from(fileList);
+      if (!files.length) return;
+      if (!currentPath) {
+        showError('Pilih kategori (WP/BA/Peralatan/Spreadsheet) dulu sebelum mengunggah.');
+        return;
+      }
+      hideError();
+
+      const box = document.getElementById('upload-progress');
+      const bar = document.getElementById('up-bar');
+      const cnt = document.getElementById('up-count');
+      const cur = document.getElementById('up-current');
+      box.classList.remove('hidden');
+
+      let done = 0;
+      const failed = [];
+      for (const file of files) {
+        cur.textContent = file.name;
+        cnt.textContent = `${done}/${files.length}`;
+        try {
+          await uploadOne(currentPath, file);
+        } catch (err) {
+          failed.push(err.message);
+        }
+        done++;
+        bar.style.width = Math.round((done / files.length) * 100) + '%';
+      }
+
+      box.classList.add('hidden');
+      bar.style.width = '0%';
+      await refresh();
+
+      if (failed.length) showError(failed.join(' · '));
+      const ok = files.length - failed.length;
+      if (ok) toast(`${ok} berkas terunggah`);
+    }
+
+    async function navigate(path) {
+      currentPath = path;
+      renderKategori();
+      renderBreadcrumb();
+      document.getElementById('fm-body').innerHTML =
+        `<div class="py-20 text-center text-sm text-on-surface-variant">Memuat…</div>`;
+      await refresh();
+    }
+
+    async function refresh() {
+      try {
+        currentData = await listFolder(currentPath);
+        hideError();
+      } catch (err) {
+        currentData = { folders: [], files: [] };
+        showError(err.message);
+      }
+      renderBody();
+    }
+
+    function setupDropzone() {
+      const dz = document.getElementById('dropzone');
+      ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => {
+        e.preventDefault(); dz.classList.add('drop-active');
+      }));
+      ['dragleave', 'drop'].forEach((ev) => dz.addEventListener(ev, (e) => {
+        e.preventDefault();
+        if (ev === 'dragleave' && dz.contains(e.relatedTarget)) return;
+        dz.classList.remove('drop-active');
+      }));
+      dz.addEventListener('drop', (e) => handleUpload(e.dataTransfer.files));
+    }
+
+    async function bootstrap() {
+      const content = document.getElementById('page-content');
+      content.innerHTML = '';
+      content.appendChild(document.getElementById('fm-template').content.cloneNode(true));
+
+      document.getElementById('btn-upload').addEventListener('click', () => document.getElementById('file-input').click());
+      document.getElementById('file-input').addEventListener('change', (e) => {
+        handleUpload(e.target.files);
+        e.target.value = '';
+      });
+      document.getElementById('btn-new-folder').addEventListener('click', promptNewFolder);
+      setupDropzone();
+
+      await navigate('WP');
+    }
+
+    if (requireAuth('../../')) {
+      renderShell({ activeId: 'file-manager', pageTitle: 'File WP/BA/Peralatan', rootPrefix: '../../', searchPlaceholder: 'Cari berkas...' });
+      bootstrap();
+    }
+  </script>
+</body>
+</html>

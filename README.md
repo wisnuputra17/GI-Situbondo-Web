@@ -21,9 +21,9 @@ shared/                → kode dipakai bersama semua modul
   shell.js              → render sidebar + topbar (dipakai ulang di semua modul)
   gi-data.js            → akses data GI/tower/anomali yang dipakai >1 modul
 features/               → satu modul per folder
-  peta-tower/            → ✅ modul aktif pertama (peta Leaflet+OSM, marker GI & tower)
-    index.html            → tampilan (Tailwind + Leaflet)
-    db.js                 → logic data (load/save/append lewat shared/api.js)
+  peta-tower/            → peta Leaflet+OSM, 417 tower, pencatatan anomali
+  file-manager/          → dokumen WP/BA/Peralatan/Spreadsheet di Google Drive
+  (tiap modul: index.html = tampilan, db.js = logika data)
 index.html              → Landing + login (gerbang masuk)
 dashboard.html          → Dashboard (metrik, peta ringkas, tabel anomali terbuka)
 ```
@@ -88,15 +88,19 @@ memakainya begitu masing-masing dibangun.
 
 ```
 [ROOT_FOLDER_ID]/
-  [id_gi]/
-    WP/
-    BA/
-    Peralatan/
-    Spreadsheet/
+  WP/            → Working Permit
+  BA/            → Berita Acara
+  Peralatan/     → dokumen peralatan GI
+  Spreadsheet/   → data & rekap
 ```
 
-Folder per-GI & sub-kategori dibuat otomatis saat file pertama diupload ke
-path tersebut (lihat `getOrCreateFolderByPath` di `Code.gs`).
+Karena proyek ini hanya untuk satu GI (Situbondo), tingkat folder per-GI
+tidak dipakai. Folder dibuat otomatis saat pertama diakses/diunggahi
+(`getOrCreateFolderByPath` di `Code.gs`). Subfolder bebas dibuat dari UI.
+
+**Batas unggah: 15 MB per berkas.** Payload dikirim sebagai base64 lewat
+Apps Script (menggembung ~33%), jadi berkas besar harus diunggah langsung
+lewat Google Drive.
 
 ## Status modul
 
@@ -107,7 +111,7 @@ path tersebut (lihat `getOrCreateFolderByPath` di `Code.gs`).
 | Landing + login (index.html) | ✅ Selesai — form kode akses, diverifikasi ke backend |
 | Dashboard (dashboard.html) | ✅ Selesai — metrik, peta ringkas, rincian penghantar, tabel anomali |
 | Profil GI (halaman detail terpisah) | ⏳ Belum — untuk saat ini profil GI dikelola dari tombol "Edit profil GI" di Peta & Tower |
-| File Manager (WP/BA/Peralatan) | ⏳ Menyusul |
+| File Manager (WP/BA/Peralatan) | ✅ Selesai — jelajah folder, unggah (drag & drop), hapus ke Trash |
 | Kondisi Peralatan | ⏳ Menyusul |
 | Anomali Peralatan | ⏳ Menyusul |
 
