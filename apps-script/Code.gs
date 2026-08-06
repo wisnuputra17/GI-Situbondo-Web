@@ -72,6 +72,8 @@ function doPost(e) {
         return jsonOut({ ok: true, data: renameFile(body.fileId, body.newName) });
       case 'createFolder':
         return jsonOut({ ok: true, data: createFolder(body.path, body.name) });
+      case 'deleteFolder':
+        return jsonOut({ ok: true, data: deleteFolder(body.folderId) });
       default:
         return jsonOut({ ok: false, error: 'Unknown action: ' + body.action });
     }
@@ -209,6 +211,26 @@ function deleteFile(fileId) {
   const name = file.getName();
   file.setTrashed(true);
   return { id: fileId, name: name, trashed: true };
+}
+
+/**
+ * Pindahkan folder ke Trash beserta seluruh isinya.
+ * Root folder dilindungi agar tidak bisa terhapus.
+ */
+function deleteFolder(folderId) {
+  const rootId = PropertiesService.getScriptProperties().getProperty('ROOT_FOLDER_ID');
+  if (folderId === rootId) throw new Error('Folder root tidak boleh dihapus');
+
+  const folder = DriveApp.getFolderById(folderId);
+  const name = folder.getName();
+
+  // hitung isi supaya UI bisa memberi peringatan yang akurat
+  let fileCount = 0;
+  const it = folder.getFiles();
+  while (it.hasNext()) { it.next(); fileCount++; }
+
+  folder.setTrashed(true);
+  return { id: folderId, name: name, fileCount: fileCount, trashed: true };
 }
 
 function renameFile(fileId, newName) {

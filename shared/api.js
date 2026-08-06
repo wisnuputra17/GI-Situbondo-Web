@@ -95,6 +95,7 @@ const apiUploadFile = (path, fileName, mimeType, base64) =>
 const apiDeleteFile = (fileId) => apiPost('deleteFile', { fileId });
 const apiRenameFile = (fileId, newName) => apiPost('renameFile', { fileId, newName });
 const apiCreateFolder = (path, name) => apiPost('createFolder', { path, name });
+const apiDeleteFolder = (folderId) => apiPost('deleteFolder', { folderId });
 
 async function apiPing() {
   try {

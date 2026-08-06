@@ -82,6 +82,9 @@
   <script>
     let currentPath = '';
     let currentData = { folders: [], files: [] };
+    // Penanda urutan permintaan. Kalau pengguna cepat berpindah folder, respons
+    // yang datang terlambat harus diabaikan supaya tidak menimpa isi folder aktif.
+    let requestSeq = 0;
 
     function toast(msg, ms = 2800) {
       const el = document.getElementById('toast');
@@ -144,16 +147,18 @@
       }
 
       const folderRows = folders.map((f) => `
-        <tr class="hover:bg-surface-container-low/40 cursor-pointer" data-folder="${f.name}">
+        <tr class="hover:bg-surface-container-low/40">
           <td class="px-5 py-3">
-            <div class="flex items-center gap-3">
+            <button data-folder="${f.name}" class="flex items-center gap-3 text-left w-full">
               <span class="material-symbols-outlined text-tertiary">folder</span>
-              <span class="text-sm font-medium text-on-surface">${f.name}</span>
-            </div>
+              <span class="text-sm font-medium text-on-surface hover:text-primary">${f.name}</span>
+            </button>
           </td>
           <td class="px-5 py-3 text-xs text-on-surface-variant">Folder</td>
           <td class="px-5 py-3 text-xs text-on-surface-variant">–</td>
-          <td class="px-5 py-3"></td>
+          <td class="px-5 py-3 text-right whitespace-nowrap">
+            <button data-del-folder="${f.id}" data-name="${f.name}" class="inline-flex p-1.5 text-on-surface-variant hover:text-error" title="Hapus folder"><span class="material-symbols-outlined text-base">delete</span></button>
+          </td>
         </tr>`).join('');
 
       const fileRows = files.map((f) => `
@@ -194,6 +199,9 @@
       body.querySelectorAll('[data-delete]').forEach((b) => {
         b.addEventListener('click', () => confirmDelete(b.dataset.delete, b.dataset.name));
       });
+      body.querySelectorAll('[data-del-folder]').forEach((b) => {
+        b.addEventListener('click', () => confirmDeleteFolder(b.dataset.delFolder, b.dataset.name));
+      });
     }
 
     function confirmDelete(fileId, name) {
@@ -224,12 +232,48 @@
       });
     }
 
+    function confirmDeleteFolder(folderId, name) {
+      const isKategori = KATEGORI.some((k) => k.id === name) && !currentPath.includes('/');
+      document.getElementById('modal-root').innerHTML = `
+        <div class="modal-backdrop">
+          <div class="bg-white rounded-lg shadow-xl w-[420px] p-6">
+            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-2">Hapus folder?</h2>
+            <p class="text-sm text-gray-700 mb-2"><span class="font-mono font-bold">${name}</span></p>
+            <p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2.5 mb-3">
+              Seluruh isi folder ikut terhapus, termasuk subfolder dan berkas di dalamnya.
+              Semuanya dipindahkan ke Trash Google Drive dan masih bisa dipulihkan dalam 30 hari.
+            </p>
+            ${isKategori ? `<p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded p-2.5 mb-3">Ini folder kategori utama. Kalau dihapus, folder akan dibuat ulang otomatis (kosong) saat kategori dibuka lagi.</p>` : ''}
+            <div class="flex gap-2">
+              <button id="modal-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
+              <button id="delfolder-confirm" class="flex-1 bg-[#ba1a1a] text-white rounded py-2 text-sm font-bold">Hapus folder</button>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('modal-cancel').addEventListener('click', closeModal);
+      document.getElementById('delfolder-confirm').addEventListener('click', async (e) => {
+        e.target.disabled = true; e.target.textContent = 'Menghapus…';
+        try {
+          const res = await removeFolder(folderId);
+          closeModal();
+          await refresh();
+          toast(`Folder "${res.name}" (${res.fileCount} berkas) dipindahkan ke Trash`, 3500);
+        } catch (err) {
+          closeModal();
+          showError('Gagal menghapus folder: ' + err.message);
+        }
+      });
+    }
+
     function promptNewFolder() {
+      // Kunci path saat modal DIBUKA. Kalau dibaca saat submit, berpindah folder
+      // selagi modal terbuka bisa membuat folder tercipta di tempat yang salah.
+      const targetPath = currentPath;
       document.getElementById('modal-root').innerHTML = `
         <div class="modal-backdrop">
           <div class="bg-white rounded-lg shadow-xl w-[380px] p-6">
             <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-1">Folder baru</h2>
-            <p class="text-xs text-gray-500 mb-4">Dibuat di: <span class="font-mono">${currentPath || 'Root'}</span></p>
+            <p class="text-xs text-gray-500 mb-4">Dibuat di: <span class="font-mono font-bold text-[#8a5300]">${targetPath || 'Root'}</span></p>
             <form id="folder-form">
               <input name="name" placeholder="Nama folder" class="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4" required autofocus>
               <div class="flex gap-2">
@@ -246,10 +290,12 @@
         const btn = e.target.querySelector('[type=submit]');
         btn.disabled = true; btn.textContent = 'Membuat…';
         try {
-          const res = await makeFolder(currentPath, name);
+          const res = await makeFolder(targetPath, name);
           closeModal();
-          await refresh();
-          toast(res.existed ? `Folder "${name}" sudah ada` : `Folder "${name}" dibuat`);
+          if (targetPath === currentPath) await refresh();
+          toast(res.existed
+            ? `Folder "${name}" sudah ada di ${targetPath || 'Root'}`
+            : `Folder "${name}" dibuat di ${targetPath || 'Root'}`);
         } catch (err) {
           closeModal();
           showError('Gagal membuat folder: ' + err.message);
@@ -305,10 +351,15 @@
     }
 
     async function refresh() {
+      const seq = ++requestSeq;
+      const pathAtRequest = currentPath;
       try {
-        currentData = await listFolder(currentPath);
+        const data = await listFolder(pathAtRequest);
+        if (seq !== requestSeq || pathAtRequest !== currentPath) return; // sudah usang
+        currentData = data;
         hideError();
       } catch (err) {
+        if (seq !== requestSeq || pathAtRequest !== currentPath) return;
         currentData = { folders: [], files: [] };
         showError(err.message);
       }

@@ -51,6 +51,10 @@ async function makeFolder(path, name) {
   return apiCreateFolder(path, name);
 }
 
+async function removeFolder(folderId) {
+  return apiDeleteFolder(folderId);
+}
+
 // ---------- util tampilan ----------
 function formatBytes(bytes) {
   const n = Number(bytes);
