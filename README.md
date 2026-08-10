@@ -23,6 +23,7 @@ shared/                → kode dipakai bersama semua modul
 features/               → satu modul per folder
   peta-tower/            → peta Leaflet+OSM, 417 tower, pencatatan anomali
   file-manager/          → dokumen WP/BA/Peralatan/Spreadsheet di Google Drive
+  data-peralatan/        → daftar induk peralatan GI + riwayat kondisi
   (tiap modul: index.html = tampilan, db.js = logika data)
 index.html              → Landing + login (gerbang masuk)
 dashboard.html          → Dashboard (metrik, peta ringkas, tabel anomali terbuka)
@@ -73,7 +74,7 @@ berikut:
 | Sheet | Kolom |
 |---|---|
 | `profil_gi` | id_gi, nama_gi, lokasi, lat, lng, tegangan, tahun_operasi, catatan, updated_at |
-| `peralatan_master` | id_peralatan, id_gi, jenis, merk, tahun_pasang, status, updated_at |
+| `peralatan_master` | id_peralatan, jenis, bay, merk, tipe, no_seri, kapasitas, tahun_pasang, status, catatan, updated_at |
 | `kondisi_log` | timestamp, id_peralatan, kondisi, catatan, oleh |
 | `tower_master` | id_tower, penghantar, nomor, lat, lng, alamat, ground_patrol, status, updated_at |
 | `tower_anomali_log` | timestamp, id_tower, jenis_anomali, catatan, status, oleh |
@@ -112,7 +113,7 @@ lewat Google Drive.
 | Dashboard (dashboard.html) | ✅ Selesai — metrik, peta ringkas, rincian penghantar, tabel anomali |
 | Profil GI (halaman detail terpisah) | ⏳ Belum — untuk saat ini profil GI dikelola dari tombol "Edit profil GI" di Peta & Tower |
 | File Manager (WP/BA/Peralatan) | ✅ Selesai — jelajah folder, unggah (drag & drop), hapus ke Trash |
-| Kondisi Peralatan | ⏳ Menyusul |
+| Data Peralatan | ✅ Selesai — daftar induk, filter, riwayat kondisi, impor dari spreadsheet |
 | Anomali Peralatan | ⏳ Menyusul |
 
 **Catatan skema:** kolom `lat` dan `lng` ditambahkan ke `profil_gi` (untuk marker

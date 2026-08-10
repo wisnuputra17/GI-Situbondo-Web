@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { id: 'peta-tower', label: 'Peta & Tower', icon: 'map', path: 'features/peta-tower/index.html', ready: true },
   { id: 'profil-gi', label: 'Profil GI', icon: 'badge', path: 'features/profil-gi/index.html', ready: false },
   { id: 'file-manager', label: 'File WP/BA/Peralatan', icon: 'folder_open', path: 'features/file-manager/index.html', ready: true },
-  { id: 'kondisi-peralatan', label: 'Kondisi Peralatan', icon: 'precision_manufacturing', path: '#', ready: false },
+  { id: 'data-peralatan', label: 'Data Peralatan', icon: 'precision_manufacturing', path: 'features/data-peralatan/index.html', ready: true },
   { id: 'anomali', label: 'Anomali', icon: 'warning', path: '#', ready: false }
 ];
 
