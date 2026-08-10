@@ -70,6 +70,9 @@ function renderShell({ activeId, pageTitle, rootPrefix = '', searchPlaceholder =
             <button class="relative p-1 text-on-surface-variant hover:text-primary transition-colors">
               <span class="material-symbols-outlined">notifications</span>
             </button>
+            <button class="p-1 text-on-surface-variant hover:text-primary transition-colors" id="btn-tema" title="Ganti tema gelap/terang">
+              <span class="material-symbols-outlined" id="ikon-tema">dark_mode</span>
+            </button>
             <button class="p-1 text-on-surface-variant hover:text-primary transition-colors" id="conn-indicator" title="Memeriksa koneksi...">
               <span class="material-symbols-outlined">cloud_sync</span>
             </button>
@@ -84,6 +87,16 @@ function renderShell({ activeId, pageTitle, rootPrefix = '', searchPlaceholder =
 
   const logoutBtn = document.getElementById('btn-logout');
   if (logoutBtn) logoutBtn.addEventListener('click', () => logout(rootPrefix));
+
+  const temaBtn = document.getElementById('btn-tema');
+  if (temaBtn) {
+    const sinkronIkon = () => {
+      const ik = document.getElementById('ikon-tema');
+      if (ik) ik.textContent = temaAktif() === 'dark' ? 'light_mode' : 'dark_mode';
+    };
+    temaBtn.addEventListener('click', () => { toggleTema(); sinkronIkon(); });
+    sinkronIkon();
+  }
 
   checkShellConnection();
 }

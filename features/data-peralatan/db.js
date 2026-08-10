@@ -180,3 +180,102 @@ function ringkasPeralatan(list) {
   });
   return { perJenis, perStatus, total: list.length };
 }
+
+// ============================================================
+//  JARING LAYANG-LAYANG
+//  Struktur awal. Rincian kolom masih menunggu penjelasan Wisnu —
+//  skema ini sengaja dibuat longgar agar mudah disesuaikan.
+// ============================================================
+
+const KERAWANAN = [
+  { key: 'rendah', label: 'Rendah' },
+  { key: 'sedang', label: 'Sedang' },
+  { key: 'tinggi', label: 'Tinggi' }
+];
+
+async function loadJaring() {
+  const rows = await apiLoad('jaring_master');
+  return rows
+    .filter((r) => r && r.id_jaring)
+    .map((r) => ({
+      id_jaring: String(r.id_jaring),
+      penghantar: r.penghantar || '',
+      dari_menara: r.dari_menara || '',
+      ke_menara: r.ke_menara || '',
+      lokasi: r.lokasi || '',
+      panjang: r.panjang || '',
+      tahun_pasang: r.tahun_pasang || '',
+      kerawanan: r.kerawanan || 'sedang',
+      status: r.status || 'normal',
+      catatan: r.catatan || '',
+      updated_at: r.updated_at || ''
+    }))
+    .sort((a, b) =>
+      a.penghantar.localeCompare(b.penghantar) ||
+      (Number(a.dari_menara) || 0) - (Number(b.dari_menara) || 0)
+    );
+}
+
+async function addJaring(data) {
+  const row = { ...data, updated_at: new Date().toISOString() };
+  await apiAppend('jaring_master', row);
+  return row;
+}
+
+async function updateJaring(idAsal, data) {
+  const all = await loadJaring();
+  const updated = all.map((j) =>
+    j.id_jaring === idAsal ? { ...j, ...data, updated_at: new Date().toISOString() } : j
+  );
+  await apiSave('jaring_master', updated);
+  return updated;
+}
+
+async function deleteJaring(id) {
+  const all = await loadJaring();
+  await apiSave('jaring_master', all.filter((j) => j.id_jaring !== id));
+}
+
+// ---------- Util tampilan kartu ----------
+
+/** Inisial untuk blok warna di kartu, diringkas dari nama jenis. */
+function inisialJenis(jenis) {
+  const khusus = {
+    'PMT (Circuit Breaker)': 'PMT',
+    'PMS (Disconnecting Switch)': 'PMS',
+    'PMS Tanah (Earthing Switch)': 'PMS-T',
+    'CT (Current Transformer)': 'CT',
+    'PT / VT (Voltage Transformer)': 'PT',
+    'LA (Lightning Arrester)': 'LA',
+    'NGR (Neutral Grounding Resistor)': 'NGR',
+    'Transformator Daya': 'TRF',
+    'Trafo Pemakaian Sendiri': 'TPS',
+    'Kubikel 20 kV': '20kV',
+    'Baterai & Rectifier': 'BAT',
+    'Panel Kontrol / Proteksi': 'PNL',
+    'Relai Proteksi': 'RLY',
+    'Kabel Power': 'KBL',
+    'Kompresor': 'KMP',
+    'Busbar': 'BUS',
+    'Lain-lain': 'ETC'
+  };
+  if (khusus[jenis]) return khusus[jenis];
+  return String(jenis || '?').split(/[\s\/]+/).map((w) => w[0]).join('').slice(0, 3).toUpperCase();
+}
+
+/**
+ * Warna blok kartu ditentukan dari nama jenis (hash sederhana), sehingga
+ * satu jenis selalu mendapat warna yang sama tanpa perlu daftar manual.
+ */
+const PALET_BLOK = [
+  ['#1e3a5f', '#7fb3ff'], ['#3d2a5c', '#c4a3ff'], ['#0f4034', '#5fe0b0'],
+  ['#4a3212', '#fbbf24'], ['#4a1f2b', '#ff8fa8'], ['#173a3f', '#6fd6e0'],
+  ['#3a3520', '#e0d06f'], ['#2b2f4a', '#a3b0ff'], ['#40241a', '#ffa07a']
+];
+
+function warnaBlok(kunci) {
+  let h = 0;
+  const t = String(kunci || '');
+  for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
+  return PALET_BLOK[h % PALET_BLOK.length];
+}

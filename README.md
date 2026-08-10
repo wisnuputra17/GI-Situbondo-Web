@@ -17,7 +17,7 @@ shared/                → kode dipakai bersama semua modul
   api.js                → wrapper fetch ke Apps Script Web App
   store.js              → state store ringan lintas modul
   format.js             → format tanggal/angka gaya Indonesia
-  tailwind-config.js    → token desain (warna/font) — sumber tunggal untuk semua halaman
+  tailwind-config.js    → token desain + sistem tema gelap/terang (CSS variable)
   shell.js              → render sidebar + topbar (dipakai ulang di semua modul)
   gi-data.js            → akses data GI/tower/anomali yang dipakai >1 modul
 features/               → satu modul per folder
@@ -79,6 +79,7 @@ berikut:
 | `tower_master` | id_tower, penghantar, nomor, lat, lng, alamat, ground_patrol, status, updated_at |
 | `tower_anomali_log` | timestamp, id_tower, jenis_anomali, catatan, status, oleh |
 | `counter_log` | timestamp, id_peralatan, jenis_counter, nilai, oleh |
+| `jaring_master` | id_jaring, penghantar, dari_menara, ke_menara, lokasi, panjang, tahun_pasang, kerawanan, status, catatan, updated_at |
 | `anomali_log` | timestamp, id_peralatan, deskripsi, status, oleh |
 
 Skema ini disiapkan di awal untuk semua modul, meski baru sheet `profil_gi`
@@ -113,7 +114,8 @@ lewat Google Drive.
 | Dashboard (dashboard.html) | ✅ Selesai — metrik, peta ringkas, rincian penghantar, tabel anomali |
 | Profil GI (halaman detail terpisah) | ⏳ Belum — untuk saat ini profil GI dikelola dari tombol "Edit profil GI" di Peta & Tower |
 | File Manager (WP/BA/Peralatan) | ✅ Selesai — jelajah folder, unggah (drag & drop), hapus ke Trash |
-| Data Peralatan | ✅ Selesai — daftar induk, filter, riwayat kondisi, impor dari spreadsheet |
+| Data Peralatan | ✅ Tata letak 3 panel — Switchgear + Jaring Layang-layang, grid kartu/tabel, riwayat kondisi, impor |
+| Tema gelap/terang | ✅ Tombol di topbar, tersimpan di localStorage |
 | Anomali Peralatan | ⏳ Menyusul |
 
 **Catatan skema:** kolom `lat` dan `lng` ditambahkan ke `profil_gi` (untuk marker
