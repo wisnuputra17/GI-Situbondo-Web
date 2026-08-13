@@ -291,6 +291,28 @@
         panduan += `<text x="${cx(k) + CELL / 2}" y="${H - PAD_Y + 44}" text-anchor="middle" font-size="11"
           fill="currentColor" opacity=".38" font-family="Inter">${k + 1}</text>`;
 
+      const rusak = denahRusak(jaring);
+      const peringatan = rusak ? `
+        <div class="bg-error-container border border-error/40 text-on-error-container rounded-lg px-4 py-3.5">
+          <div class="flex items-start gap-2.5">
+            <span class="material-symbols-outlined text-base">warning</span>
+            <div class="flex-grow">
+              <p class="font-bold text-xs uppercase tracking-wide mb-1">Data denah tidak lengkap</p>
+              <p class="text-xs leading-relaxed">
+                ${rusak.tanpaUkuran ? `${rusak.tanpaUkuran} jaring kehilangan ukuran. ` : ''}${rusak.tumpuk ? `${rusak.tumpuk} jaring menumpuk di posisi yang sama. ` : ''}
+                Penyebabnya skema <span class="font-mono">jaring_master</span> di Code.gs masih versi lama,
+                sehingga kolom posisi dan ukuran terbuang saat disimpan.
+              </p>
+              <p class="text-xs mt-2">
+                Perbarui Code.gs dengan skema baru, <b>deploy versi baru</b>, lalu klik tombol di bawah.
+              </p>
+              <button id="btn-perbaiki" class="mt-2.5 bg-error text-on-error rounded-lg px-4 py-2 text-xs font-bold">
+                Susun ulang denah
+              </button>
+            </div>
+          </div>
+        </div>` : '';
+
       const r = ringkasJaring(jaring);
       const legenda = KONDISI_JARING.map((k) => `
         <button data-kondisi="${k.key}" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
@@ -302,6 +324,7 @@
 
       return `
         <div class="space-y-4">
+          ${peringatan}
           <div class="flex flex-wrap items-center gap-2 justify-between">
             <div class="flex flex-wrap gap-1">${legenda}</div>
             <div class="flex items-center gap-3 text-xs text-on-surface-variant">
@@ -347,6 +370,8 @@
         wrap.innerHTML = renderDenah();
         wrap.querySelectorAll('[data-jaring]').forEach((el) =>
           el.addEventListener('click', () => detailJaring(el.dataset.jaring)));
+        const bp = $('btn-perbaiki');
+        if (bp) bp.addEventListener('click', perbaikiDenah);
         wrap.querySelectorAll('[data-kondisi]').forEach((el) =>
           el.addEventListener('click', () => {
             statusAktif = statusAktif === el.dataset.kondisi ? '' : el.dataset.kondisi;
@@ -598,6 +623,24 @@
           closeModal(); await muat(); toast('Pemeriksaan tercatat');
         } catch (err) { b.disabled = false; b.textContent = 'Catat pemeriksaan'; alert('Gagal: ' + err.message); }
       });
+    }
+
+    async function perbaikiDenah() {
+      const b = $('btn-perbaiki');
+      b.disabled = true; b.textContent = 'Menyusun ulang…';
+      try {
+        const res = await seedJaring('normal');
+        if (!res.skemaOk) {
+          showError('Masih gagal — skema jaring_master di Code.gs belum diperbarui, atau deployment belum di-update ke versi baru. Ingat: Ctrl+S saja tidak cukup, harus Deploy → Manage deployments → New version.');
+          b.disabled = false; b.textContent = 'Susun ulang denah';
+          return;
+        }
+        await muat();
+        toast('Denah tersusun ulang — ' + res.count + ' jaring', 3800);
+      } catch (err) {
+        showError('Gagal menyusun ulang: ' + err.message);
+        b.disabled = false; b.textContent = 'Susun ulang denah';
+      }
     }
 
     // ---------- form ----------

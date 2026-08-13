@@ -353,6 +353,20 @@ function statusUsia(tahun) {
   return { key: 'baru', label: `${u} tahun`, kelas: 'text-secondary' };
 }
 
+/**
+ * Deteksi data denah yang rusak: baris tanpa ukuran, atau banyak jaring
+ * menempati satu sel yang sama. Keduanya gejala skema jaring_master di
+ * Code.gs masih versi lama sehingga kolom denah terbuang saat penyimpanan.
+ */
+function denahRusak(list) {
+  if (!list.length) return null;
+  const tanpaUkuran = list.filter((j) => !j.ukuran).length;
+  const sel = new Set(list.map((j) => j.baris + ',' + j.kolom));
+  const tumpuk = list.length - sel.size;
+  if (tanpaUkuran === 0 && tumpuk === 0) return null;
+  return { tanpaUkuran, tumpuk, total: list.length };
+}
+
 /** Ringkasan kondisi & usia untuk panel statistik. */
 function ringkasJaring(list) {
   const perKondisi = { normal: 0, ringan: 0, parah: 0, kosong: 0 };
