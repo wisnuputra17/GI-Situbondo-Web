@@ -313,11 +313,7 @@
           ${jaring.length === 0 ? `
             <div class="flex flex-col items-center justify-center py-20 text-center border border-dashed border-outline-variant/50 rounded-xl">
               <span class="material-symbols-outlined text-5xl text-outline-variant">grid_on</span>
-              <p class="text-sm text-on-surface-variant mt-3">Denah belum dimuat.</p>
-              <p class="text-xs text-outline mt-1 mb-4">42 jaring dari denah GI Situbondo siap diimpor.</p>
-              <button id="btn-seed-jaring" class="bg-tertiary text-on-primary rounded-lg px-5 py-2.5 text-xs font-bold flex items-center gap-2">
-                <span class="material-symbols-outlined text-sm">cloud_upload</span> Impor denah (42 jaring)
-              </button>
+              <p class="text-sm text-on-surface-variant mt-3">Menyiapkan denah 42 jaring…</p>
             </div>` : `
             <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-4 overflow-x-auto text-on-surface">
               <svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:900px;height:auto" xmlns="http://www.w3.org/2000/svg">
@@ -356,8 +352,6 @@
             statusAktif = statusAktif === el.dataset.kondisi ? '' : el.dataset.kondisi;
             renderSemua();
           }));
-        const sb = $('btn-seed-jaring');
-        if (sb) sb.addEventListener('click', konfirmasiSeedJaring);
         return;
       }
 
@@ -606,41 +600,6 @@
       });
     }
 
-    function konfirmasiSeedJaring() {
-      $('modal-root').innerHTML = `
-        <div class="modal-backdrop">
-          <div class="bg-surface-container-lowest text-on-surface rounded-xl shadow-2xl w-[440px] p-6">
-            <h2 class="font-headline font-bold text-lg mb-2">Impor denah jaring</h2>
-            <p class="text-sm text-on-surface-variant mb-3">
-              Mengisi sheet <span class="font-mono text-xs">jaring_master</span> dengan
-              <strong>42 jaring</strong> hasil ekstraksi denah GI Situbondo, lengkap dengan
-              posisi grid, ukuran, dan bay masing-masing.
-            </p>
-            <p class="text-xs text-on-surface-variant bg-surface-container-low rounded-lg p-2.5 mb-3">
-              Semua jaring diisi kondisi <b>“Belum terpasang”</b> (abu-abu). Kondisi sebenarnya
-              diisi lewat pemeriksaan pada tiap kotak.
-            </p>
-            <p class="text-xs text-error bg-error-container/40 border border-error/30 rounded-lg p-2.5 mb-4">
-              Menimpa seluruh isi sheet jaring_master.
-            </p>
-            <div class="flex gap-2">
-              <button id="batal" class="flex-1 border border-outline-variant/40 rounded-lg py-2 text-sm font-medium">Batal</button>
-              <button id="ya" class="flex-1 bg-tertiary text-on-primary rounded-lg py-2 text-sm font-bold">Impor denah</button>
-            </div>
-          </div>
-        </div>`;
-      $('batal').addEventListener('click', closeModal);
-      $('ya').addEventListener('click', async (e) => {
-        e.target.disabled = true; e.target.textContent = 'Mengimpor…';
-        try {
-          const res = await seedJaring();
-          closeModal(); await muat();
-          if (!res.skemaOk) showError('Data terkirim (' + res.written + ' baris), TAPI kolom denah hilang karena skema jaring_master di Code.gs masih versi lama. Perbarui Code.gs lalu impor ulang.');
-          else toast(res.count + ' jaring berhasil diimpor', 4000);
-        } catch (err) { closeModal(); showError('Gagal impor: ' + err.message); }
-      });
-    }
-
     // ---------- form ----------
     const inp = (name, label, val, extra = '') =>
       `<div><label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">${label}</label>
@@ -801,6 +760,8 @@
     }
 
     // ---------- bootstrap ----------
+    let sedangSeed = false;
+
     async function muat() {
       try {
         const [sg, jr, logs, kr] = await Promise.all([
@@ -809,6 +770,24 @@
         switchgear = sg; jaring = jr;
         kondisiMap = groupKondisi(logs); kerusakanMap = groupKerusakan(kr);
         hideError();
+
+        // Denah punya jumlah jaring tetap (42) dan tidak ditambah manual, jadi
+        // saat sheet masih kosong isinya langsung disiapkan — semuanya kondisi
+        // 'normal', lalu disesuaikan lewat pencatatan pemeriksaan di web.
+        if (!jaring.length && !sedangSeed) {
+          sedangSeed = true;
+          try {
+            const res = await seedJaring('normal');
+            if (!res.skemaOk) {
+              showError('Denah terkirim (' + res.written + ' baris), TAPI kolom denah hilang karena skema jaring_master di Code.gs masih versi lama. Perbarui Code.gs lalu muat ulang.');
+            } else {
+              jaring = await loadJaring();
+              toast(res.count + ' jaring disiapkan dengan kondisi normal', 3800);
+            }
+          } catch (e) {
+            showError('Gagal menyiapkan denah: ' + e.message);
+          } finally { sedangSeed = false; }
+        }
       } catch (err) {
         switchgear = []; jaring = []; kondisiMap = {}; kerusakanMap = {};
         showError(err.message);

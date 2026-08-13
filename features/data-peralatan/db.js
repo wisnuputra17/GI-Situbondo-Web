@@ -274,11 +274,14 @@ async function loadJaring() {
     .sort((a, b) => a.baris - b.baris || a.kolom - b.kolom);
 }
 
-/** Isi jaring_master dari denah (JARING_SEED). Menimpa seluruh isi sheet. */
-async function seedJaring() {
+/**
+ * Isi jaring_master dari denah (JARING_SEED). Menimpa seluruh isi sheet.
+ * Kondisi awal 'normal' — kondisi sebenarnya diisi lewat pemeriksaan di web.
+ */
+async function seedJaring(kondisiAwal) {
   if (typeof JARING_SEED === 'undefined') throw new Error('jaring-seed.js belum ter-load');
   const rows = JARING_SEED.map((j) => ({
-    ...j, kondisi: 'kosong', tahun_pasang: '', catatan: '',
+    ...j, kondisi: kondisiAwal || 'normal', tahun_pasang: '', catatan: '',
     updated_at: new Date().toISOString()
   }));
   await apiSave('jaring_master', rows);
