@@ -79,7 +79,8 @@ berikut:
 | `tower_master` | id_tower, penghantar, nomor, lat, lng, alamat, ground_patrol, status, updated_at |
 | `tower_anomali_log` | timestamp, id_tower, jenis_anomali, catatan, status, oleh |
 | `counter_log` | timestamp, id_peralatan, jenis_counter, nilai, oleh |
-| `jaring_master` | id_jaring, penghantar, dari_menara, ke_menara, lokasi, panjang, tahun_pasang, kerawanan, status, catatan, updated_at |
+| `jaring_master` | id_jaring, baris, kolom, bay, ukuran, samping, kondisi, tahun_pasang, catatan, updated_at |
+| `jaring_kerusakan_log` | timestamp, id_jaring, kondisi, jenis_kerusakan, catatan, oleh |
 | `anomali_log` | timestamp, id_peralatan, deskripsi, status, oleh |
 
 Skema ini disiapkan di awal untuk semua modul, meski baru sheet `profil_gi`
@@ -114,7 +115,8 @@ lewat Google Drive.
 | Dashboard (dashboard.html) | ✅ Selesai — metrik, peta ringkas, rincian penghantar, tabel anomali |
 | Profil GI (halaman detail terpisah) | ⏳ Belum — untuk saat ini profil GI dikelola dari tombol "Edit profil GI" di Peta & Tower |
 | File Manager (WP/BA/Peralatan) | ✅ Selesai — jelajah folder, unggah (drag & drop), hapus ke Trash |
-| Data Peralatan | ✅ Tata letak 3 panel — Switchgear + Jaring Layang-layang, grid kartu/tabel, riwayat kondisi, impor |
+| Data Peralatan · Switchgear | ✅ Grid kartu/tabel, riwayat kondisi, impor dari spreadsheet |
+| Data Peralatan · Jaring Pengaman | ✅ Denah interaktif 42 jaring (8×9), monitoring usia & kerusakan |
 | Tema gelap/terang | ✅ Tombol di topbar, tersimpan di localStorage |
 | Anomali Peralatan | ⏳ Menyusul |
 

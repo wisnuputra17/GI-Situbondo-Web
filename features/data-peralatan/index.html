@@ -90,10 +90,11 @@
   <script src="../../shared/format.js"></script>
   <script src="../../shared/api.js"></script>
   <script src="../../shared/shell.js"></script>
+  <script src="./jaring-seed.js"></script>
   <script src="./db.js"></script>
   <script>
     // ---------- state ----------
-    let switchgear = [], jaring = [], kondisiMap = {};
+    let switchgear = [], jaring = [], kondisiMap = {}, kerusakanMap = {};
     let kategori = 'semua';       // 'semua' | 'switchgear' | 'jaring' | 'j:<jenis>'
     let statusAktif = '';
     let tampilan = localStorage.getItem('pln_gi_dp_view') || 'grid';
@@ -173,8 +174,9 @@
     }
 
     function renderTab() {
-      const sumber = modeJaring() ? jaring : (kategori === 'semua' || kategori === 'switchgear'
-        ? switchgear : switchgear.filter((p) => p.jenis === kategori.slice(2)));
+      if (modeJaring()) { $('tab-status').innerHTML = ''; return; } // filter lewat legenda denah
+      const sumber = (kategori === 'semua' || kategori === 'switchgear')
+        ? switchgear : switchgear.filter((p) => p.jenis === kategori.slice(2));
       const hit = { '': sumber.length };
       STATUS_PERALATAN.forEach((s) => { hit[s.key] = sumber.filter((d) => d.status === s.key).length; });
 
@@ -216,68 +218,168 @@
         </article>`;
     }
 
-    function kartuJaring(j) {
-      const [bg, fg] = warnaBlok('jaring-' + j.penghantar);
-      const kLabel = (KERAWANAN.find((k) => k.key === j.kerawanan) || {}).label || j.kerawanan;
-      const kCls = { rendah: 'bg-secondary-container text-on-secondary-container',
-                     sedang: 'bg-tertiary-container text-on-tertiary-container',
-                     tinggi: 'bg-error-container text-on-error-container' }[j.kerawanan] || '';
+    // ---------- DENAH JARING ----------
+    // Digambar sebagai SVG grid 8x9 mengikuti denah asli. Tiap kotak = satu
+    // jaring; warnanya mengikuti kondisi (hijau/kuning/merah/abu-abu).
+    function renderDenah() {
+      const CELL = 92, GAP = 10, PAD_X = 118, PAD_Y = 74;
+      const W = PAD_X * 2 + DENAH_KOLOM * CELL + (DENAH_KOLOM - 1) * GAP;
+      const H = PAD_Y * 2 + DENAH_BARIS * CELL + (DENAH_BARIS - 1) * GAP;
+      const cx = (k) => PAD_X + k * (CELL + GAP);
+      const cy = (b) => PAD_Y + b * (CELL + GAP);
+
+      const peta = {};
+      jaring.forEach((j) => { peta[j.baris + ',' + j.kolom] = j; });
+
+      const q = $('cari').value.trim().toLowerCase();
+      const cocok = (j) => {
+        if (statusAktif && j.kondisi !== statusAktif) return false;
+        if (!q) return true;
+        return [j.id_jaring, j.bay, j.ukuran, j.catatan].join(' ').toLowerCase().includes(q);
+      };
+
+      let kotak = '';
+      for (let b = 0; b < DENAH_BARIS; b++) {
+        for (let k = 0; k < DENAH_KOLOM; k++) {
+          const j = peta[b + ',' + k];
+          if (!j) continue;
+          const w = warnaKondisi(j.kondisi);
+          const redup = !cocok(j);
+          const jmlRusak = (kerusakanMap[j.id_jaring] || []).filter((x) => x.kondisi !== 'normal').length;
+          const usia = usiaJaring(j.tahun_pasang);
+          kotak += `
+            <g class="kotak-jaring" data-jaring="${esc(j.id_jaring)}" style="cursor:pointer;opacity:${redup ? .22 : 1}">
+              <rect x="${cx(k)}" y="${cy(b)}" width="${CELL}" height="${CELL}" rx="7"
+                    fill="${w.warna}" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>
+              <text x="${cx(k) + CELL / 2}" y="${cy(b) + 30}" text-anchor="middle"
+                    font-size="15" font-weight="800" fill="${w.teks}" font-family="Manrope">${esc(j.id_jaring)}</text>
+              <text x="${cx(k) + CELL / 2}" y="${cy(b) + 50}" text-anchor="middle"
+                    font-size="12.5" fill="${w.teks}" opacity=".92" font-family="Inter">${esc(j.ukuran)} m</text>
+              ${j.bay ? `<text x="${cx(k) + CELL / 2}" y="${cy(b) + 69}" text-anchor="middle"
+                    font-size="11" font-weight="600" fill="${w.teks}" opacity=".8" font-family="Inter">${esc(j.bay)}</text>` : ''}
+              ${j.samping ? `<text x="${cx(k) + CELL - 7}" y="${cy(b) + 15}" text-anchor="end"
+                    font-size="9" fill="${w.teks}" opacity=".75" font-family="Inter">SPG</text>` : ''}
+              ${jmlRusak ? `<circle cx="${cx(k) + 13}" cy="${cy(b) + 13}" r="7.5" fill="#7f1d1d"/>
+                    <text x="${cx(k) + 13}" y="${cy(b) + 17}" text-anchor="middle" font-size="10"
+                    font-weight="700" fill="#fff" font-family="Inter">${jmlRusak}</text>` : ''}
+              ${usia !== null && usia >= 10 ? `<circle cx="${cx(k) + CELL - 13}" cy="${cy(b) + CELL - 13}" r="7.5" fill="#78350f"/>
+                    <text x="${cx(k) + CELL - 13}" y="${cy(b) + CELL - 9}" text-anchor="middle" font-size="9"
+                    font-weight="700" fill="#fde68a" font-family="Inter">U</text>` : ''}
+            </g>`;
+        }
+      }
+
+      // label bay di atas & di bawah grid
+      let label = '';
+      Object.keys(BAY_ATAS).forEach((k) => {
+        label += `<text x="${cx(+k) + CELL / 2}" y="${PAD_Y - 30}" text-anchor="middle" font-size="13"
+          font-weight="800" fill="currentColor" font-family="Manrope">${BAY_ATAS[k]}</text>
+          <text x="${cx(+k) + CELL / 2}" y="${PAD_Y - 15}" text-anchor="middle" font-size="9.5"
+          fill="currentColor" opacity=".55" font-family="Inter">TL BAY</text>`;
+      });
+      Object.keys(BAY_BAWAH).forEach((k) => {
+        label += `<text x="${cx(+k) + CELL / 2}" y="${cy(DENAH_BARIS - 1) + CELL + 26}" text-anchor="middle"
+          font-size="13" font-weight="800" fill="currentColor" font-family="Manrope">${BAY_BAWAH[k]}</text>`;
+      });
+
+      // nomor baris & kolom sebagai panduan orientasi
+      let panduan = '';
+      for (let b = 0; b < DENAH_BARIS; b++)
+        panduan += `<text x="${PAD_X - 22}" y="${cy(b) + CELL / 2 + 4}" text-anchor="middle" font-size="11"
+          fill="currentColor" opacity=".38" font-family="Inter">${b + 1}</text>`;
+      for (let k = 0; k < DENAH_KOLOM; k++)
+        panduan += `<text x="${cx(k) + CELL / 2}" y="${H - PAD_Y + 44}" text-anchor="middle" font-size="11"
+          fill="currentColor" opacity=".38" font-family="Inter">${k + 1}</text>`;
+
+      const r = ringkasJaring(jaring);
+      const legenda = KONDISI_JARING.map((k) => `
+        <button data-kondisi="${k.key}" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+          ${statusAktif === k.key ? 'bg-surface-container-high' : 'hover:bg-surface-container-low'}">
+          <span class="w-3.5 h-3.5 rounded" style="background:${k.warna}"></span>
+          <span>${k.label}</span>
+          <span class="opacity-60 tabular-nums">${r.perKondisi[k.key] || 0}</span>
+        </button>`).join('');
+
       return `
-        <article data-buka-jaring="${esc(j.id_jaring)}" class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl overflow-hidden cursor-pointer hover:border-primary/50 transition-colors group">
-          <div class="blok-inisial h-28 relative" style="background:${bg};color:${fg}">
-            <span class="material-symbols-outlined" style="font-size:44px;opacity:.9">grid_on</span>
-            <span class="absolute bottom-2 right-3 text-[10px] font-bold opacity-80">${esc(j.penghantar) || '—'}</span>
-          </div>
-          <div class="p-4">
-            <h3 class="font-headline font-bold text-sm truncate group-hover:text-primary transition-colors">${esc(j.id_jaring)}</h3>
-            <p class="text-[11.5px] text-on-surface-variant mt-1.5 mb-2">
-              ${j.dari_menara || j.ke_menara ? `Bentang menara ${esc(j.dari_menara) || '?'} → ${esc(j.ke_menara) || '?'}` : 'Bentang belum ditentukan'}
-            </p>
-            <p class="text-[11.5px] text-on-surface-variant leading-snug line-clamp-2 min-h-[2.4em]">
-              ${esc([j.lokasi, j.panjang].filter(Boolean).join(' · ')) || 'Belum ada rincian lokasi.'}
-            </p>
-            <div class="mt-3 pt-3 border-t border-outline-variant/20 flex items-center justify-between gap-2">
-              <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded ${kCls}">Kerawanan ${esc(kLabel)}</span>
-              ${statusBadge(j.status)}
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center gap-2 justify-between">
+            <div class="flex flex-wrap gap-1">${legenda}</div>
+            <div class="flex items-center gap-3 text-xs text-on-surface-variant">
+              <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-[#7f1d1d]"></span>Jumlah temuan kerusakan</span>
+              <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-[#78350f]"></span>Usia ≥ 10 tahun</span>
             </div>
           </div>
-        </article>`;
+
+          ${jaring.length === 0 ? `
+            <div class="flex flex-col items-center justify-center py-20 text-center border border-dashed border-outline-variant/50 rounded-xl">
+              <span class="material-symbols-outlined text-5xl text-outline-variant">grid_on</span>
+              <p class="text-sm text-on-surface-variant mt-3">Denah belum dimuat.</p>
+              <p class="text-xs text-outline mt-1 mb-4">42 jaring dari denah GI Situbondo siap diimpor.</p>
+              <button id="btn-seed-jaring" class="bg-tertiary text-on-primary rounded-lg px-5 py-2.5 text-xs font-bold flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">cloud_upload</span> Impor denah (42 jaring)
+              </button>
+            </div>` : `
+            <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-4 overflow-x-auto text-on-surface">
+              <svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:900px;height:auto" xmlns="http://www.w3.org/2000/svg">
+                <rect x="${PAD_X - 40}" y="${PAD_Y - 8}" width="${W - PAD_X * 2 + 80}" height="${H - PAD_Y * 2 + 16}"
+                      rx="10" fill="none" stroke="currentColor" stroke-opacity=".12" stroke-dasharray="6 5"/>
+                ${panduan}${label}${kotak}
+              </svg>
+            </div>
+            <div class="grid grid-cols-4 gap-3">
+              <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-lg p-3">
+                <span class="block font-headline font-extrabold text-xl">${r.total}</span>
+                <span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Total jaring</span></div>
+              <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-lg p-3">
+                <span class="block font-headline font-extrabold text-xl text-error">${(r.perKondisi.ringan || 0) + (r.perKondisi.parah || 0)}</span>
+                <span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Ada kerusakan</span></div>
+              <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-lg p-3">
+                <span class="block font-headline font-extrabold text-xl text-tertiary">${r.perluRemaja}</span>
+                <span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Usia ≥ 10 th</span></div>
+              <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-lg p-3">
+                <span class="block font-headline font-extrabold text-xl">${r.adaUsia}/${r.total}</span>
+                <span class="text-[10px] text-on-surface-variant uppercase tracking-wide">Tahun pasang terisi</span></div>
+            </div>`}
+        </div>`;
     }
 
     function renderIsi() {
-      const data = dataTampil();
       const wrap = $('isi');
-      const jrg = modeJaring();
 
+      if (modeJaring()) {
+        $('hitungan').textContent = 'Total: ' + formatNumber(jaring.length);
+        wrap.innerHTML = renderDenah();
+        wrap.querySelectorAll('[data-jaring]').forEach((el) =>
+          el.addEventListener('click', () => detailJaring(el.dataset.jaring)));
+        wrap.querySelectorAll('[data-kondisi]').forEach((el) =>
+          el.addEventListener('click', () => {
+            statusAktif = statusAktif === el.dataset.kondisi ? '' : el.dataset.kondisi;
+            renderSemua();
+          }));
+        const sb = $('btn-seed-jaring');
+        if (sb) sb.addEventListener('click', konfirmasiSeedJaring);
+        return;
+      }
+
+      const data = dataTampil();
       $('hitungan').textContent = 'Total: ' + formatNumber(data.length);
 
       if (!data.length) {
-        const kosong = jrg ? jaring.length === 0 : switchgear.length === 0;
         wrap.innerHTML = `
           <div class="flex flex-col items-center justify-center py-24 text-center">
-            <span class="material-symbols-outlined text-5xl text-outline-variant">${jrg ? 'grid_on' : 'inventory_2'}</span>
-            <p class="text-sm text-on-surface-variant mt-3">${kosong ? (jrg ? 'Belum ada data jaring layang-layang.' : 'Belum ada data peralatan.') : 'Tidak ada yang cocok dengan filter.'}</p>
-            ${kosong ? `<p class="text-xs text-outline mt-1">Tambahkan lewat tombol "Tambah"${jrg ? '' : ', atau impor dari spreadsheet'}.</p>` : ''}
+            <span class="material-symbols-outlined text-5xl text-outline-variant">inventory_2</span>
+            <p class="text-sm text-on-surface-variant mt-3">${switchgear.length ? 'Tidak ada yang cocok dengan filter.' : 'Belum ada data peralatan.'}</p>
+            ${switchgear.length ? '' : '<p class="text-xs text-outline mt-1">Tambahkan lewat tombol "Tambah", atau impor dari spreadsheet.</p>'}
           </div>`;
         return;
       }
 
       if (tampilan === 'grid') {
         wrap.innerHTML = `<div class="grid gap-4" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
-          ${data.map((d) => (jrg ? kartuJaring(d) : kartuSwitchgear(d))).join('')}</div>`;
+          ${data.map(kartuSwitchgear).join('')}</div>`;
       } else {
-        const kol = jrg
-          ? ['ID', 'Penghantar', 'Bentang', 'Lokasi', 'Kerawanan', 'Status']
-          : ['ID / Bay', 'Jenis', 'Merk / Tipe', 'Kapasitas', 'Tahun', 'Status'];
-        const baris = data.map((d) => jrg ? `
-          <tr data-buka-jaring="${esc(d.id_jaring)}" class="hover:bg-surface-container-low/60 cursor-pointer">
-            <td class="px-4 py-3 text-sm font-bold font-mono">${esc(d.id_jaring)}</td>
-            <td class="px-4 py-3 text-xs">${esc(d.penghantar) || '–'}</td>
-            <td class="px-4 py-3 text-xs">${esc(d.dari_menara) || '?'} → ${esc(d.ke_menara) || '?'}</td>
-            <td class="px-4 py-3 text-xs">${esc(d.lokasi) || '–'}</td>
-            <td class="px-4 py-3 text-xs">${esc((KERAWANAN.find((k) => k.key === d.kerawanan) || {}).label || '–')}</td>
-            <td class="px-4 py-3">${statusBadge(d.status)}</td>
-          </tr>` : `
+        const kol = ['ID / Bay', 'Jenis', 'Merk / Tipe', 'Kapasitas', 'Tahun', 'Status'];
+        const baris = data.map((d) => `
           <tr data-buka="${esc(d.id_peralatan)}" class="hover:bg-surface-container-low/60 cursor-pointer">
             <td class="px-4 py-3"><div class="text-sm font-bold font-mono">${esc(d.id_peralatan)}</div>${d.bay ? `<div class="text-[11px] text-on-surface-variant">Bay ${esc(d.bay)}</div>` : ''}</td>
             <td class="px-4 py-3 text-xs">${esc(d.jenis)}</td>
@@ -286,7 +388,6 @@
             <td class="px-4 py-3 text-xs">${esc(d.tahun_pasang) || '–'}</td>
             <td class="px-4 py-3">${statusBadge(d.status)}</td>
           </tr>`).join('');
-
         wrap.innerHTML = `
           <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl overflow-hidden">
             <table class="w-full text-left border-collapse">
@@ -299,7 +400,6 @@
       }
 
       wrap.querySelectorAll('[data-buka]').forEach((el) => el.addEventListener('click', () => detailSwitchgear(el.dataset.buka)));
-      wrap.querySelectorAll('[data-buka-jaring]').forEach((el) => el.addEventListener('click', () => detailJaring(el.dataset.bukaJaring)));
     }
 
     function renderSemua() {
@@ -308,9 +408,11 @@
         : kategori === 'switchgear' ? 'Switchgear'
         : jrg ? 'Jaring Layang-layang' : kategori.slice(2);
       $('sub-isi').textContent = jrg
-        ? 'Jaring pengaman pada bentang penghantar'
+        ? 'Denah jaring pengaman — klik kotak untuk melihat rincian'
         : 'Peralatan di dalam gardu induk';
       $('btn-impor').style.display = jrg ? 'none' : '';
+      $('btn-tambah').style.display = jrg ? 'none' : '';
+      document.querySelector('#v-grid').parentElement.style.display = jrg ? 'none' : '';
       [['v-grid', 'grid'], ['v-tabel', 'tabel']].forEach(([id, m]) => {
         $(id).className = 'p-1.5 rounded ' + (tampilan === m ? 'bg-primary text-on-primary' : 'text-on-surface-variant');
       });
@@ -396,50 +498,147 @@
     function detailJaring(id) {
       const j = jaring.find((x) => x.id_jaring === id);
       if (!j) return;
-      const [bg, fg] = warnaBlok('jaring-' + j.penghantar);
+      const w = warnaKondisi(j.kondisi);
+      const logs = kerusakanMap[id] || [];
+      const su = statusUsia(j.tahun_pasang);
       const baris = (l, v) => `<div class="flex justify-between gap-3 py-1.5 border-b border-outline-variant/15">
         <span class="text-[11px] text-on-surface-variant uppercase tracking-wide">${l}</span>
-        <span class="text-xs font-medium text-right">${esc(v) || '–'}</span></div>`;
+        <span class="text-xs font-medium text-right">${v || '–'}</span></div>`;
 
       $('modal-root').innerHTML = `
         <div class="modal-backdrop">
-          <div class="bg-surface-container-lowest text-on-surface rounded-xl shadow-2xl w-[620px] max-h-[88vh] flex flex-col overflow-hidden">
-            <div class="blok-inisial h-24 shrink-0 relative" style="background:${bg};color:${fg}">
-              <span class="material-symbols-outlined" style="font-size:48px">grid_on</span>
-              <button id="tutup-x" class="absolute top-3 right-3 p-1 rounded-full hover:bg-black/20"><span class="material-symbols-outlined text-lg">close</span></button>
+          <div class="bg-surface-container-lowest text-on-surface rounded-xl shadow-2xl w-[620px] max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="h-24 shrink-0 relative flex items-center justify-center" style="background:${w.warna};color:${w.teks}">
+              <div class="text-center">
+                <div class="font-headline font-extrabold text-2xl">${esc(j.id_jaring)}</div>
+                <div class="text-xs opacity-90 mt-0.5">${esc(j.ukuran)} m${j.bay ? ' · ' + esc(j.bay) : ''}</div>
+              </div>
+              <button id="tutup-x" class="absolute top-3 right-3 p-1 rounded-full hover:bg-black/20">
+                <span class="material-symbols-outlined text-lg">close</span></button>
             </div>
-            <div class="p-5 border-b border-outline-variant/20">
-              <h2 class="font-headline font-bold text-lg font-mono">${esc(j.id_jaring)}</h2>
-              <p class="text-xs text-on-surface-variant mt-0.5">${esc(j.penghantar) || 'Penghantar belum diisi'}</p>
-              <div class="mt-2">${statusBadge(j.status)}</div>
-            </div>
-            <div class="overflow-y-auto flex-grow p-5">
-              ${baris('Bentang', (j.dari_menara || '?') + ' → ' + (j.ke_menara || '?'))}
-              ${baris('Lokasi', j.lokasi)}${baris('Panjang', j.panjang)}
-              ${baris('Tahun pasang', j.tahun_pasang)}
-              ${baris('Kerawanan', (KERAWANAN.find((k) => k.key === j.kerawanan) || {}).label)}
-              ${j.catatan ? `<p class="mt-3 text-xs text-on-surface-variant bg-surface-container-low rounded-lg p-3">${esc(j.catatan)}</p>` : ''}
 
-              <div class="mt-5 border border-dashed border-outline-variant/50 rounded-xl p-6 text-center">
-                <span class="material-symbols-outlined text-4xl text-outline-variant">map</span>
-                <h3 class="font-headline font-bold text-sm mt-2">Denah &amp; peta kerawanan</h3>
-                <p class="text-xs text-on-surface-variant mt-1 max-w-sm mx-auto">
-                  Tempat untuk denah bentang dan peta kerawanan layang-layang. Belum dibangun —
-                  menunggu penjelasan bentuk datanya.
-                </p>
+            <div class="overflow-y-auto flex-grow">
+              <div class="p-5">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="inline-block px-2.5 py-1 text-[11px] font-bold rounded" style="background:${w.warna};color:${w.teks}">${w.label}</span>
+                  <span class="text-xs ${su.kelas}">${su.label}</span>
+                </div>
+                ${baris('Posisi denah', `Baris ${j.baris + 1}, kolom ${j.kolom + 1}`)}
+                ${baris('Ukuran', esc(j.ukuran) + ' meter')}
+                ${baris('Bay', esc(j.bay))}
+                ${baris('Letak', j.samping ? 'Jaring samping' : 'Jaring atas')}
+                ${baris('Tahun pasang', esc(j.tahun_pasang))}
+                ${baris('Terakhir diubah', j.updated_at ? formatDateTime(j.updated_at) : '')}
+                ${j.catatan ? `<p class="mt-3 text-xs text-on-surface-variant bg-surface-container-low rounded-lg p-3">${esc(j.catatan)}</p>` : ''}
+
+                <button id="ubah-data" class="mt-3 w-full border border-outline-variant/40 rounded-lg py-2 text-xs font-bold">
+                  Ubah tahun pasang &amp; catatan
+                </button>
+              </div>
+
+              <div class="px-5 pb-5">
+                <h3 class="font-headline font-bold text-sm mb-2">Riwayat pemeriksaan <span class="text-on-surface-variant font-normal">(${logs.length})</span></h3>
+                <form id="form-r" class="bg-surface-container-low rounded-lg p-3 space-y-2.5 mb-4">
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label class="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">Kondisi</label>
+                      <select name="kondisi" id="sel-kondisi" required class="w-full bg-surface-container-lowest border border-outline-variant/40 rounded px-2.5 py-2 text-xs text-on-surface">
+                        ${KONDISI_JARING.map((k) => `<option value="${k.key}" ${j.kondisi === k.key ? 'selected' : ''}>${k.label}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">Jenis kerusakan</label>
+                      <select name="jenis_kerusakan" id="sel-jenis" class="w-full bg-surface-container-lowest border border-outline-variant/40 rounded px-2.5 py-2 text-xs text-on-surface">
+                        <option value="">— tidak ada —</option>
+                        ${JENIS_KERUSAKAN.map((x) => `<option>${esc(x)}</option>`).join('')}
+                      </select>
+                    </div>
+                  </div>
+                  <textarea name="catatan" rows="2" placeholder="Rincian temuan…" class="w-full bg-surface-container-lowest border border-outline-variant/40 rounded px-2.5 py-2 text-xs text-on-surface"></textarea>
+                  <input name="oleh" value="Wisnu" class="w-full bg-surface-container-lowest border border-outline-variant/40 rounded px-2.5 py-2 text-xs text-on-surface">
+                  <button type="submit" class="w-full bg-primary text-on-primary rounded py-2 text-xs font-bold">Catat pemeriksaan</button>
+                </form>
+
+                ${logs.length ? logs.map((l) => {
+                  const lw = warnaKondisi(l.kondisi);
+                  return `
+                  <div class="border-l-2 pl-3 pb-3" style="border-color:${lw.warna}">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                      <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded" style="background:${lw.warna};color:${lw.teks}">${lw.label}</span>
+                      ${l.jenis_kerusakan ? `<span class="text-[11px] font-medium">${esc(l.jenis_kerusakan)}</span>` : ''}
+                      <span class="text-[11px] text-on-surface-variant">${formatDateTime(l.timestamp)}</span>
+                    </div>
+                    ${l.catatan ? `<p class="text-xs text-on-surface-variant">${esc(l.catatan)}</p>` : ''}
+                    <p class="text-[10px] text-outline mt-0.5">${esc(l.oleh) || '–'}</p>
+                  </div>`; }).join('')
+                  : '<p class="text-xs text-on-surface-variant text-center py-4">Belum ada riwayat pemeriksaan.</p>'}
               </div>
             </div>
-            <div class="p-4 border-t border-outline-variant/20 flex gap-2 shrink-0">
-              <button id="hapus" class="px-4 py-2 border border-error/40 text-error rounded-lg text-xs font-bold">Hapus</button>
-              <div class="flex-grow"></div>
+
+            <div class="p-4 border-t border-outline-variant/20 flex justify-end shrink-0">
               <button id="tutup" class="px-4 py-2 border border-outline-variant/40 rounded-lg text-xs font-bold">Tutup</button>
-              <button id="ubah" class="px-4 py-2 bg-primary text-on-primary rounded-lg text-xs font-bold">Ubah</button>
             </div>
           </div>
         </div>`;
+
       ['tutup', 'tutup-x'].forEach((i) => $(i).addEventListener('click', closeModal));
-      $('ubah').addEventListener('click', () => formJaring(id));
-      $('hapus').addEventListener('click', () => konfirmasiHapus('jaring', id));
+      $('ubah-data').addEventListener('click', () => formJaring(id));
+
+      // pilihan "jenis kerusakan" hanya relevan bila kondisinya bukan normal/kosong
+      const sinkron = () => {
+        const k = $('sel-kondisi').value;
+        const perlu = k === 'ringan' || k === 'parah';
+        $('sel-jenis').disabled = !perlu;
+        $('sel-jenis').style.opacity = perlu ? 1 : .45;
+        if (!perlu) $('sel-jenis').value = '';
+      };
+      $('sel-kondisi').addEventListener('change', sinkron);
+      sinkron();
+
+      $('form-r').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const b = e.target.querySelector('[type=submit]');
+        b.disabled = true; b.textContent = 'Menyimpan…';
+        try {
+          await addKerusakan({ id_jaring: id, ...Object.fromEntries(new FormData(e.target).entries()) });
+          closeModal(); await muat(); toast('Pemeriksaan tercatat');
+        } catch (err) { b.disabled = false; b.textContent = 'Catat pemeriksaan'; alert('Gagal: ' + err.message); }
+      });
+    }
+
+    function konfirmasiSeedJaring() {
+      $('modal-root').innerHTML = `
+        <div class="modal-backdrop">
+          <div class="bg-surface-container-lowest text-on-surface rounded-xl shadow-2xl w-[440px] p-6">
+            <h2 class="font-headline font-bold text-lg mb-2">Impor denah jaring</h2>
+            <p class="text-sm text-on-surface-variant mb-3">
+              Mengisi sheet <span class="font-mono text-xs">jaring_master</span> dengan
+              <strong>42 jaring</strong> hasil ekstraksi denah GI Situbondo, lengkap dengan
+              posisi grid, ukuran, dan bay masing-masing.
+            </p>
+            <p class="text-xs text-on-surface-variant bg-surface-container-low rounded-lg p-2.5 mb-3">
+              Semua jaring diisi kondisi <b>“Belum terpasang”</b> (abu-abu). Kondisi sebenarnya
+              diisi lewat pemeriksaan pada tiap kotak.
+            </p>
+            <p class="text-xs text-error bg-error-container/40 border border-error/30 rounded-lg p-2.5 mb-4">
+              Menimpa seluruh isi sheet jaring_master.
+            </p>
+            <div class="flex gap-2">
+              <button id="batal" class="flex-1 border border-outline-variant/40 rounded-lg py-2 text-sm font-medium">Batal</button>
+              <button id="ya" class="flex-1 bg-tertiary text-on-primary rounded-lg py-2 text-sm font-bold">Impor denah</button>
+            </div>
+          </div>
+        </div>`;
+      $('batal').addEventListener('click', closeModal);
+      $('ya').addEventListener('click', async (e) => {
+        e.target.disabled = true; e.target.textContent = 'Mengimpor…';
+        try {
+          const res = await seedJaring();
+          closeModal(); await muat();
+          if (!res.skemaOk) showError('Data terkirim (' + res.written + ' baris), TAPI kolom denah hilang karena skema jaring_master di Code.gs masih versi lama. Perbarui Code.gs lalu impor ulang.');
+          else toast(res.count + ' jaring berhasil diimpor', 4000);
+        } catch (err) { closeModal(); showError('Gagal impor: ' + err.message); }
+      });
     }
 
     // ---------- form ----------
@@ -501,43 +700,19 @@
     }
 
     function formJaring(id) {
-      const j = id ? jaring.find((x) => x.id_jaring === id) : null;
-      const g = (k) => (j ? j[k] : '');
-      const penghantarAda = ['STBDO-PITON', 'STBDO-BWNGI', 'BDWSO-STBDO'];
+      const j = jaring.find((x) => x.id_jaring === id);
+      if (!j) return;
       $('modal-root').innerHTML = `
         <div class="modal-backdrop">
-          <div class="bg-surface-container-lowest text-on-surface rounded-xl shadow-2xl w-[520px] max-h-[88vh] overflow-y-auto p-6">
-            <h2 class="font-headline font-bold text-lg mb-1">${j ? 'Ubah jaring' : 'Tambah jaring layang-layang'}</h2>
-            <p class="text-[11px] text-on-surface-variant mb-4">Kolom masih sementara — akan disesuaikan setelah rinciannya jelas.</p>
+          <div class="bg-surface-container-lowest text-on-surface rounded-xl shadow-2xl w-[440px] p-6">
+            <h2 class="font-headline font-bold text-lg mb-1">Ubah data jaring</h2>
+            <p class="text-xs text-on-surface-variant mb-4 font-mono">${esc(j.id_jaring)} · ${esc(j.ukuran)} m</p>
             <form id="form-j" class="space-y-3">
-              ${inp('id_jaring', 'ID jaring *', g('id_jaring'), 'required placeholder="JRG-01"')}
-              <div><label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Penghantar</label>
-                <select name="penghantar" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
-                  <option value="">— pilih —</option>
-                  ${penghantarAda.map((x) => `<option ${j && j.penghantar === x ? 'selected' : ''}>${x}</option>`).join('')}
-                </select></div>
-              <div class="grid grid-cols-2 gap-3">
-                ${inp('dari_menara', 'Dari menara no.', g('dari_menara'), 'placeholder="12"')}
-                ${inp('ke_menara', 'Ke menara no.', g('ke_menara'), 'placeholder="13"')}
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                ${inp('lokasi', 'Lokasi / kecamatan', g('lokasi'))}
-                ${inp('panjang', 'Panjang', g('panjang'), 'placeholder="120 m"')}
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                ${inp('tahun_pasang', 'Tahun pasang', g('tahun_pasang'))}
-                <div><label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Kerawanan</label>
-                  <select name="kerawanan" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
-                    ${KERAWANAN.map((k) => `<option value="${k.key}" ${j && j.kerawanan === k.key ? 'selected' : ''}>${k.label}</option>`).join('')}
-                  </select></div>
-              </div>
-              <div><label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Status</label>
-                <select name="status" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
-                  ${STATUS_PERALATAN.map((s) => `<option value="${s.key}" ${j && j.status === s.key ? 'selected' : ''}>${s.label}</option>`).join('')}
-                </select></div>
+              ${inp('tahun_pasang', 'Tahun pasang', j.tahun_pasang, 'placeholder="2019" inputmode="numeric"')}
               <div><label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Catatan</label>
-                <textarea name="catatan" rows="2" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">${esc(g('catatan'))}</textarea></div>
-              <div class="flex gap-2 pt-2">
+                <textarea name="catatan" rows="3" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">${esc(j.catatan)}</textarea></div>
+              <p class="text-[11px] text-on-surface-variant">Kondisi jaring diubah lewat pencatatan pemeriksaan, bukan di sini — supaya setiap perubahan punya riwayat.</p>
+              <div class="flex gap-2 pt-1">
                 <button type="button" id="batal" class="flex-1 border border-outline-variant/40 rounded-lg py-2 text-sm font-medium">Batal</button>
                 <button type="submit" class="flex-1 bg-primary text-on-primary rounded-lg py-2 text-sm font-bold">Simpan</button>
               </div>
@@ -549,20 +724,14 @@
         e.preventDefault();
         const b = e.target.querySelector('[type=submit]');
         b.disabled = true; b.textContent = 'Menyimpan…';
-        const d = Object.fromEntries(new FormData(e.target).entries());
-        d.id_jaring = d.id_jaring.trim();
         try {
-          if (j) await updateJaring(j.id_jaring, d);
-          else {
-            if (jaring.some((x) => x.id_jaring === d.id_jaring)) throw new Error(`ID "${d.id_jaring}" sudah dipakai`);
-            await addJaring(d);
-          }
-          closeModal(); await muat(); toast(j ? 'Jaring diperbarui' : 'Jaring ditambahkan');
+          await updateJaring(id, Object.fromEntries(new FormData(e.target).entries()));
+          closeModal(); await muat(); toast('Data jaring diperbarui');
         } catch (err) { b.disabled = false; b.textContent = 'Simpan'; alert('Gagal: ' + err.message); }
       });
     }
 
-    function konfirmasiHapus(tipe, id) {
+    function konfirmasiHapus(_tipe, id) {
       $('modal-root').innerHTML = `
         <div class="modal-backdrop">
           <div class="bg-surface-container-lowest text-on-surface rounded-xl shadow-2xl w-[400px] p-6">
@@ -579,7 +748,7 @@
       $('ya').addEventListener('click', async (e) => {
         e.target.disabled = true; e.target.textContent = 'Menghapus…';
         try {
-          if (tipe === 'sg') await deletePeralatan(id); else await deleteJaring(id);
+          await deletePeralatan(id);
           closeModal(); await muat(); toast('Data dihapus');
         } catch (err) { closeModal(); showError('Gagal menghapus: ' + err.message); }
       });
@@ -634,11 +803,14 @@
     // ---------- bootstrap ----------
     async function muat() {
       try {
-        const [sg, jr, logs] = await Promise.all([loadPeralatan(), loadJaring(), loadKondisiLog()]);
-        switchgear = sg; jaring = jr; kondisiMap = groupKondisi(logs);
+        const [sg, jr, logs, kr] = await Promise.all([
+          loadPeralatan(), loadJaring(), loadKondisiLog(), loadKerusakanLog()
+        ]);
+        switchgear = sg; jaring = jr;
+        kondisiMap = groupKondisi(logs); kerusakanMap = groupKerusakan(kr);
         hideError();
       } catch (err) {
-        switchgear = []; jaring = []; kondisiMap = {};
+        switchgear = []; jaring = []; kondisiMap = {}; kerusakanMap = {};
         showError(err.message);
       }
       renderSemua();
@@ -650,7 +822,7 @@
       c.innerHTML = '';
       c.appendChild($('dp-template').content.cloneNode(true));
 
-      $('btn-tambah').addEventListener('click', () => (modeJaring() ? formJaring(null) : formSwitchgear(null)));
+      $('btn-tambah').addEventListener('click', () => formSwitchgear(null));
       $('btn-impor').addEventListener('click', panelImpor);
       $('btn-muat').addEventListener('click', muat);
       $('cari').addEventListener('input', renderIsi);

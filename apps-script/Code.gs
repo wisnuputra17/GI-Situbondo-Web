@@ -24,7 +24,8 @@ const SHEET_HEADERS = {
   tower_master: ['id_tower', 'penghantar', 'nomor', 'lat', 'lng', 'alamat', 'ground_patrol', 'status', 'updated_at'],
   tower_anomali_log: ['timestamp', 'id_tower', 'jenis_anomali', 'catatan', 'status', 'oleh'],
   counter_log: ['timestamp', 'id_peralatan', 'jenis_counter', 'nilai', 'oleh'],
-  jaring_master: ['id_jaring', 'penghantar', 'dari_menara', 'ke_menara', 'lokasi', 'panjang', 'tahun_pasang', 'kerawanan', 'status', 'catatan', 'updated_at'],
+  jaring_master: ['id_jaring', 'baris', 'kolom', 'bay', 'ukuran', 'samping', 'kondisi', 'tahun_pasang', 'catatan', 'updated_at'],
+  jaring_kerusakan_log: ['timestamp', 'id_jaring', 'kondisi', 'jenis_kerusakan', 'catatan', 'oleh'],
   anomali_log: ['timestamp', 'id_peralatan', 'deskripsi', 'status', 'oleh']
 };
 

@@ -181,61 +181,6 @@ function ringkasPeralatan(list) {
   return { perJenis, perStatus, total: list.length };
 }
 
-// ============================================================
-//  JARING LAYANG-LAYANG
-//  Struktur awal. Rincian kolom masih menunggu penjelasan Wisnu —
-//  skema ini sengaja dibuat longgar agar mudah disesuaikan.
-// ============================================================
-
-const KERAWANAN = [
-  { key: 'rendah', label: 'Rendah' },
-  { key: 'sedang', label: 'Sedang' },
-  { key: 'tinggi', label: 'Tinggi' }
-];
-
-async function loadJaring() {
-  const rows = await apiLoad('jaring_master');
-  return rows
-    .filter((r) => r && r.id_jaring)
-    .map((r) => ({
-      id_jaring: String(r.id_jaring),
-      penghantar: r.penghantar || '',
-      dari_menara: r.dari_menara || '',
-      ke_menara: r.ke_menara || '',
-      lokasi: r.lokasi || '',
-      panjang: r.panjang || '',
-      tahun_pasang: r.tahun_pasang || '',
-      kerawanan: r.kerawanan || 'sedang',
-      status: r.status || 'normal',
-      catatan: r.catatan || '',
-      updated_at: r.updated_at || ''
-    }))
-    .sort((a, b) =>
-      a.penghantar.localeCompare(b.penghantar) ||
-      (Number(a.dari_menara) || 0) - (Number(b.dari_menara) || 0)
-    );
-}
-
-async function addJaring(data) {
-  const row = { ...data, updated_at: new Date().toISOString() };
-  await apiAppend('jaring_master', row);
-  return row;
-}
-
-async function updateJaring(idAsal, data) {
-  const all = await loadJaring();
-  const updated = all.map((j) =>
-    j.id_jaring === idAsal ? { ...j, ...data, updated_at: new Date().toISOString() } : j
-  );
-  await apiSave('jaring_master', updated);
-  return updated;
-}
-
-async function deleteJaring(id) {
-  const all = await loadJaring();
-  await apiSave('jaring_master', all.filter((j) => j.id_jaring !== id));
-}
-
 // ---------- Util tampilan kartu ----------
 
 /** Inisial untuk blok warna di kartu, diringkas dari nama jenis. */
@@ -278,4 +223,142 @@ function warnaBlok(kunci) {
   const t = String(kunci || '');
   for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
   return PALET_BLOK[h % PALET_BLOK.length];
+}
+
+// ============================================================
+//  JARING PENGAMAN (denah gardu induk)
+//  Sumber denah: Denah_Jaring_Pengaman_EDITABLE.docx — 42 jaring
+//  pada grid 8 baris x 9 kolom.
+// ============================================================
+
+/** Empat kondisi jaring, mengikuti kode warna pada denah asli. */
+const KONDISI_JARING = [
+  { key: 'normal', label: 'Normal',          warna: '#22a24d', teks: '#ffffff' },
+  { key: 'ringan', label: 'Kerusakan ringan', warna: '#e0b520', teks: '#3a2c00' },
+  { key: 'parah',  label: 'Kerusakan parah',  warna: '#cc2b2b', teks: '#ffffff' },
+  { key: 'kosong', label: 'Belum terpasang',  warna: '#9aa3ad', teks: '#20262d' }
+];
+
+function warnaKondisi(k) {
+  return KONDISI_JARING.find((x) => x.key === k) || KONDISI_JARING[3];
+}
+
+const JENIS_KERUSAKAN = [
+  'Jaring sobek',
+  'Simpul lepas',
+  'Kawat sling kendor',
+  'Kawat sling putus',
+  'Tiang penyangga miring',
+  'Tiang penyangga korosi',
+  'Jaring lepas dari rangka',
+  'Tertutup vegetasi',
+  'Lain-lain'
+];
+
+async function loadJaring() {
+  const rows = await apiLoad('jaring_master');
+  return rows
+    .filter((r) => r && r.id_jaring)
+    .map((r) => ({
+      id_jaring: String(r.id_jaring),
+      baris: Number(r.baris) || 0,
+      kolom: Number(r.kolom) || 0,
+      bay: r.bay || '',
+      ukuran: r.ukuran || '',
+      samping: Number(r.samping) ? 1 : 0,
+      kondisi: r.kondisi || 'kosong',
+      tahun_pasang: r.tahun_pasang || '',
+      catatan: r.catatan || '',
+      updated_at: r.updated_at || ''
+    }))
+    .sort((a, b) => a.baris - b.baris || a.kolom - b.kolom);
+}
+
+/** Isi jaring_master dari denah (JARING_SEED). Menimpa seluruh isi sheet. */
+async function seedJaring() {
+  if (typeof JARING_SEED === 'undefined') throw new Error('jaring-seed.js belum ter-load');
+  const rows = JARING_SEED.map((j) => ({
+    ...j, kondisi: 'kosong', tahun_pasang: '', catatan: '',
+    updated_at: new Date().toISOString()
+  }));
+  await apiSave('jaring_master', rows);
+  const after = await apiLoad('jaring_master');
+  const skemaOk = after.length > 0 && Object.prototype.hasOwnProperty.call(after[0], 'ukuran');
+  return { count: rows.length, written: after.length, skemaOk };
+}
+
+async function updateJaring(id, data) {
+  const all = await loadJaring();
+  const updated = all.map((j) =>
+    j.id_jaring === id ? { ...j, ...data, updated_at: new Date().toISOString() } : j
+  );
+  await apiSave('jaring_master', updated);
+  return updated;
+}
+
+// ---------- Riwayat kerusakan ----------
+async function loadKerusakanLog() {
+  return apiLoad('jaring_kerusakan_log');
+}
+
+async function addKerusakan({ id_jaring, kondisi, jenis_kerusakan, catatan, oleh }) {
+  const row = {
+    timestamp: new Date().toISOString(),
+    id_jaring,
+    kondisi,
+    jenis_kerusakan: jenis_kerusakan || '',
+    catatan: catatan || '',
+    oleh: oleh || 'Wisnu'
+  };
+  await apiAppend('jaring_kerusakan_log', row);
+  await updateJaring(id_jaring, { kondisi });
+  return row;
+}
+
+function groupKerusakan(logs) {
+  const map = {};
+  logs.forEach((l) => {
+    if (!l || !l.id_jaring) return;
+    const id = String(l.id_jaring);
+    if (!map[id]) map[id] = [];
+    map[id].push(l);
+  });
+  Object.values(map).forEach((a) =>
+    a.sort((x, y) => String(y.timestamp).localeCompare(String(x.timestamp)))
+  );
+  return map;
+}
+
+// ---------- Usia jaring ----------
+
+/** Usia dalam tahun dari tahun pasang; null kalau belum diisi. */
+function usiaJaring(tahunPasang) {
+  const t = parseInt(tahunPasang, 10);
+  if (!t || t < 1900 || t > 2200) return null;
+  return new Date().getFullYear() - t;
+}
+
+/**
+ * Klasifikasi usia. Ambang ini perkiraan awal dan perlu disesuaikan
+ * dengan standar pemeliharaan yang berlaku di unit.
+ */
+function statusUsia(tahun) {
+  const u = usiaJaring(tahun);
+  if (u === null) return { key: 'tidak-diketahui', label: 'Usia belum diisi', kelas: 'text-on-surface-variant' };
+  if (u >= 10) return { key: 'tua', label: `${u} tahun — perlu peremajaan`, kelas: 'text-error' };
+  if (u >= 7)  return { key: 'menengah', label: `${u} tahun — pantau`, kelas: 'text-tertiary' };
+  return { key: 'baru', label: `${u} tahun`, kelas: 'text-secondary' };
+}
+
+/** Ringkasan kondisi & usia untuk panel statistik. */
+function ringkasJaring(list) {
+  const perKondisi = { normal: 0, ringan: 0, parah: 0, kosong: 0 };
+  let perluRemaja = 0, adaUsia = 0;
+  list.forEach((j) => {
+    if (perKondisi[j.kondisi] === undefined) perKondisi[j.kondisi] = 0;
+    perKondisi[j.kondisi]++;
+    const u = usiaJaring(j.tahun_pasang);
+    if (u !== null) { adaUsia++; if (u >= 10) perluRemaja++; }
+  });
+  return { perKondisi, perluRemaja, adaUsia, total: list.length };
 }
