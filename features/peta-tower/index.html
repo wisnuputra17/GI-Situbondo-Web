@@ -16,8 +16,21 @@
   body { font-family: 'Inter', sans-serif; }
   h1, h2, h3 { font-family: 'Manrope', sans-serif; }
   #map { width: 100%; height: 100%; background: #e5eeff; }
-  .leaflet-popup-content-wrapper { border-radius: 10px; padding: 0; }
+  /* Popup Leaflet punya latar putih bawaan; disamakan dengan token tema
+     supaya isinya tetap terbaca saat tema gelap aktif. */
+  .leaflet-popup-content-wrapper {
+    border-radius: 10px; padding: 0;
+    background: var(--sc-lowest); color: var(--on-surface);
+    border: 1px solid var(--outline-variant);
+  }
   .leaflet-popup-content { margin: 0; width: 250px !important; }
+  .leaflet-popup-tip { background: var(--sc-lowest); }
+  .leaflet-container a.leaflet-popup-close-button { color: var(--on-surface-variant); }
+  .leaflet-container { background: var(--sc); }
+  .leaflet-bar a, .leaflet-bar a:hover {
+    background: var(--sc-lowest); color: var(--on-surface); border-color: var(--outline-variant);
+  }
+  html.dark .leaflet-tile { filter: brightness(.78) saturate(.85) contrast(1.05); }
 .tower-label {
     background: transparent; border: none; box-shadow: none; padding: 0;
     font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 600;
@@ -25,7 +38,9 @@
   }
   .tower-label::before { display: none; }
   .tower-label.is-anomali { color: #ba1a1a; }
-  .modal-backdrop { position: fixed; inset: 0; background: rgba(11,28,48,0.45); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
+  html.dark .tower-label { color: var(--on-surface); text-shadow: 0 0 3px #0d1117, 0 0 3px #0d1117, 0 0 2px #0d1117; }
+  html.dark .tower-label.is-anomali { color: #ff8a80; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
 </style>
 </head>
 <body class="bg-background text-on-surface h-screen flex overflow-hidden">
@@ -54,7 +69,7 @@
       </div>
 
       <div class="absolute top-6 right-6 flex gap-2 z-[500]">
-        <button id="btn-seed" class="bg-tertiary text-white rounded-lg shadow-md px-4 py-3 flex items-center gap-2 text-sm font-bold">
+        <button id="btn-seed" class="bg-tertiary text-on-primary rounded-lg shadow-md px-4 py-3 flex items-center gap-2 text-sm font-bold">
           <span class="material-symbols-outlined text-base">cloud_upload</span>
           Impor data tower
         </button>
@@ -73,7 +88,7 @@
 
       <div id="toast" class="hidden absolute bottom-24 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-sm px-4 py-2.5 rounded-lg shadow-lg z-[1500]"></div>
 
-      <div id="error-banner" class="hidden absolute top-6 left-1/2 -translate-x-1/2 bg-error text-white text-sm px-4 py-3 rounded-lg shadow-lg z-[1500] max-w-lg">
+      <div id="error-banner" class="hidden absolute top-6 left-1/2 -translate-x-1/2 bg-error text-on-error text-sm px-4 py-3 rounded-lg shadow-lg z-[1500] max-w-lg">
         <div class="flex items-start gap-2">
           <span class="material-symbols-outlined text-base">error</span>
           <div>
@@ -142,39 +157,40 @@
     }
 
     function statusBadge(status) {
-      if (status === 'anomali') return '<span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded" style="background:#ffdad6;color:#93000a">Anomali</span>';
-      if (status === 'offline') return '<span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded" style="background:#e5e5e5;color:#555">Offline</span>';
-      return '<span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded" style="background:#c9f5d4;color:#007439">Normal</span>';
+      const k = { anomali: ['error-container', 'on-error-container', 'Anomali'],
+                  offline: ['surface-container-highest', 'on-surface-variant', 'Offline'] }[status]
+              || ['secondary-container', 'on-secondary-container', 'Normal'];
+      return `<span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded bg-${k[0]} text-${k[1]}">${k[2]}</span>`;
     }
 
     function towerPopupHtml(t) {
       const anomalies = openAnomalies[t.id_tower] || [];
       const anomaliBlock = anomalies.length
-        ? `<div class="mt-2 pt-2 border-t border-gray-200">
-             <p class="text-[10px] font-bold text-red-700 uppercase mb-1">Anomali terbuka (${anomalies.length})</p>
-             ${anomalies.slice(0, 3).map((a) => `<p class="text-[11px] text-gray-700">• ${a.jenis_anomali}${a.catatan ? ' — ' + a.catatan : ''} <span class="text-gray-400">(${formatDate(a.timestamp)})</span></p>`).join('')}
+        ? `<div class="mt-2 pt-2 border-t border-outline-variant/25">
+             <p class="text-[10px] font-bold text-error uppercase mb-1">Anomali terbuka (${anomalies.length})</p>
+             ${anomalies.slice(0, 3).map((a) => `<p class="text-[11px] text-on-surface">• ${a.jenis_anomali}${a.catatan ? ' — ' + a.catatan : ''} <span class="text-outline">(${formatDate(a.timestamp)})</span></p>`).join('')}
            </div>` : '';
       return `
         <div class="p-4">
           <div class="flex justify-between items-start mb-2">
             <div>
-              <h3 class="font-bold text-sm text-[#0b1c30]">Tower ${t.nomor}</h3>
-              <p class="text-[10px] text-gray-500 font-mono">${t.id_tower}</p>
+              <h3 class="font-bold text-sm text-on-surface">Tower ${t.nomor}</h3>
+              <p class="text-[10px] text-on-surface-variant font-mono">${t.id_tower}</p>
             </div>
             ${statusBadge(t.status)}
           </div>
-          <div class="space-y-1 text-xs text-gray-600">
-            <div class="flex justify-between gap-2"><span>Penghantar</span><span class="text-[#0b1c30] font-medium text-right">${t.penghantar}</span></div>
-            <div class="flex justify-between gap-2"><span>Kecamatan</span><span class="text-[#0b1c30] font-medium text-right">${t.alamat || '-'}</span></div>
-            <div class="flex justify-between gap-2"><span>Ground patrol</span><span class="text-[#0b1c30] font-medium text-right">${t.ground_patrol || '-'}</span></div>
-            <div class="flex justify-between gap-2"><span>Koordinat</span><span class="text-[#0b1c30] font-mono text-[10px] text-right">${Number(t.lat).toFixed(5)}, ${Number(t.lng).toFixed(5)}</span></div>
+          <div class="space-y-1 text-xs text-on-surface-variant">
+            <div class="flex justify-between gap-2"><span>Penghantar</span><span class="text-on-surface font-medium text-right">${t.penghantar}</span></div>
+            <div class="flex justify-between gap-2"><span>Kecamatan</span><span class="text-on-surface font-medium text-right">${t.alamat || '-'}</span></div>
+            <div class="flex justify-between gap-2"><span>Ground patrol</span><span class="text-on-surface font-medium text-right">${t.ground_patrol || '-'}</span></div>
+            <div class="flex justify-between gap-2"><span>Koordinat</span><span class="text-on-surface font-mono text-[10px] text-right">${Number(t.lat).toFixed(5)}, ${Number(t.lng).toFixed(5)}</span></div>
           </div>
           ${anomaliBlock}
           <div class="flex gap-2 mt-3">
             ${t.status === 'anomali'
-              ? `<button data-resolve="${t.id_tower}" class="flex-1 bg-[#006d35] text-white text-[11px] font-bold uppercase tracking-wide py-2 rounded">Tandai selesai</button>`
-              : `<button data-anomali="${t.id_tower}" class="flex-1 bg-[#ba1a1a] text-white text-[11px] font-bold uppercase tracking-wide py-2 rounded">Catat anomali</button>`}
-            <a href="https://www.google.com/maps?q=${t.lat},${t.lng}" target="_blank" rel="noopener" class="px-3 py-2 border border-gray-300 rounded text-[11px] font-bold text-gray-600">Maps</a>
+              ? `<button data-resolve="${t.id_tower}" class="flex-1 bg-secondary text-on-secondary text-[11px] font-bold uppercase tracking-wide py-2 rounded">Tandai selesai</button>`
+              : `<button data-anomali="${t.id_tower}" class="flex-1 bg-error text-on-error text-[11px] font-bold uppercase tracking-wide py-2 rounded">Catat anomali</button>`}
+            <a href="https://www.google.com/maps?q=${t.lat},${t.lng}" target="_blank" rel="noopener" class="px-3 py-2 border border-outline-variant/40 rounded text-[11px] font-bold text-on-surface-variant">Maps</a>
           </div>
         </div>`;
     }
@@ -272,7 +288,7 @@
 
       box.innerHTML = Object.keys(counts).map((ph) => `
         <label class="flex items-center gap-2 cursor-pointer text-xs">
-          <input type="checkbox" value="${ph}" ${activePenghantar.has(ph) ? 'checked' : ''} class="ph-toggle rounded border-gray-300">
+          <input type="checkbox" value="${ph}" ${activePenghantar.has(ph) ? 'checked' : ''} class="ph-toggle rounded border-outline-variant/40">
           <span class="w-2.5 h-1 rounded" style="background:${PENGHANTAR_COLOR[ph] || '#999'}"></span>
           <span class="flex-grow text-on-surface font-medium">${ph}</span>
           <span class="text-on-surface-variant">${counts[ph].total}</span>
@@ -294,13 +310,13 @@
     function showAnomaliModal(t) {
       document.getElementById('modal-root').innerHTML = `
         <div class="modal-backdrop">
-          <div class="bg-white rounded-lg shadow-xl w-[400px] p-6">
-            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-1">Catat anomali</h2>
-            <p class="text-xs text-gray-500 mb-4 font-mono">${t.id_tower} — ${t.penghantar} #${t.nomor}</p>
+          <div class="bg-surface-container-lowest text-on-surface rounded-lg shadow-xl w-[400px] p-6">
+            <h2 class="font-headline font-bold text-lg text-on-surface mb-1">Catat anomali</h2>
+            <p class="text-xs text-on-surface-variant mb-4 font-mono">${t.id_tower} — ${t.penghantar} #${t.nomor}</p>
             <form id="anomali-form" class="space-y-3">
               <div>
-                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Jenis anomali</label>
-                <select name="jenis_anomali" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
+                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Jenis anomali</label>
+                <select name="jenis_anomali" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm" required>
                   <option value="">— pilih —</option>
                   <option>Isolator retak/pecah</option>
                   <option>Korosi struktur</option>
@@ -314,16 +330,16 @@
                 </select>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Catatan</label>
-                <textarea name="catatan" rows="3" placeholder="Detail temuan…" class="w-full border border-gray-300 rounded px-3 py-2 text-sm"></textarea>
+                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Catatan</label>
+                <textarea name="catatan" rows="3" placeholder="Detail temuan…" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm"></textarea>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Dicatat oleh</label>
-                <input name="oleh" value="Wisnu" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Dicatat oleh</label>
+                <input name="oleh" value="Wisnu" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm">
               </div>
               <div class="flex gap-2 pt-2">
-                <button type="button" id="modal-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
-                <button type="submit" class="flex-1 bg-[#ba1a1a] text-white rounded py-2 text-sm font-bold">Simpan</button>
+                <button type="button" id="modal-cancel" class="flex-1 border border-outline-variant/40 rounded py-2 text-sm font-medium">Batal</button>
+                <button type="submit" class="flex-1 bg-error text-on-error rounded py-2 text-sm font-bold">Simpan</button>
               </div>
             </form>
           </div>
@@ -350,7 +366,7 @@
 
     function showTowerListModal() {
       const rows = allTowers.map((t) => `
-        <tr class="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" data-goto="${t.id_tower}">
+        <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low cursor-pointer" data-goto="${t.id_tower}">
           <td class="px-3 py-2 font-mono text-[11px]">${t.id_tower}</td>
           <td class="px-3 py-2 text-xs">${t.alamat || '-'}</td>
           <td class="px-3 py-2 text-xs">${t.ground_patrol || '-'}</td>
@@ -359,25 +375,25 @@
 
       document.getElementById('modal-root').innerHTML = `
         <div class="modal-backdrop">
-          <div class="bg-white rounded-lg shadow-xl w-[760px] max-h-[85vh] flex flex-col">
-            <div class="p-5 border-b border-gray-200 flex justify-between items-center">
+          <div class="bg-surface-container-lowest text-on-surface rounded-lg shadow-xl w-[760px] max-h-[85vh] flex flex-col">
+            <div class="p-5 border-b border-outline-variant/25 flex justify-between items-center">
               <div>
-                <h2 class="font-headline font-bold text-lg text-[#0b1c30]">Daftar tower</h2>
-                <p class="text-xs text-gray-500">${allTowers.length} tower — klik baris untuk menuju lokasinya di peta</p>
+                <h2 class="font-headline font-bold text-lg text-on-surface">Daftar tower</h2>
+                <p class="text-xs text-on-surface-variant">${allTowers.length} tower — klik baris untuk menuju lokasinya di peta</p>
               </div>
-              <button id="modal-cancel" class="text-gray-400 hover:text-gray-700"><span class="material-symbols-outlined">close</span></button>
+              <button id="modal-cancel" class="text-outline hover:text-on-surface"><span class="material-symbols-outlined">close</span></button>
             </div>
-            <div class="p-4 border-b border-gray-200">
-              <input id="list-search" placeholder="Cari ID, kecamatan, atau petugas…" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+            <div class="p-4 border-b border-outline-variant/25">
+              <input id="list-search" placeholder="Cari ID, kecamatan, atau petugas…" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm">
             </div>
             <div class="overflow-y-auto flex-grow">
               <table class="w-full text-left">
-                <thead class="bg-gray-50 sticky top-0">
+                <thead class="bg-surface-container-low sticky top-0">
                   <tr>
-                    <th class="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase">ID Tower</th>
-                    <th class="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase">Kecamatan</th>
-                    <th class="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase">Ground Patrol</th>
-                    <th class="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase">Status</th>
+                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface-variant uppercase">ID Tower</th>
+                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface-variant uppercase">Kecamatan</th>
+                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface-variant uppercase">Ground Patrol</th>
+                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface-variant uppercase">Status</th>
                   </tr>
                 </thead>
                 <tbody id="list-body">${rows}</tbody>
@@ -409,18 +425,18 @@
     function showSeedConfirmModal() {
       document.getElementById('modal-root').innerHTML = `
         <div class="modal-backdrop">
-          <div class="bg-white rounded-lg shadow-xl w-[420px] p-6">
-            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-2">Impor data tower</h2>
-            <p class="text-sm text-gray-600 mb-3">Akan mengisi sheet <span class="font-mono text-xs">tower_master</span> dengan <strong>${typeof TOWER_SEED !== 'undefined' ? TOWER_SEED.length : 0} tower</strong> hasil ekstraksi file KML:</p>
-            <ul class="text-xs text-gray-600 space-y-1 mb-3 pl-4 list-disc">
+          <div class="bg-surface-container-lowest text-on-surface rounded-lg shadow-xl w-[420px] p-6">
+            <h2 class="font-headline font-bold text-lg text-on-surface mb-2">Impor data tower</h2>
+            <p class="text-sm text-on-surface-variant mb-3">Akan mengisi sheet <span class="font-mono text-xs">tower_master</span> dengan <strong>${typeof TOWER_SEED !== 'undefined' ? TOWER_SEED.length : 0} tower</strong> hasil ekstraksi file KML:</p>
+            <ul class="text-xs text-on-surface-variant space-y-1 mb-3 pl-4 list-disc">
               <li>STBDO–PITON: 157 tower</li>
               <li>STBDO–BWNGI: 151 tower</li>
               <li>BDWSO–STBDO: 109 tower</li>
             </ul>
-            <p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2.5 mb-4">Perhatian: proses ini <strong>menimpa seluruh isi</strong> sheet tower_master. Status anomali yang sudah dicatat lewat web akan ter-reset ke normal.</p>
+            <p class="text-xs text-error bg-error-container/40 border border-error/30 rounded p-2.5 mb-4">Perhatian: proses ini <strong>menimpa seluruh isi</strong> sheet tower_master. Status anomali yang sudah dicatat lewat web akan ter-reset ke normal.</p>
             <div class="flex gap-2">
-              <button type="button" id="modal-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
-              <button type="button" id="seed-confirm" class="flex-1 bg-[#8a5300] text-white rounded py-2 text-sm font-bold">Ya, impor sekarang</button>
+              <button type="button" id="modal-cancel" class="flex-1 border border-outline-variant/40 rounded py-2 text-sm font-medium">Batal</button>
+              <button type="button" id="seed-confirm" class="flex-1 bg-tertiary text-on-primary rounded py-2 text-sm font-bold">Ya, impor sekarang</button>
             </div>
           </div>
         </div>`;
@@ -499,7 +515,7 @@
 
       const giName = (profile && profile.nama_gi) || 'GI Situbondo';
       L.marker(center, { icon: giIcon() }).addTo(map)
-        .bindPopup(`<div class="p-3"><h3 class="font-bold text-sm">${giName}</h3><p class="text-xs text-gray-500">${(profile && profile.lokasi) || 'Situbondo, Jawa Timur'}</p><p class="text-[10px] font-mono text-gray-400 mt-1">${center[0].toFixed(6)}, ${center[1].toFixed(6)}</p></div>`);
+        .bindPopup(`<div class="p-3"><h3 class="font-bold text-sm">${giName}</h3><p class="text-xs text-on-surface-variant">${(profile && profile.lokasi) || 'Situbondo, Jawa Timur'}</p><p class="text-[10px] font-mono text-outline mt-1">${center[0].toFixed(6)}, ${center[1].toFixed(6)}</p></div>`);
 
       document.getElementById('summary-nama').textContent = giName;
       document.getElementById('summary-tegangan').textContent = (profile && profile.tegangan) || '150 kV';

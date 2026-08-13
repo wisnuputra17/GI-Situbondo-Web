@@ -13,7 +13,7 @@
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
   body { font-family: 'Inter', sans-serif; }
   h1, h2, h3 { font-family: 'Manrope', sans-serif; }
-  .modal-backdrop { position: fixed; inset: 0; background: rgba(11,28,48,0.45); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
   .drop-active { outline: 2px dashed #8a5300; outline-offset: -6px; background: #fff8ef; }
 </style>
 </head>
@@ -207,13 +207,13 @@
     function confirmDelete(fileId, name) {
       document.getElementById('modal-root').innerHTML = `
         <div class="modal-backdrop">
-          <div class="bg-white rounded-lg shadow-xl w-[400px] p-6">
-            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-2">Hapus berkas?</h2>
-            <p class="text-sm text-gray-600 mb-1">${name}</p>
-            <p class="text-xs text-gray-500 mb-4">Berkas dipindahkan ke Trash Google Drive dan masih bisa dipulihkan dari sana dalam 30 hari.</p>
+          <div class="bg-surface-container-lowest text-on-surface rounded-lg shadow-xl w-[400px] p-6">
+            <h2 class="font-headline font-bold text-lg text-on-surface mb-2">Hapus berkas?</h2>
+            <p class="text-sm text-on-surface-variant mb-1">${name}</p>
+            <p class="text-xs text-on-surface-variant mb-4">Berkas dipindahkan ke Trash Google Drive dan masih bisa dipulihkan dari sana dalam 30 hari.</p>
             <div class="flex gap-2">
-              <button id="modal-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
-              <button id="del-confirm" class="flex-1 bg-[#ba1a1a] text-white rounded py-2 text-sm font-bold">Hapus</button>
+              <button id="modal-cancel" class="flex-1 border border-outline-variant/40 rounded py-2 text-sm font-medium">Batal</button>
+              <button id="del-confirm" class="flex-1 bg-error text-on-error rounded py-2 text-sm font-bold">Hapus</button>
             </div>
           </div>
         </div>`;
@@ -236,17 +236,17 @@
       const isKategori = KATEGORI.some((k) => k.id === name) && !currentPath.includes('/');
       document.getElementById('modal-root').innerHTML = `
         <div class="modal-backdrop">
-          <div class="bg-white rounded-lg shadow-xl w-[420px] p-6">
-            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-2">Hapus folder?</h2>
-            <p class="text-sm text-gray-700 mb-2"><span class="font-mono font-bold">${name}</span></p>
-            <p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2.5 mb-3">
+          <div class="bg-surface-container-lowest text-on-surface rounded-lg shadow-xl w-[420px] p-6">
+            <h2 class="font-headline font-bold text-lg text-on-surface mb-2">Hapus folder?</h2>
+            <p class="text-sm text-on-surface mb-2"><span class="font-mono font-bold">${name}</span></p>
+            <p class="text-xs text-error bg-error-container/40 border border-error/30 rounded p-2.5 mb-3">
               Seluruh isi folder ikut terhapus, termasuk subfolder dan berkas di dalamnya.
               Semuanya dipindahkan ke Trash Google Drive dan masih bisa dipulihkan dalam 30 hari.
             </p>
             ${isKategori ? `<p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded p-2.5 mb-3">Ini folder kategori utama. Kalau dihapus, folder akan dibuat ulang otomatis (kosong) saat kategori dibuka lagi.</p>` : ''}
             <div class="flex gap-2">
-              <button id="modal-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
-              <button id="delfolder-confirm" class="flex-1 bg-[#ba1a1a] text-white rounded py-2 text-sm font-bold">Hapus folder</button>
+              <button id="modal-cancel" class="flex-1 border border-outline-variant/40 rounded py-2 text-sm font-medium">Batal</button>
+              <button id="delfolder-confirm" class="flex-1 bg-error text-on-error rounded py-2 text-sm font-bold">Hapus folder</button>
             </div>
           </div>
         </div>`;
@@ -271,14 +271,14 @@
       const targetPath = currentPath;
       document.getElementById('modal-root').innerHTML = `
         <div class="modal-backdrop">
-          <div class="bg-white rounded-lg shadow-xl w-[380px] p-6">
-            <h2 class="font-headline font-bold text-lg text-[#0b1c30] mb-1">Folder baru</h2>
-            <p class="text-xs text-gray-500 mb-4">Dibuat di: <span class="font-mono font-bold text-[#8a5300]">${targetPath || 'Root'}</span></p>
+          <div class="bg-surface-container-lowest text-on-surface rounded-lg shadow-xl w-[380px] p-6">
+            <h2 class="font-headline font-bold text-lg text-on-surface mb-1">Folder baru</h2>
+            <p class="text-xs text-on-surface-variant mb-4">Dibuat di: <span class="font-mono font-bold text-[#8a5300]">${targetPath || 'Root'}</span></p>
             <form id="folder-form">
-              <input name="name" placeholder="Nama folder" class="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4" required autofocus>
+              <input name="name" placeholder="Nama folder" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm mb-4" required autofocus>
               <div class="flex gap-2">
-                <button type="button" id="modal-cancel" class="flex-1 border border-gray-300 rounded py-2 text-sm font-medium">Batal</button>
-                <button type="submit" class="flex-1 bg-[#0b1c30] text-white rounded py-2 text-sm font-bold">Buat</button>
+                <button type="button" id="modal-cancel" class="flex-1 border border-outline-variant/40 rounded py-2 text-sm font-medium">Batal</button>
+                <button type="submit" class="flex-1 bg-primary text-on-primary rounded py-2 text-sm font-bold">Buat</button>
               </div>
             </form>
           </div>
