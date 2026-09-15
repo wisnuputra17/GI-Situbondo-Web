@@ -86,7 +86,9 @@ async function deletePeralatan(id) {
  * data lama; mode 'ganti' menimpa seluruh isi sheet.
  */
 function parseTempelan(teks) {
-  const baris = String(teks).trim().split(/\r?\n/).filter((b) => b.trim());
+  // Jangan trim seluruh teks: tab pemisah di awal baris pertama ikut terhapus,
+  // sehingga baris ber-ID kosong salah terbaca sebagai baris berisi.
+  const baris = String(teks).replace(/^[\r\n]+|[\r\n]+$/g, '').split(/\r?\n/).filter((b) => b.trim());
   const hasil = [];
   const ditolak = [];
 

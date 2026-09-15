@@ -128,6 +128,24 @@ GI di peta). Kalau sheet `profil_gi` sudah pernah dipakai sebelumnya dengan
 skema lama, hapus isi sheet itu dulu (biarkan backend buat ulang otomatis
 dengan header baru) — atau tambah kolom `lat`/`lng` manual di Sheets.
 
+## Uji otomatis
+
+```
+node test/run.js
+```
+
+73 uji untuk fungsi murni (tanpa jaringan) di tiap `db.js`, plus pemeriksaan
+integritas data seed dan konsistensi skema `Code.gs`. Tidak butuh npm install —
+penguji ditulis tanpa dependensi, mengikuti prinsip proyek ini yang tanpa build
+step.
+
+Yang diuji: perhitungan counter (laju, ambang, deteksi pembacaan mundur),
+normalisasi tiga sumber anomali, usia & kondisi jaring, deteksi denah rusak,
+parser impor spreadsheet, dan keutuhan 417 menara + 42 jaring.
+
+Yang TIDAK diuji: pemanggilan API (butuh backend), render DOM, dan perilaku
+Apps Script. Bagian itu masih diverifikasi manual lewat browser.
+
 ## Catatan keamanan
 
 - Autentikasi saat ini: kode akses tunggal (`ACCESS_PASSWORD`) dicek di
