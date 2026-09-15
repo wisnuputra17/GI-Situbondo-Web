@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLN GI Suite — Anomali</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../../shared/tailwind-config.js"></script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+  body { font-family: 'Inter', sans-serif; }
+  h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+</style>
+</head>
+<body class="bg-background text-on-surface h-screen flex overflow-hidden">
+
+  <div id="app-shell" class="flex w-full"></div>
+
+  <template id="an-template">
+    <div class="p-8 space-y-6 max-w-[1500px] mx-auto w-full">
+
+      <div id="error-banner" class="hidden bg-error-container border border-error/30 text-on-error-container rounded-lg px-4 py-3 flex items-start gap-2">
+        <span class="material-symbols-outlined text-base">error</span>
+        <div><p class="font-bold text-xs uppercase tracking-wide mb-0.5">Terjadi kesalahan</p><p id="error-message" class="text-xs"></p></div>
+      </div>
+
+      <div class="grid grid-cols-4 gap-5">
+        <div class="bg-surface-container-lowest p-5 rounded shadow-sm border-l-4 border-error">
+          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Temuan terbuka</span>
+          <div class="mt-1"><span id="m-terbuka" class="text-3xl font-headline font-extrabold">–</span></div>
+          <p id="m-terbuka-sub" class="text-[11px] text-on-surface-variant mt-0.5">&nbsp;</p>
+        </div>
+        <div class="bg-surface-container-lowest p-5 rounded shadow-sm border-l-4 border-tertiary">
+          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Tingkat parah</span>
+          <div class="mt-1"><span id="m-parah" class="text-3xl font-headline font-extrabold">–</span></div>
+          <p class="text-[11px] text-on-surface-variant mt-0.5">butuh prioritas</p>
+        </div>
+        <div class="bg-surface-container-lowest p-5 rounded shadow-sm border-l-4 border-outline">
+          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Terbuka &gt; 30 hari</span>
+          <div class="mt-1"><span id="m-lama" class="text-3xl font-headline font-extrabold">–</span></div>
+          <p id="m-lama-sub" class="text-[11px] text-on-surface-variant mt-0.5">&nbsp;</p>
+        </div>
+        <div class="bg-surface-container-lowest p-5 rounded shadow-sm border-l-4 border-secondary">
+          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Sudah selesai</span>
+          <div class="mt-1"><span id="m-selesai" class="text-3xl font-headline font-extrabold">–</span></div>
+          <p id="m-selesai-sub" class="text-[11px] text-on-surface-variant mt-0.5">&nbsp;</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-8 bg-surface-container-lowest rounded shadow-sm border border-outline-variant/10 p-5">
+          <h2 class="font-headline font-bold text-base mb-3">Temuan per bulan</h2>
+          <div id="tren"></div>
+        </div>
+        <div class="col-span-4 bg-surface-container-lowest rounded shadow-sm border border-outline-variant/10 p-5">
+          <h2 class="font-headline font-bold text-base mb-3">Terbuka per sumber</h2>
+          <div id="per-sumber" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <section class="bg-surface-container-lowest rounded shadow-sm border border-outline-variant/10 overflow-hidden">
+        <div class="p-5 border-b border-outline-variant/10 bg-surface-container-low/30 flex flex-wrap gap-3 items-center justify-between">
+          <div class="flex gap-3 items-center flex-grow min-w-0">
+            <div class="relative flex-grow max-w-sm">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+              <input id="cari" placeholder="Cari objek, temuan, atau catatan…" class="w-full bg-surface-container-low border-none rounded py-2 pl-10 pr-4 text-sm text-on-surface focus:ring-1 focus:ring-primary">
+            </div>
+            <select id="filter-sumber" class="text-sm border border-outline-variant/40 rounded py-2 px-3 bg-surface-container-lowest text-on-surface">
+              <option value="">Semua sumber</option>
+            </select>
+          </div>
+          <div id="tab-status" class="flex bg-surface-container-low rounded-lg p-1 gap-0.5"></div>
+        </div>
+
+        <div class="overflow-x-auto min-h-[320px]">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-surface-container-low/50">
+                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Objek</th>
+                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Temuan</th>
+                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Status</th>
+                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Umur</th>
+                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Dicatat</th>
+                <th class="px-4 py-3 border-b border-outline-variant/10"></th>
+              </tr>
+            </thead>
+            <tbody id="tbody" class="divide-y divide-outline-variant/10"></tbody>
+          </table>
+        </div>
+        <div id="footer" class="p-4 border-t border-outline-variant/10 text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter bg-surface-container-low/20"></div>
+      </section>
+    </div>
+  </template>
+
+  <script src="../../shared/store.js"></script>
+  <script src="../../shared/format.js"></script>
+  <script src="../../shared/api.js"></script>
+  <script src="../../shared/shell.js"></script>
+  <script src="./db.js"></script>
+  <script>
+    let semua = [], statusAktif = 'terbuka';
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    function showError(m) { $('error-message').textContent = m; $('error-banner').classList.remove('hidden'); }
+    function hideError() { $('error-banner').classList.add('hidden'); }
+
+    const sumberInfo = (k) => SUMBER.find((s) => s.key === k) || { label: k, ikon: 'help' };
+
+    // Tautan balik ke modul asal, supaya temuan bisa langsung ditindaklanjuti.
+    function tautan(a) {
+      if (a.sumber === 'tower') return '../peta-tower/index.html';
+      if (a.sumber === 'peralatan') return '../data-peralatan/index.html';
+      return '../data-peralatan/index.html';
+    }
+
+    function renderRingkasan() {
+      const r = ringkasAnomali(semua);
+      $('m-terbuka').textContent = formatNumber(r.terbuka);
+      $('m-terbuka-sub').textContent = r.total ? `dari ${formatNumber(r.total)} total catatan` : 'belum ada catatan';
+      $('m-parah').textContent = formatNumber(r.parah);
+      $('m-lama').textContent = formatNumber(r.lebih30);
+      $('m-lama-sub').textContent = r.tertua !== null ? `tertua ${r.tertua} hari` : '—';
+      $('m-selesai').textContent = formatNumber(r.selesai);
+      const pct = r.total ? Math.round((r.selesai / r.total) * 100) : 0;
+      $('m-selesai-sub').textContent = r.total ? `${pct}% dari seluruh catatan` : '—';
+
+      // per sumber
+      $('per-sumber').innerHTML = SUMBER.map((s) => {
+        const n = r.perSumber[s.key] || 0;
+        const maks = Math.max(1, ...Object.values(r.perSumber));
+        return `
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="flex items-center gap-2 text-xs font-medium">
+                <span class="material-symbols-outlined text-base text-on-surface-variant">${s.ikon}</span>${s.label}</span>
+              <span class="text-sm font-headline font-extrabold tabular-nums">${n}</span>
+            </div>
+            <div class="h-1.5 w-full bg-surface-container-high rounded overflow-hidden">
+              <div class="h-full ${n ? 'bg-error' : 'bg-secondary'}" style="width:${n ? (n / maks) * 100 : 100}%"></div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderTren() {
+      const data = trenBulanan(semua, 12);
+      const maks = Math.max(1, ...data.map((d) => d.jumlah));
+      const H = 120;
+      $('tren').innerHTML = `
+        <div class="flex items-end gap-2" style="height:${H}px">
+          ${data.map((d) => `
+            <div class="flex-1 flex flex-col items-center justify-end h-full gap-1" title="${d.label}: ${d.jumlah} temuan">
+              ${d.jumlah ? `<span class="text-[10px] font-bold text-on-surface-variant tabular-nums">${d.jumlah}</span>` : ''}
+              <div class="w-full rounded-t ${d.jumlah ? 'bg-primary' : 'bg-surface-container-high'}"
+                   style="height:${d.jumlah ? Math.max((d.jumlah / maks) * (H - 26), 4) : 3}px"></div>
+            </div>`).join('')}
+        </div>
+        <div class="flex gap-2 mt-2">
+          ${data.map((d) => `<div class="flex-1 text-center text-[10px] text-on-surface-variant">${d.label}</div>`).join('')}
+        </div>`;
+    }
+
+    function renderTab() {
+      const r = ringkasAnomali(semua);
+      const tabs = [
+        { key: 'terbuka', label: 'Terbuka', n: r.terbuka },
+        { key: 'selesai', label: 'Selesai', n: r.selesai },
+        { key: '', label: 'Semua', n: r.total }
+      ];
+      $('tab-status').innerHTML = tabs.map((t) => `
+        <button data-status="${t.key}" class="px-3 py-1.5 rounded-md text-xs font-bold transition-colors
+          ${statusAktif === t.key ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high'}">
+          ${t.label} <span class="opacity-70">${t.n}</span>
+        </button>`).join('');
+      $('tab-status').querySelectorAll('[data-status]').forEach((b) =>
+        b.addEventListener('click', () => { statusAktif = b.dataset.status; renderTab(); renderTabel(); }));
+    }
+
+    function isiFilterSumber() {
+      $('filter-sumber').innerHTML = '<option value="">Semua sumber</option>' +
+        SUMBER.map((s) => `<option value="${s.key}">${s.label}</option>`).join('');
+    }
+
+    function renderTabel() {
+      const q = $('cari').value.trim().toLowerCase();
+      const fs = $('filter-sumber').value;
+
+      const data = semua.filter((a) => {
+        if (statusAktif && a.status !== statusAktif) return false;
+        if (fs && a.sumber !== fs) return false;
+        if (!q) return true;
+        return [a.objek, a.judul, a.catatan, a.oleh].join(' ').toLowerCase().includes(q);
+      });
+
+      const tb = $('tbody');
+      if (!data.length) {
+        tb.innerHTML = `<tr><td colspan="6" class="px-6 py-16 text-center">
+          <span class="material-symbols-outlined text-4xl text-outline-variant">${statusAktif === 'terbuka' ? 'task_alt' : 'inbox'}</span>
+          <p class="text-sm text-on-surface-variant mt-2">${
+            semua.length === 0 ? 'Belum ada catatan temuan.'
+            : statusAktif === 'terbuka' ? 'Tidak ada temuan terbuka. Semua sudah ditangani.'
+            : 'Tidak ada yang cocok dengan filter.'}</p>
+        </td></tr>`;
+        $('footer').textContent = '';
+        return;
+      }
+
+      tb.innerHTML = data.map((a) => {
+        const s = sumberInfo(a.sumber);
+        const u = umurHari(a.timestamp);
+        const tua = a.status === 'terbuka' && u !== null && u > 30;
+        return `
+        <tr class="hover:bg-surface-container-low/40">
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-base text-on-surface-variant">${s.ikon}</span>
+              <div>
+                <div class="text-sm font-bold font-mono">${esc(a.objek)}</div>
+                <div class="text-[11px] text-on-surface-variant">${esc(s.label)}</div>
+              </div>
+            </div>
+          </td>
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-1.5">
+              ${a.tingkat === 'parah' ? '<span class="w-1.5 h-1.5 rounded-full bg-error shrink-0"></span>' : ''}
+              <span class="text-xs font-medium">${esc(a.judul)}</span>
+            </div>
+            ${a.catatan ? `<p class="text-[11px] text-on-surface-variant mt-0.5 line-clamp-2">${esc(a.catatan)}</p>` : ''}
+          </td>
+          <td class="px-4 py-3">
+            <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded ${
+              a.status === 'terbuka' ? 'bg-error-container text-on-error-container' : 'bg-secondary-container text-on-secondary-container'}">
+              ${a.status === 'terbuka' ? 'Terbuka' : 'Selesai'}</span>
+          </td>
+          <td class="px-4 py-3">
+            <span class="text-xs ${tua ? 'text-error font-bold' : 'text-on-surface-variant'}">
+              ${u === null ? '–' : u === 0 ? 'hari ini' : u + ' hari'}</span>
+          </td>
+          <td class="px-4 py-3">
+            <div class="text-xs">${formatDate(a.timestamp)}</div>
+            <div class="text-[10px] text-on-surface-variant">${esc(a.oleh) || '–'}</div>
+          </td>
+          <td class="px-4 py-3 text-right">
+            <a href="${tautan(a)}" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold text-primary hover:bg-surface-container-high rounded">
+              Tindak lanjut <span class="material-symbols-outlined text-sm">arrow_forward</span></a>
+          </td>
+        </tr>`;
+      }).join('');
+
+      $('footer').textContent = `Menampilkan ${data.length} dari ${semua.length} catatan`;
+    }
+
+    async function muat() {
+      try {
+        semua = await loadSemuaAnomali();
+        hideError();
+      } catch (err) {
+        semua = [];
+        showError(err.message);
+      }
+      renderRingkasan();
+      renderTren();
+      renderTab();
+      renderTabel();
+    }
+
+    async function bootstrap() {
+      const c = $('page-content');
+      c.innerHTML = '';
+      c.appendChild($('an-template').content.cloneNode(true));
+      isiFilterSumber();
+      $('cari').addEventListener('input', renderTabel);
+      $('filter-sumber').addEventListener('change', renderTabel);
+      await muat();
+    }
+
+    if (requireAuth('../../')) {
+      renderShell({ activeId: 'anomali', pageTitle: 'Anomali', rootPrefix: '../../', searchPlaceholder: 'Cari temuan...' });
+      bootstrap();
+    }
+  </script>
+</body>
+</html>

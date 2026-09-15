@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   { id: 'file-manager', label: 'File WP/BA/Peralatan', icon: 'folder_open', path: 'features/file-manager/index.html', ready: true },
   { id: 'data-peralatan', label: 'Data Peralatan', icon: 'precision_manufacturing', path: 'features/data-peralatan/index.html', ready: true },
   { id: 'counter', label: 'Counter Peralatan', icon: 'speed', path: 'features/counter/index.html', ready: true },
-  { id: 'anomali', label: 'Anomali', icon: 'warning', path: '#', ready: false }
+  { id: 'anomali', label: 'Anomali', icon: 'warning', path: 'features/anomali/index.html', ready: true }
 ];
 
 function renderShell({ activeId, pageTitle, rootPrefix = '', searchPlaceholder = 'Cari...' }) {

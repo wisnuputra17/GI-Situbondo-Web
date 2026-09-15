@@ -23,7 +23,9 @@ shared/                → kode dipakai bersama semua modul
 features/               → satu modul per folder
   peta-tower/            → peta Leaflet+OSM, 417 tower, pencatatan anomali
   file-manager/          → dokumen WP/BA/Peralatan/Spreadsheet di Google Drive
-  data-peralatan/        → daftar induk peralatan GI + riwayat kondisi
+  data-peralatan/        → switchgear + denah jaring pengaman
+  counter/               → pembacaan counter peralatan & laju pemakaian
+  anomali/               → gabungan temuan dari tower, peralatan, dan jaring
   (tiap modul: index.html = tampilan, db.js = logika data)
 index.html              → Landing + login (gerbang masuk)
 dashboard.html          → Dashboard (metrik, peta ringkas, tabel anomali terbuka)
@@ -118,7 +120,8 @@ lewat Google Drive.
 | Data Peralatan · Switchgear | ✅ Grid kartu/tabel, riwayat kondisi, impor dari spreadsheet |
 | Data Peralatan · Jaring Pengaman | ✅ Denah interaktif 42 jaring (8×9), monitoring usia & kerusakan |
 | Tema gelap/terang | ✅ Tombol di topbar, tersimpan di localStorage |
-| Anomali Peralatan | ⏳ Menyusul |
+| Counter Peralatan | ✅ Pembacaan berurutan, laju/bulan, ambang, deteksi pembacaan mundur |
+| Anomali | ✅ Gabungan temuan menara + peralatan + jaring, riwayat terbuka & selesai |
 
 **Catatan skema:** kolom `lat` dan `lng` ditambahkan ke `profil_gi` (untuk marker
 GI di peta). Kalau sheet `profil_gi` sudah pernah dipakai sebelumnya dengan
