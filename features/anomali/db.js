@@ -69,12 +69,34 @@ function normalJaring(r) {
   };
 }
 
+/**
+ * Baca ketiga sumber temuan.
+ *
+ * Kegagalan per-sumber TIDAK lagi ditelan diam-diam. Sebelumnya semua error
+ * dipetakan ke `[]`, sehingga backend mati tampil sebagai "Tidak ada temuan
+ * terbuka. Semua sudah ditangani." — false all-clear pada alat monitoring.
+ * Sekarang sumber yang gagal dikembalikan lewat `gagal[]` supaya UI bisa
+ * membedakan "tidak ada temuan" dari "tidak bisa dibaca".
+ */
 async function loadSemuaAnomali() {
-  const [tw, pr, jr] = await Promise.all([
-    apiLoad('tower_anomali_log').catch(() => []),
-    apiLoad('kondisi_log').catch(() => []),
-    apiLoad('jaring_kerusakan_log').catch(() => [])
+  const hasil = await Promise.allSettled([
+    apiLoad('tower_anomali_log'),
+    apiLoad('kondisi_log'),
+    apiLoad('jaring_kerusakan_log')
   ]);
+
+  const gagal = [];
+  const isi = hasil.map((h, i) => {
+    if (h.status === 'fulfilled' && Array.isArray(h.value)) return h.value;
+    gagal.push({
+      sumber: SUMBER[i].key,
+      label: SUMBER[i].label,
+      pesan: (h.reason && h.reason.message) || 'Gagal memuat'
+    });
+    return [];
+  });
+
+  const [tw, pr, jr] = isi;
 
   const out = [
     ...tw.filter((r) => r && r.id_tower).map(normalTower),
@@ -98,7 +120,11 @@ async function loadSemuaAnomali() {
     }
   });
 
-  return out.sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
+  const daftar = out.sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
+  // Properti non-enumerable: pemanggil lama yang memperlakukan hasil ini
+  // sebagai array biasa tetap jalan, sementara UI baru bisa membaca `gagal`.
+  Object.defineProperty(daftar, 'gagal', { value: gagal, enumerable: false });
+  return daftar;
 }
 
 /** Umur temuan dalam hari; null kalau timestamp tidak valid. */

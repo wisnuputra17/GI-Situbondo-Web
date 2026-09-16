@@ -257,7 +257,18 @@
     async function muat() {
       try {
         semua = await loadSemuaAnomali();
-        hideError();
+        // Sebagian sumber bisa gagal sementara sisanya berhasil. Tanpa
+        // peringatan ini, halaman tampak "aman" padahal ada sumber temuan
+        // yang tidak terbaca sama sekali.
+        const gagal = semua.gagal || [];
+        if (gagal.length) {
+          showError(
+            `Sumber gagal dimuat: ${gagal.map((g) => g.label).join(', ')}. ` +
+            `Angka di bawah BELUM lengkap — jangan dianggap "tidak ada temuan".`
+          );
+        } else {
+          hideError();
+        }
       } catch (err) {
         semua = [];
         showError(err.message);
