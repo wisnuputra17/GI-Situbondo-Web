@@ -79,6 +79,47 @@ async function deletePeralatan(id) {
 }
 
 /**
+ * Cocokkan teks jenis dari tempelan ke daftar JENIS_PERALATAN.
+ *
+ * Aturan, berurutan:
+ *   1. Kosong                  → 'Lain-lain' (JANGAN ditebak)
+ *   2. Sama persis             → dipakai
+ *   3. Awalan label            → mis. "PMS Tanah" cocok ke "PMS Tanah (…)"
+ *   4. Singkatan dalam kurung  → mis. "Circuit Breaker" cocok ke "PMT (Circuit Breaker)"
+ *   5. Sisanya                 → 'Lain-lain'
+ *
+ * Versi lama memotong 4 huruf pertama lalu memakai startsWith, sehingga
+ * `''.slice(0,4)` = `''` dan `startsWith('')` selalu true — kolom jenis yang
+ * KOSONG diam-diam menjadi "Transformator Daya" (label pertama di daftar).
+ * "PMS Tanah" juga nyasar ke "PMS (Disconnecting Switch)" karena cuma 4 huruf
+ * yang dibandingkan. Pencocokan sekarang memakai label terpanjang yang cocok
+ * supaya label yang lebih spesifik menang.
+ */
+function cocokkanJenis(teks) {
+  const q = String(teks || '').trim().toLowerCase();
+  if (!q) return 'Lain-lain';
+
+  const persis = JENIS_PERALATAN.find((j) => j.toLowerCase() === q);
+  if (persis) return persis;
+
+  // Label terpanjang yang diawali teks ini — "PMS Tanah (Earthing Switch)"
+  // menang atas "PMS (Disconnecting Switch)" untuk masukan "PMS Tanah".
+  const awalan = JENIS_PERALATAN
+    .filter((j) => j.toLowerCase().startsWith(q))
+    .sort((a, b) => b.length - a.length)[0];
+  if (awalan) return awalan;
+
+  // Cocokkan ke isi kurung, mis. "Circuit Breaker" → "PMT (Circuit Breaker)".
+  const dalamKurung = JENIS_PERALATAN.find((j) => {
+    const m = j.match(/\(([^)]+)\)/);
+    return m && m[1].trim().toLowerCase() === q;
+  });
+  if (dalamKurung) return dalamKurung;
+
+  return 'Lain-lain';
+}
+
+/**
  * Impor massal dari tempelan spreadsheet (TSV/CSV).
  * Kolom yang diharapkan berurutan:
  *   id_peralatan, jenis, bay, merk, tipe, no_seri, kapasitas, tahun_pasang, status
@@ -99,10 +140,7 @@ function parseTempelan(teks) {
     // lewati baris header kalau terbawa
     if (/^id[_ ]?peralatan$/i.test(id)) return;
 
-    const jenisMentah = (kol[1] || '').trim();
-    const jenis = JENIS_PERALATAN.find((j) => j.toLowerCase() === jenisMentah.toLowerCase())
-      || JENIS_PERALATAN.find((j) => j.toLowerCase().startsWith(jenisMentah.toLowerCase().slice(0, 4)))
-      || (jenisMentah ? 'Lain-lain' : 'Lain-lain');
+    const jenis = cocokkanJenis(kol[1]);
 
     const statusMentah = (kol[8] || '').trim().toLowerCase();
     const status = STATUS_PERALATAN.some((s) => s.key === statusMentah) ? statusMentah : 'normal';
