@@ -298,7 +298,11 @@
 
     // ---------- Form catat ----------
     function formCatat(idAwal, jenisAwal) {
-      const hariIni = new Date().toISOString().slice(0, 10);
+      // Tanggal LOKAL, bukan `toISOString().slice(0,10)` yang memberi tanggal
+      // UTC — di WIB (UTC+7) itu membuat form default ke KEMARIN setiap kali
+      // dibuka antara pukul 00:00 dan 07:00.
+      const kini = new Date();
+      const hariIni = `${kini.getFullYear()}-${String(kini.getMonth() + 1).padStart(2, '0')}-${String(kini.getDate()).padStart(2, '0')}`;
       const opsiPeralatan = peralatan.length
         ? peralatan.map((p) => `<option value="${esc(p.id_peralatan)}" ${idAwal === p.id_peralatan ? 'selected' : ''}>${esc(p.id_peralatan)} — ${esc(p.jenis)}</option>`).join('')
         : '';

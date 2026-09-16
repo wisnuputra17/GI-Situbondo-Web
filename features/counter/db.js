@@ -28,26 +28,60 @@ function jenisCounter(key) {
 }
 
 // ---------- Baca / tulis ----------
+
+/**
+ * Timestamp pembacaan.
+ *
+ * `new Date('2026-09-16').toISOString()` menghasilkan tengah malam UTC, jadi
+ * DUA pembacaan pada tanggal yang sama menghasilkan timestamp IDENTIK. Akibatnya:
+ * urutan sort jadi sembarang (bisa memunculkan `mundur` palsu) dan
+ * `hapusPembacaan` menghapus KEDUA baris sekaligus. Karena itu tanggal
+ * pilihan user digabung dengan jam lokal saat input supaya tetap unik dan
+ * tetap jatuh pada hari yang benar menurut waktu setempat (WIB).
+ */
+function stempelWaktu(tanggal) {
+  const now = new Date();
+  if (!tanggal) return now.toISOString();
+
+  const m = String(tanggal).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) {
+    const d = new Date(tanggal);
+    return isNaN(d.getTime()) ? now.toISOString() : d.toISOString();
+  }
+  const lokal = new Date(
+    Number(m[1]), Number(m[2]) - 1, Number(m[3]),
+    now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds()
+  );
+  return lokal.toISOString();
+}
+
 async function loadCounterLog() {
   const rows = await apiLoad('counter_log');
   return rows
     .filter((r) => r && r.id_peralatan && r.jenis_counter)
+    // Sel nilai yang kosong/bukan angka DIBUANG, bukan dijadikan 0.
+    // `Number('') || 0` dulu memunculkan pembacaan 0 palsu yang memicu
+    // peringatan "counter mundur" dan merusak perhitungan laju.
+    .filter((r) => Number.isFinite(Number(r.nilai)) && String(r.nilai).trim() !== '')
     .map((r) => ({
       timestamp: r.timestamp || '',
       id_peralatan: String(r.id_peralatan),
       jenis_counter: String(r.jenis_counter),
-      nilai: Number(r.nilai) || 0,
+      nilai: Number(r.nilai),
       oleh: r.oleh || ''
     }))
     .sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp)));
 }
 
 async function addPembacaan({ id_peralatan, jenis_counter, nilai, tanggal, oleh }) {
+  const angka = Number(nilai);
+  if (!Number.isFinite(angka)) throw new Error('Nilai counter harus berupa angka');
+
   const row = {
-    timestamp: tanggal ? new Date(tanggal).toISOString() : new Date().toISOString(),
+    timestamp: stempelWaktu(tanggal),
     id_peralatan,
     jenis_counter,
-    nilai: Number(nilai),
+    nilai: angka,
     oleh: oleh || 'Wisnu'
   };
   await apiAppend('counter_log', row);
