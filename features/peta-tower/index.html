@@ -203,7 +203,10 @@
       towerMarkers = [];
 
       towerLayer = L.layerGroup();
-      const visible = allTowers.filter((t) => activePenghantar.has(t.penghantar));
+      // Hanya tower berkoordinat sah yang boleh masuk peta — satu sel lat/lng
+      // kosong di spreadsheet membuat L.polyline melempar `Invalid LatLng`
+      // dan mematikan seluruh modul peta.
+      const visible = towerBerkoordinat(allTowers).filter((t) => activePenghantar.has(t.penghantar));
       const zoom = map.getZoom();
 
       // garis penghantar (urut nomor tower)
@@ -269,11 +272,20 @@
       if (anomaliBtn) anomaliBtn.addEventListener('click', () => showAnomaliModal(t));
       const resolveBtn = document.querySelector(`[data-resolve="${t.id_tower}"]`);
       if (resolveBtn) resolveBtn.addEventListener('click', async () => {
+        const labelAsli = resolveBtn.textContent;
         resolveBtn.disabled = true; resolveBtn.textContent = 'Menyimpan…';
-        await resolveTowerAnomalies(t.id_tower);
-        map.closePopup();
-        await refreshAll();
-        toast(`Anomali ${t.id_tower} ditandai selesai`);
+        // Tanpa try/catch, kegagalan jaringan meninggalkan tombol permanen
+        // dalam keadaan "Menyimpan…" dan user mengira prosesnya masih jalan.
+        try {
+          await resolveTowerAnomalies(t.id_tower);
+          map.closePopup();
+          await refreshAll();
+          toast(`Anomali ${t.id_tower} ditandai selesai`);
+        } catch (err) {
+          resolveBtn.disabled = false;
+          resolveBtn.textContent = labelAsli;
+          showError('Gagal menandai selesai: ' + err.message);
+        }
       });
     }
 
@@ -477,7 +489,20 @@
         const [towers, anomalies] = await Promise.all([loadTowers(), loadTowerAnomalies()]);
         allTowers = towers;
         openAnomalies = groupOpenAnomalies(anomalies);
-        hideError();
+
+        // Tower berkoordinat rusak tidak lagi menjatuhkan peta, tapi user
+        // tetap harus tahu — kalau diam saja, tower hilang dari peta tanpa
+        // jejak dan dikira memang belum didata.
+        const tanpaKoordinat = towerTanpaKoordinat(allTowers);
+        if (tanpaKoordinat.length) {
+          const contoh = tanpaKoordinat.slice(0, 5).map((t) => t.id_tower).join(', ');
+          showError(
+            `${tanpaKoordinat.length} tower tidak tampil di peta karena lat/lng kosong atau tidak wajar: ` +
+            `${contoh}${tanpaKoordinat.length > 5 ? ', …' : ''}. Perbaiki di spreadsheet tower_master.`
+          );
+        } else {
+          hideError();
+        }
       } catch (err) {
         allTowers = [];
         openAnomalies = {};
@@ -501,7 +526,11 @@
       content.appendChild(document.getElementById('map-content-template').content.cloneNode(true));
 
       let profile = null;
-      try { profile = await loadGIProfile(); } catch (e) { /* sheet mungkin belum ada */ }
+      // Bedakan "gagal baca" dari "memang belum ada": kalau gangguan jaringan
+      // dianggap 'belum ada', auto-seed di bawah akan MENIMPA profil GI yang
+      // sudah diisi (lat/lng/tegangan/catatan) dengan nilai bawaan.
+      let profilGagalDibaca = false;
+      try { profile = await loadGIProfile(); } catch (e) { profilGagalDibaca = true; }
 
       const center = (profile && profile.lat && profile.lng) ? [Number(profile.lat), Number(profile.lng)] : GI_FALLBACK;
 
@@ -525,8 +554,11 @@
 
       await refreshAll();
 
-      // simpan profil GI otomatis kalau belum ada, pakai koordinat terkonfirmasi
-      if (!profile || !profile.lat) {
+      // Simpan profil GI otomatis HANYA kalau pembacaan berhasil dan memang
+      // belum ada isinya. Kalau pembacaan gagal, jangan menulis apa pun —
+      // menimpa profil yang sudah diisi jauh lebih merugikan daripada
+      // menunda pembuatan profil baru.
+      if (!profilGagalDibaca && (!profile || !profile.lat)) {
         try {
           await saveGIProfile({
             lokasi: 'Situbondo, Jawa Timur',

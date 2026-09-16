@@ -27,23 +27,66 @@ async function saveGIProfile(data) {
 }
 
 // ---------- Tower ----------
+
+/**
+ * Koordinat sah = angka berhingga, dalam rentang bumi, dan BUKAN hasil sel
+ * kosong.
+ *
+ * `Number('')` bernilai 0 (bukan NaN), jadi sel lat/lng yang kosong diam-diam
+ * menjadi koordinat 0,0 — tower muncul di lepas pantai Afrika alih-alih
+ * ditandai bermasalah. Karena itu nilai MENTAH-nya ikut diperiksa.
+ */
+function koordinatSah(lat, lng, latMentah, lngMentah) {
+  if (arguments.length >= 4) {
+    const kosong = (v) => v === null || v === undefined || String(v).trim() === '';
+    if (kosong(latMentah) || kosong(lngMentah)) return false;
+  }
+  return Number.isFinite(lat) && Number.isFinite(lng) &&
+    lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+    !(lat === 0 && lng === 0); // 0,0 di tengah Samudra Atlantik — pasti data kosong
+}
+
+/**
+ * Baca tower_master.
+ *
+ * Baris berkoordinat kosong/rusak TIDAK dibuang — datanya tetap dikembalikan
+ * (masih dipakai daftar & rekap) tetapi ditandai `koordinatValid:false`.
+ * Pemanggil yang menggambar peta WAJIB menyaring dengan tanda ini: satu sel
+ * lat kosong pernah membuat `L.polyline` melempar `Invalid LatLng` sehingga
+ * seluruh modul peta mati tanpa pesan.
+ */
 async function loadTowers() {
   const rows = await apiLoad('tower_master');
   return rows
     .filter((t) => t && t.id_tower)
-    .map((t) => ({
-      ...t,
-      // `jalur` = nama kolom skema lama; fallback supaya sheet berheader lama
-      // tidak membuat halaman gagal total.
-      penghantar: t.penghantar || t.jalur || '(tanpa penghantar)',
-      alamat: t.alamat || '',
-      ground_patrol: t.ground_patrol || '',
-      status: t.status || 'normal',
-      nomor: Number(t.nomor) || 0,
-      lat: Number(t.lat),
-      lng: Number(t.lng)
-    }))
+    .map((t) => {
+      const lat = Number(t.lat);
+      const lng = Number(t.lng);
+      return {
+        ...t,
+        // `jalur` = nama kolom skema lama; fallback supaya sheet berheader lama
+        // tidak membuat halaman gagal total.
+        penghantar: t.penghantar || t.jalur || '(tanpa penghantar)',
+        alamat: t.alamat || '',
+        ground_patrol: t.ground_patrol || '',
+        status: t.status || 'normal',
+        nomor: Number(t.nomor) || 0,
+        lat,
+        lng,
+        koordinatValid: koordinatSah(lat, lng, t.lat, t.lng)
+      };
+    })
     .sort((a, b) => String(a.penghantar).localeCompare(String(b.penghantar)) || a.nomor - b.nomor);
+}
+
+/** Hanya tower yang aman digambar di peta. */
+function towerBerkoordinat(towers) {
+  return towers.filter((t) => t.koordinatValid);
+}
+
+/** Tower yang dilewati peta karena koordinatnya kosong/rusak — untuk peringatan UI. */
+function towerTanpaKoordinat(towers) {
+  return towers.filter((t) => !t.koordinatValid);
 }
 
 async function updateTowerStatus(idTower, newStatus) {
