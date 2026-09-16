@@ -106,6 +106,23 @@ console.log('\n=== PLN GI Suite — uji fungsi murni ===\n');
     const p = m.titikSparkline(datar, 50, 10);
     benar(!p.includes('NaN'), 'tidak boleh NaN');
   });
+
+  // --- regresi: stempelWaktu (dulu selalu tengah malam UTC) ---
+  uji('stempelWaktu: dua pembacaan sehari TIDAK bertabrakan', () => {
+    const a = m.stempelWaktu('2026-09-16');
+    benar(!a.endsWith('T00:00:00.000Z'), 'tidak boleh dipaku ke tengah malam UTC');
+  });
+  uji('stempelWaktu: tanggal jatuh pada hari lokal yang benar', () => {
+    const d = new Date(m.stempelWaktu('2026-09-16'));
+    sama([d.getFullYear(), d.getMonth() + 1, d.getDate()], [2026, 9, 16]);
+  });
+  uji('stempelWaktu: tanpa argumen memakai waktu sekarang', () => {
+    const selisih = Math.abs(Date.now() - new Date(m.stempelWaktu()).getTime());
+    benar(selisih < 5000, 'harus dekat dengan sekarang');
+  });
+  uji('stempelWaktu: tanggal ngawur tidak menghasilkan Invalid Date', () => {
+    benar(!isNaN(new Date(m.stempelWaktu('bukan-tanggal')).getTime()));
+  });
 }
 
 // ---------------------------------------------------------------- anomali
@@ -225,6 +242,31 @@ console.log('\n=== PLN GI Suite — uji fungsi murni ===\n');
     sama(hasil[0].status, 'normal');
   });
 
+  // --- regresi: cocokkanJenis (dulu memotong 4 huruf + startsWith) ---
+  uji('cocokkanJenis: kosong -> Lain-lain (bukan Transformator Daya)', () => {
+    sama(m.cocokkanJenis(''), 'Lain-lain');
+    sama(m.cocokkanJenis('   '), 'Lain-lain');
+    sama(m.cocokkanJenis(undefined), 'Lain-lain');
+  });
+  uji('cocokkanJenis: "PMS Tanah" tidak nyasar ke PMS biasa', () => {
+    sama(m.cocokkanJenis('PMS Tanah'), 'PMS Tanah (Earthing Switch)');
+  });
+  uji('cocokkanJenis: cocok persis dipakai apa adanya', () => {
+    sama(m.cocokkanJenis('Busbar'), 'Busbar');
+    sama(m.cocokkanJenis('pmt (circuit breaker)'), 'PMT (Circuit Breaker)');
+  });
+  uji('cocokkanJenis: singkatan dalam kurung dikenali', () => {
+    sama(m.cocokkanJenis('Circuit Breaker'), 'PMT (Circuit Breaker)');
+    sama(m.cocokkanJenis('Lightning Arrester'), 'LA (Lightning Arrester)');
+  });
+  uji('cocokkanJenis: teks asing -> Lain-lain', () => {
+    sama(m.cocokkanJenis('ngawur bebas'), 'Lain-lain');
+  });
+  uji('parseTempelan: kolom jenis kosong TIDAK jadi Transformator Daya', () => {
+    const { hasil } = m.parseTempelan('X-9,,Bay 3');
+    sama(hasil[0].jenis, 'Lain-lain');
+  });
+
   uji('ringkasPeralatan: hitung per jenis dan status', () => {
     const r = m.ringkasPeralatan([
       { jenis: 'Busbar', status: 'normal' },
@@ -282,6 +324,32 @@ console.log('\n=== PLN GI Suite — uji fungsi murni ===\n');
       { penghantar: 'B', status: 'normal' }
     ]);
     sama([s.A.total, s.A.anomali, s.B.total, s.B.anomali], [2, 1, 1, 0]);
+  });
+
+  // --- regresi: satu koordinat rusak dulu mematikan seluruh peta ---
+  uji('koordinatSah: menolak NaN, kosong, 0,0, dan di luar rentang bumi', () => {
+    benar(m.koordinatSah(-7.7, 114.0), 'koordinat wajar harus sah');
+    benar(!m.koordinatSah(NaN, 114.0), 'NaN harus ditolak');
+    benar(!m.koordinatSah(0, 0), '0,0 (Null Island) harus ditolak');
+    benar(!m.koordinatSah(95, 114), 'lat > 90 harus ditolak');
+    benar(!m.koordinatSah(-7.7, 200), 'lng > 180 harus ditolak');
+    benar(!m.koordinatSah(Infinity, 0), 'Infinity harus ditolak');
+  });
+  uji('koordinatSah: sel spreadsheet kosong ditolak lewat nilai mentah', () => {
+    // Number('') === 0, jadi tanpa cek mentah sel kosong lolos sebagai 0,0
+    benar(!m.koordinatSah(Number(''), Number(''), '', ''), 'string kosong harus ditolak');
+    benar(!m.koordinatSah(0, 0, null, null), 'null harus ditolak');
+    benar(!m.koordinatSah(-7.7, 114, '  ', '114'), 'spasi saja harus ditolak');
+    benar(m.koordinatSah(-7.7, 114, '-7.7', '114'), 'nilai mentah wajar tetap lolos');
+  });
+  uji('towerBerkoordinat: hanya yang valid yang boleh masuk peta', () => {
+    const daftar = [
+      { id_tower: 'T-1', koordinatValid: true },
+      { id_tower: 'T-2', koordinatValid: false },
+      { id_tower: 'T-3', koordinatValid: true }
+    ];
+    sama(m.towerBerkoordinat(daftar).map((t) => t.id_tower), ['T-1', 'T-3']);
+    sama(m.towerTanpaKoordinat(daftar).map((t) => t.id_tower), ['T-2']);
   });
 }
 
