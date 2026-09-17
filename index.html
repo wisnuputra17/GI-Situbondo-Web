@@ -5,72 +5,200 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PLN GI Suite — Masuk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-* { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+/* === Design tokens from shared/tailwind-config.js === */
+:root {
+  --sc-lowest:#ffffff; --sc-low:#eff4ff; --sc:#e5eeff; --sc-high:#dce9ff; --sc-highest:#d3e4fe;
+  --on-surface:#0b1c30; --on-surface-variant:#444748;
+  --outline:#747878; --outline-variant:#c4c7c7;
+  --primary:#0b1c30; --on-primary:#ffffff;
+  --secondary:#006d35; --on-secondary:#ffffff;
+  --tertiary:#8a5300; --tertiary-container:#ffe0b3; --on-tertiary-container:#6e3900;
+  --error:#ba1a1a; --on-error:#ffffff; --error-container:#ffdad6; --on-error-container:#93000a;
+  --shadow-color: 0 0% 40%;
+}
+html.dark {
+  --sc-lowest:#141a22; --sc-low:#1a212b; --sc:#1f2731; --sc-high:#262f3a; --sc-highest:#2d3742;
+  --on-surface:#e3e8ef; --on-surface-variant:#9aa5b1;
+  --outline:#6b7684; --outline-variant:#364150;
+  --primary:#7fb3ff; --on-primary:#0a1420;
+  --secondary:#4ade80; --on-secondary:#052e16;
+  --tertiary:#fbbf24; --tertiary-container:#453113; --on-tertiary-container:#fcd34d;
+  --error:#f87171; --on-error:#450a0a; --error-container:#4c1d1d; --on-error-container:#fca5a5;
+  --shadow-color: 0 0% 0%;
+}
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
 
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+
+/* === Scenic background === */
 .scene {
   position: relative; width: 100%; height: 100vh;
-  background:
-    var(--photo, none) center/cover no-repeat,
+  background: var(--photo, none) center/cover no-repeat,
     linear-gradient(180deg, #1a2740 0%, #3a3050 35%, #a3542f 68%, #d98d4a 85%, #f0b26b 100%);
   overflow: hidden;
 }
-.scene svg.silhouette { position: absolute; bottom: 0; left: 0; width: 100%; height: 62%; }
-.overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,14,20,0.2) 0%, rgba(10,14,20,0.55) 70%, rgba(10,14,20,0.88) 100%); }
+.scene svg.silhouette { position: absolute; bottom: 0; left: 0; width: 100%; height: 62%; z-index: 2; }
 
-.hotspot { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.75); cursor: pointer; }
-.hotspot::after { content: ''; position: absolute; inset: 6px; border-radius: 50%; background: #fff; animation: pulse 2.2s infinite; }
-@keyframes pulse { 0%,100% { opacity: .45; transform: scale(.85); } 50% { opacity: 1; transform: scale(1); } }
+/* Atmospheric depth layers */
+.scene::before {
+  content: ''; position: absolute; inset: 0; z-index: 3;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(18,22,29,0.3) 0%, transparent 50%);
+  pointer-events: none;
+}
+.scene::after {
+  content: ''; position: absolute; inset: 0; z-index: 3;
+  background:
+    linear-gradient(180deg, rgba(10,14,20,0.15) 0%, rgba(10,14,20,0.35) 40%, rgba(10,14,20,0.75) 75%, rgba(10,14,20,0.92) 100%);
+  pointer-events: none;
+}
+.overlay { position: absolute; inset: 0; z-index: 3; background: none; }
+
+/* === Hotspots === */
+.hotspot {
+  position: absolute; width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.5);
+  cursor: pointer; z-index: 10; transition: background 0.2s, border-color 0.2s;
+}
+.hotspot:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.9); }
+.hotspot::after {
+  content: ''; position: absolute; inset: 5px; border-radius: 50%;
+  background: #fff; animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity:.3; transform:scale(.7); } 50% { opacity:1; transform:scale(1); } }
 @media (prefers-reduced-motion: reduce) { .hotspot::after { animation: none; } }
 .tooltip {
-  position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%) translateY(6px);
-  background: rgba(15,20,28,0.96); color: #fff; padding: 10px 13px; border-radius: 8px;
-  white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .16s ease, transform .16s ease;
-  border: 1px solid rgba(255,255,255,0.12);
+  position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(6px);
+  background: rgba(15,20,28,0.95); color: #fff; padding: 10px 14px; border-radius: 8px;
+  white-space: nowrap; opacity: 0; pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease; border: 1px solid rgba(255,255,255,0.1);
+  z-index: 20;
 }
 .hotspot:hover .tooltip, .hotspot:focus-visible .tooltip { opacity: 1; transform: translateX(-50%) translateY(0); }
-.tooltip strong { display: block; font-size: 13px; margin-bottom: 3px; font-family: 'Manrope', sans-serif; font-weight: 600; }
-.tooltip span { color: #9fb0bd; font-size: 11.5px; }
+.tooltip strong { display: block; font-size: 12px; margin-bottom: 2px; font-family: 'Manrope', sans-serif; font-weight: 600; }
+.tooltip span { color: #9fb0bd; font-size: 11px; }
 
-.brand-mark { position: absolute; top: 34px; left: 44px; color: #fff; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
-.brand-mark span { display: block; font-family: 'Inter', sans-serif; font-weight: 400; font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-top: 3px; }
+/* === Brand mark === */
+.brand-mark {
+  position: absolute; top: 36px; left: 48px; z-index: 20; color: #fff;
+  display: flex; align-items: center; gap: 10px;
+  opacity: 0; transform: translateY(-8px);
+  animation: slideDown .6s ease .1s forwards;
+}
+@keyframes slideDown { to { opacity: 1; transform: translateY(0); } }
+.brand-mark .logo-icon {
+  width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255,255,255,0.15);
+  flex-shrink: 0;
+}
+.brand-mark .logo-icon svg { width: 16px; height: 16px; }
+.brand-mark .label { display: flex; flex-direction: column; gap: 2px; }
+.brand-mark .label-main { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -0.01em; line-height: 1.2; }
+.brand-mark .label-sub { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
 
+/* === Login card === */
 .login-card {
-  position: absolute; bottom: 64px; left: 44px; width: 340px;
-  background: rgba(18,22,29,0.78); backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 26px; color: #fff;
+  position: absolute; bottom: 64px; left: 48px; width: 360px; z-index: 20;
+  background: rgba(15,20,29,0.72); backdrop-filter: blur(20px) saturate(1.2); -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px; color: #fff;
+  opacity: 0; transform: translateY(16px);
+  animation: slideUp .6s ease .25s forwards;
 }
-.login-card h1 { font-family: 'Manrope', sans-serif; font-size: 21px; font-weight: 800; margin: 0 0 4px; }
-.login-card p.sub { font-size: 12.5px; color: rgba(255,255,255,0.55); margin: 0 0 20px; }
-.login-card label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.5); display: block; margin-bottom: 7px; font-weight: 600; }
-.login-card input {
-  width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 8px; padding: 11px 13px; color: #fff; font-size: 14px; font-family: 'Inter', sans-serif;
-}
-.login-card input:focus { outline: 2px solid rgba(255,255,255,0.4); outline-offset: 1px; }
-.login-card input::placeholder { color: rgba(255,255,255,0.3); }
-.login-card button {
-  width: 100%; margin-top: 16px; background: #fff; color: #17212f; border: none; border-radius: 8px;
-  padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
-}
-.login-card button:disabled { opacity: .6; cursor: default; }
-.login-card .hint { margin-top: 14px; font-size: 11px; color: rgba(255,255,255,0.4); text-align: center; }
-.err { margin-top: 12px; font-size: 12px; color: #ffb4ab; background: rgba(186,26,26,0.18); border: 1px solid rgba(255,180,171,0.3); border-radius: 8px; padding: 9px 11px; display: none; }
+@keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
 
+.login-card .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.login-card h1 { font-family: 'Manrope', sans-serif; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+.login-card .badge {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.45);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.login-card p.sub { font-size: 12.5px; color: rgba(255,255,255,0.45); margin: 0 0 22px; line-height: 1.5; }
+
+/* Divider */
+.login-card .divider { height: 1px; background: rgba(255,255,255,0.06); margin: 0 0 22px; }
+
+/* === Form === */
+.login-card .field { margin-bottom: 16px; }
+.login-card label {
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.35); display: block; margin-bottom: 6px;
+}
+.login-card .input-wrap { position: relative; }
+.login-card .input-wrap .lock-icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; color: rgba(255,255,255,0.25);
+  transition: color 0.2s;
+}
+.login-card input[type="password"], .login-card input[type="text"] {
+  width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px; padding: 11px 13px 11px 38px; color: #fff; font-size: 14px; font-family: 'Inter', sans-serif;
+  transition: border-color .2s, background .2s, box-shadow .2s; outline: none;
+}
+.login-card input::placeholder { color: rgba(255,255,255,0.2); }
+.login-card input:hover { border-color: rgba(255,255,255,0.2); }
+.login-card input:hover + .lock-icon, .login-card input:focus + .lock-icon { color: rgba(255,255,255,0.4); }
+.login-card input:focus { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.07); box-shadow: 0 0 0 3px rgba(255,255,255,0.06); }
+.login-card input:focus ~ .lock-icon { color: rgba(255,255,255,0.5); }
+.login-card input::selection { background: rgba(255,255,255,0.2); }
+
+/* === Button === */
+.login-card button[type="submit"] {
+  width: 100%; margin-top: 4px; background: #fff; color: #17212f; border: none; border-radius: 10px;
+  padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: transform .12s, box-shadow .2s, opacity .2s; position: relative;
+}
+.login-card button[type="submit"]:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+.login-card button[type="submit"]:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
+.login-card button[type="submit"]:disabled { opacity: 0.65; cursor: default; transform: none; box-shadow: none; }
+.spinner {
+  display: none; width: 16px; height: 16px; border: 2px solid rgba(23,33,47,0.2);
+  border-top-color: #17212f; border-radius: 50%; animation: spin .6s linear infinite;
+  vertical-align: middle; margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.login-card button[type="submit"].loading .btn-text { display: none; }
+.login-card button[type="submit"].loading .spinner { display: inline-block; }
+
+/* === Error === */
+.login-card .err {
+  margin-top: 12px; font-size: 12px; color: #ffb4ab; background: rgba(186,26,26,0.15);
+  border: 1px solid rgba(255,180,171,0.25); border-radius: 8px; padding: 9px 12px;
+  display: flex; align-items: center; gap: 8px;
+  opacity: 0; transform: translateY(-4px); max-height: 0; overflow: hidden;
+  transition: opacity .25s ease, transform .25s ease, max-height .3s ease, padding .3s ease, margin .3s ease;
+  padding-top: 0; padding-bottom: 0; margin-top: 0;
+}
+.login-card .err.visible {
+  opacity: 1; transform: translateY(0); max-height: 80px;
+  padding: 9px 12px; margin-top: 12px;
+}
+.login-card .err svg { flex-shrink: 0; width: 14px; height: 14px; }
+
+/* === Hint === */
+.login-card .hint { margin-top: 14px; font-size: 10.5px; color: rgba(255,255,255,0.25); text-align: center; letter-spacing: 0.02em; }
+
+/* === Responsive === */
 @media (max-width: 720px) {
-  .login-card { left: 16px; right: 16px; width: auto; bottom: 24px; }
+  .login-card { left: 16px; right: 16px; width: auto; bottom: 24px; padding: 22px; }
   .brand-mark { left: 20px; top: 24px; }
+  .brand-mark .label-main { font-size: 17px; }
   .hotspot { display: none; }
 }
 </style>
 </head>
 <body>
+
 <div class="scene" id="scene">
   <!-- Siluet gardu induk & menara transmisi.
-       Untuk mengganti dengan foto asli GI Situbondo: set CSS var --photo pada .scene,
-       mis. style="--photo: url('assets/gi-situbondo.jpg')", lalu hapus <svg class="silhouette">. -->
+       Ganti dengan foto asli GI Situbondo: set CSS var --photo,
+       mis. style="--photo: url('assets/gi-situbondo.jpg')", lalu hapus svg ini. -->
   <svg class="silhouette" viewBox="0 0 1200 500" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <g stroke="#0a1018" stroke-width="3" fill="none" opacity="0.92">
       <path d="M180 500 L220 260 L260 500 M180 500 L260 500 M195 420 L245 420 M200 360 L240 360 M205 310 L235 310"/>
@@ -90,68 +218,102 @@ html, body { margin: 0; height: 100%; font-family: 'Inter', sans-serif; overflow
     <circle cx="520" cy="410" r="26" fill="none" stroke="#0a1018" stroke-width="3" opacity="0.88"/>
     <line x1="0" y1="500" x2="1200" y2="500" stroke="#0a1018" stroke-width="60" opacity="0.55"/>
   </svg>
+
   <div class="overlay"></div>
 
-  <div class="brand-mark">PLN GI Suite<span>GI Situbondo</span></div>
+  <!-- Brand mark -->
+  <div class="brand-mark">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    </div>
+    <div class="label">
+      <span class="label-main">PLN GI Suite</span>
+      <span class="label-sub">GI Situbondo</span>
+    </div>
+  </div>
 
+  <!-- Hotspots interaktif -->
   <div id="hotspot-layer"></div>
 
+  <!-- Login card -->
   <div class="login-card">
-    <h1>Masuk</h1>
+    <div class="card-header">
+      <h1>Masuk</h1>
+      <span class="badge">Internal</span>
+    </div>
     <p class="sub">Monitoring &amp; dokumen GI Situbondo</p>
-    <form id="login-form">
-      <label for="pw">Kode akses</label>
-      <input id="pw" type="password" placeholder="••••••••" autocomplete="current-password" autofocus>
-      <button type="submit" id="btn-login">Masuk</button>
+
+    <div class="divider"></div>
+
+    <form id="login-form" autocomplete="off">
+      <div class="field">
+        <label for="pw">Kode akses</label>
+        <div class="input-wrap">
+          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+          <input id="pw" type="password" placeholder="••••••••" autocomplete="current-password" autofocus>
+        </div>
+      </div>
+      <button type="submit" id="btn-login">
+        <span class="spinner"></span>
+        <span class="btn-text">Masuk</span>
+      </button>
     </form>
-    <div class="err" id="err"></div>
+
+    <div class="err" id="err">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span id="err-text"></span>
+    </div>
+
     <div class="hint">Akses terbatas tim internal</div>
   </div>
 </div>
 
 <script src="shared/api.js"></script>
 <script>
-  // Titik interaktif di background. Posisi dalam persen (kiri, atas) supaya
-  // ikut menyesuaikan saat ukuran layar berubah.
+  // Hotspots — posisi dalam persen
   const HOTSPOTS = [
     { left: 35, top: 63, title: 'Trafo daya', desc: 'Peralatan utama gardu induk' },
     { left: 43, top: 78, title: 'Bay penghantar', desc: 'Titik sambung ke jalur transmisi' },
     { left: 62, top: 45, title: 'Menara transmisi', desc: '417 tower termonitor' },
     { left: 84, top: 57, title: 'Jalur SUTT 150 kV', desc: '3 penghantar aktif' }
   ];
-
   const layer = document.getElementById('hotspot-layer');
   layer.innerHTML = HOTSPOTS.map((h) => `
     <div class="hotspot" style="left:${h.left}%; top:${h.top}%;" tabindex="0" role="button" aria-label="${h.title}">
       <div class="tooltip"><strong>${h.title}</strong><span>${h.desc}</span></div>
     </div>`).join('');
 
-  // Kalau sudah punya kode akses di sesi ini, langsung ke dashboard.
+  // Login logic
   if (getPassword()) window.location.replace('dashboard.html');
 
   const form = document.getElementById('login-form');
   const btn = document.getElementById('btn-login');
   const errBox = document.getElementById('err');
+  const errText = document.getElementById('err-text');
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const pw = document.getElementById('pw').value;
-    errBox.style.display = 'none';
-    btn.disabled = true; btn.textContent = 'Memeriksa…';
+    errBox.classList.remove('visible');
+    btn.classList.add('loading'); btn.disabled = true; btn.querySelector('.btn-text').textContent = 'Memeriksa…';
     try {
       const res = await verifyPassword(pw);
       if (res.ok) {
         setPassword(pw);
         window.location.href = 'dashboard.html';
       } else {
-        errBox.textContent = res.error;
-        errBox.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'Masuk';
+        errText.textContent = res.error;
+        errBox.classList.add('visible');
+        btn.classList.remove('loading'); btn.disabled = false; btn.querySelector('.btn-text').textContent = 'Masuk';
       }
     } catch (err) {
-      errBox.textContent = 'Tidak bisa menghubungi server: ' + err.message;
-      errBox.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Masuk';
+      errText.textContent = 'Tidak bisa menghubungi server: ' + err.message;
+      errBox.classList.add('visible');
+      btn.classList.remove('loading'); btn.disabled = false; btn.querySelector('.btn-text').textContent = 'Masuk';
     }
   });
 </script>

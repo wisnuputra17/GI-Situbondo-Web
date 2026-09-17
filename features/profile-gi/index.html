@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PLN GI Suite — Profil GI Situbondo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=formats,contained">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-background text-on-surface h-screen flex overflow-hidden">
+  <div id="app-shell" class="flex w-full"></div>
+
+  <script src="../shared/gi-data.js"></script>
+  <script src="../shared/tailwind-config.js"></script>
+  <script src="../shared/shell.js"></script>
+  <script src="../shared/format.js"></script>
+
+  <div id="profile-modal" class="fixed inset-0 z-50 hidden">
+    <div class="flex flex-col w-full h-full bg-background rounded-2xl shadow-2xl">
+      <div class="flex items-center justify-between p-6 border-b border-outline-variant/20">
+        <div>
+          <h2 class="font-headline font-bold text-2xl text-white">Profil GI Situbondo</h2>
+          <p class="text-gray-400 text-sm">Data profil proyek PLN GI Situbondo</p>
+        </div>
+        <button id="btn-close" class="flex items-center gap-2 text-gray-400 hover:text-gray-200">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="19" y2="6"/><line x1="9" y1="12" x2="19" y2="12"/><line x1="9" y1="18" x2="19" y2="18"/></svg>
+          Close
+        </button>
+      </div>
+      <div id="profile-content" class="flex-1 overflow-y-auto p-6">
+        <!-- Modal content will be rendered here -->
+      </div>
+    </div>
+  </div>
+</body>
+</html>
