@@ -5,245 +5,182 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PLN GI Suite — Masuk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* === Design tokens from shared/tailwind-config.js === */
 :root {
-  --sc-lowest:#ffffff; --sc-low:#eff4ff; --sc:#e5eeff; --sc-high:#dce9ff; --sc-highest:#d3e4fe;
-  --on-surface:#0b1c30; --on-surface-variant:#444748;
-  --outline:#747878; --outline-variant:#c4c7c7;
-  --primary:#0b1c30; --on-primary:#ffffff;
-  --secondary:#006d35; --on-secondary:#ffffff;
-  --tertiary:#8a5300; --tertiary-container:#ffe0b3; --on-tertiary-container:#6e3900;
-  --error:#ba1a1a; --on-error:#ffffff; --error-container:#ffdad6; --on-error-container:#93000a;
-  --shadow-color: 0 0% 40%;
+  --sc-lowest:#ffffff; --sc-low:#f5f7fa; --sc:#eef1f6; --sc-high:#e5e9f0; --sc-highest:#dde2ea;
+  --on-surface:#10182b; --on-surface-variant:#5b6472;
+  --outline:#9aa3b2; --outline-variant:#d5dae2;
+  --primary:#10182b; --on-primary:#ffffff;
+  --secondary:#0f7a44; --on-secondary:#ffffff;
+  --panel:#0b1220; --panel-line:rgba(255,255,255,0.08);
+  --accent:#3d7bff;
+  --error:#c22b2b; --on-error:#ffffff; --error-container:#fbe1e1; --on-error-container:#7a1717;
 }
 html.dark {
-  --sc-lowest:#141a22; --sc-low:#1a212b; --sc:#1f2731; --sc-high:#262f3a; --sc-highest:#2d3742;
-  --on-surface:#e3e8ef; --on-surface-variant:#9aa5b1;
-  --outline:#6b7684; --outline-variant:#364150;
-  --primary:#7fb3ff; --on-primary:#0a1420;
-  --secondary:#4ade80; --on-secondary:#052e16;
-  --tertiary:#fbbf24; --tertiary-container:#453113; --on-tertiary-container:#fcd34d;
-  --error:#f87171; --on-error:#450a0a; --error-container:#4c1d1d; --on-error-container:#fca5a5;
-  --shadow-color: 0 0% 0%;
+  --sc-lowest:#0d1219; --sc-low:#111826; --sc:#161f2e; --sc-high:#1c2739; --sc-highest:#223044;
+  --on-surface:#e7ebf2; --on-surface-variant:#96a1b3;
+  --outline:#3a4557; --outline-variant:#242f42;
+  --primary:#e7ebf2; --on-primary:#0b1220;
+  --secondary:#4fd18b; --on-secondary:#052e16;
+  --panel:#080c14; --panel-line:rgba(255,255,255,0.07);
+  --accent:#6d9bff;
+  --error:#f2867f; --on-error:#450a0a; --error-container:#3a1414; --on-error-container:#f2b3ad;
 }
 html { color-scheme: light; }
 html.dark { color-scheme: dark; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+html, body { height: 100%; }
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 100vh; background: var(--sc-lowest);
+}
 
-/* === Scenic background === */
-.scene {
-  position: relative; width: 100%; height: 100vh;
-  background: var(--photo, none) center/cover no-repeat,
-    linear-gradient(180deg, #1a2740 0%, #3a3050 35%, #a3542f 68%, #d98d4a 85%, #f0b26b 100%);
-  overflow: hidden;
+/* === Left: identity panel === */
+.identity {
+  position: relative; background: var(--panel); color: #fff;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 48px; overflow: hidden;
 }
-.scene svg.silhouette { position: absolute; bottom: 0; left: 0; width: 100%; height: 62%; z-index: 2; }
+.identity .grid-lines {
+  position: absolute; inset: 0; opacity: 0.5;
+  background-image:
+    linear-gradient(var(--panel-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--panel-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 90% 70% at 30% 20%, #000 30%, transparent 85%);
+}
+.identity .tower {
+  position: absolute; right: -40px; bottom: -20px; width: 340px; height: 340px;
+  opacity: 0.9; stroke: rgba(255,255,255,0.14);
+}
 
-/* Atmospheric depth layers */
-.scene::before {
-  content: ''; position: absolute; inset: 0; z-index: 3;
-  background:
-    radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 80%, rgba(18,22,29,0.3) 0%, transparent 50%);
-  pointer-events: none;
-}
-.scene::after {
-  content: ''; position: absolute; inset: 0; z-index: 3;
-  background:
-    linear-gradient(180deg, rgba(10,14,20,0.15) 0%, rgba(10,14,20,0.35) 40%, rgba(10,14,20,0.75) 75%, rgba(10,14,20,0.92) 100%);
-  pointer-events: none;
-}
-.overlay { position: absolute; inset: 0; z-index: 3; background: none; }
-
-/* === Hotspots === */
-.hotspot {
-  position: absolute; width: 22px; height: 22px; border-radius: 50%;
-  background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.5);
-  cursor: pointer; z-index: 10; transition: background 0.2s, border-color 0.2s;
-}
-.hotspot:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.9); }
-.hotspot::after {
-  content: ''; position: absolute; inset: 5px; border-radius: 50%;
-  background: #fff; animation: pulse 2.4s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100% { opacity:.3; transform:scale(.7); } 50% { opacity:1; transform:scale(1); } }
-@media (prefers-reduced-motion: reduce) { .hotspot::after { animation: none; } }
-.tooltip {
-  position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(6px);
-  background: rgba(15,20,28,0.95); color: #fff; padding: 10px 14px; border-radius: 8px;
-  white-space: nowrap; opacity: 0; pointer-events: none;
-  transition: opacity .2s ease, transform .2s ease; border: 1px solid rgba(255,255,255,0.1);
-  z-index: 20;
-}
-.hotspot:hover .tooltip, .hotspot:focus-visible .tooltip { opacity: 1; transform: translateX(-50%) translateY(0); }
-.tooltip strong { display: block; font-size: 12px; margin-bottom: 2px; font-family: 'Manrope', sans-serif; font-weight: 600; }
-.tooltip span { color: #9fb0bd; font-size: 11px; }
-
-/* === Brand mark === */
-.brand-mark {
-  position: absolute; top: 36px; left: 48px; z-index: 20; color: #fff;
-  display: flex; align-items: center; gap: 10px;
-  opacity: 0; transform: translateY(-8px);
-  animation: slideDown .6s ease .1s forwards;
-}
-@keyframes slideDown { to { opacity: 1; transform: translateY(0); } }
+.brand-mark { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; }
 .brand-mark .logo-icon {
-  width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.12);
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid rgba(255,255,255,0.15);
-  flex-shrink: 0;
+  width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.08);
+  display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.14); flex-shrink: 0;
 }
-.brand-mark .logo-icon svg { width: 16px; height: 16px; }
-.brand-mark .label { display: flex; flex-direction: column; gap: 2px; }
-.brand-mark .label-main { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -0.01em; line-height: 1.2; }
-.brand-mark .label-sub { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+.brand-mark .logo-icon svg { width: 19px; height: 19px; color: var(--accent); }
+.brand-mark .label-main { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 18px; letter-spacing: -0.01em; }
+.brand-mark .label-sub { font-family: 'Inter', sans-serif; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-top: 1px; }
 
-/* === Login card === */
-.login-card {
-  position: absolute; bottom: 64px; left: 48px; width: 360px; z-index: 20;
-  background: rgba(15,20,29,0.72); backdrop-filter: blur(20px) saturate(1.2); -webkit-backdrop-filter: blur(20px) saturate(1.2);
-  border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px; color: #fff;
-  opacity: 0; transform: translateY(16px);
-  animation: slideUp .6s ease .25s forwards;
+.identity-body { position: relative; z-index: 2; max-width: 420px; }
+.identity-body h1 {
+  font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 32px; line-height: 1.25;
+  letter-spacing: -0.01em; margin-bottom: 14px;
 }
-@keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+.identity-body p { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.55); }
 
-.login-card .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
-.login-card h1 { font-family: 'Manrope', sans-serif; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
-.login-card .badge {
-  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.45);
-  border: 1px solid rgba(255,255,255,0.06);
-}
-.login-card p.sub { font-size: 12.5px; color: rgba(255,255,255,0.45); margin: 0 0 22px; line-height: 1.5; }
+.identity-stats { position: relative; z-index: 2; display: flex; gap: 32px; }
+.identity-stats .stat-val { font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 22px; color: #fff; }
+.identity-stats .stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
 
-/* Divider */
-.login-card .divider { height: 1px; background: rgba(255,255,255,0.06); margin: 0 0 22px; }
+/* === Right: form panel === */
+.form-panel {
+  display: flex; align-items: center; justify-content: center; padding: 48px;
+  background: var(--sc-lowest);
+}
+.form-inner { width: 100%; max-width: 340px; }
+.form-inner .eyebrow {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--secondary); margin-bottom: 10px;
+}
+.form-inner h2 { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 26px; color: var(--on-surface); letter-spacing: -0.01em; margin-bottom: 6px; }
+.form-inner p.sub { font-size: 13px; color: var(--on-surface-variant); margin-bottom: 32px; line-height: 1.5; }
 
-/* === Form === */
-.login-card .field { margin-bottom: 16px; }
-.login-card label {
-  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.35); display: block; margin-bottom: 6px;
+.field { margin-bottom: 18px; }
+label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-variant); display: block; margin-bottom: 7px; }
+.input-wrap { position: relative; }
+.input-wrap .lock-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--outline); pointer-events: none; }
+input[type="password"], input[type="text"] {
+  width: 100%; background: var(--sc-lowest); border: 1.5px solid var(--outline-variant);
+  border-radius: 10px; padding: 12px 14px 12px 40px; color: var(--on-surface); font-size: 14.5px;
+  font-family: 'Inter', sans-serif; transition: border-color .15s, box-shadow .15s; outline: none;
 }
-.login-card .input-wrap { position: relative; }
-.login-card .input-wrap .lock-icon {
-  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-  width: 16px; height: 16px; color: rgba(255,255,255,0.25);
-  transition: color 0.2s;
-}
-.login-card input[type="password"], .login-card input[type="text"] {
-  width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 10px; padding: 11px 13px 11px 38px; color: #fff; font-size: 14px; font-family: 'Inter', sans-serif;
-  transition: border-color .2s, background .2s, box-shadow .2s; outline: none;
-}
-.login-card input::placeholder { color: rgba(255,255,255,0.2); }
-.login-card input:hover { border-color: rgba(255,255,255,0.2); }
-.login-card input:hover + .lock-icon, .login-card input:focus + .lock-icon { color: rgba(255,255,255,0.4); }
-.login-card input:focus { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.07); box-shadow: 0 0 0 3px rgba(255,255,255,0.06); }
-.login-card input:focus ~ .lock-icon { color: rgba(255,255,255,0.5); }
-.login-card input::selection { background: rgba(255,255,255,0.2); }
+input::placeholder { color: var(--outline); }
+input:hover { border-color: var(--outline); }
+input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
 
-/* === Button === */
-.login-card button[type="submit"] {
-  width: 100%; margin-top: 4px; background: #fff; color: #17212f; border: none; border-radius: 10px;
-  padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
-  transition: transform .12s, box-shadow .2s, opacity .2s; position: relative;
+button[type="submit"] {
+  width: 100%; margin-top: 6px; background: var(--primary); color: var(--on-primary); border: none;
+  border-radius: 10px; padding: 13px; font-size: 14.5px; font-weight: 600; cursor: pointer;
+  font-family: 'Inter', sans-serif; transition: opacity .15s, transform .1s;
 }
-.login-card button[type="submit"]:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
-.login-card button[type="submit"]:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
-.login-card button[type="submit"]:disabled { opacity: 0.65; cursor: default; transform: none; box-shadow: none; }
+button[type="submit"]:hover:not(:disabled) { opacity: 0.92; }
+button[type="submit"]:active:not(:disabled) { transform: translateY(1px); }
+button[type="submit"]:disabled { opacity: 0.6; cursor: default; }
 .spinner {
-  display: none; width: 16px; height: 16px; border: 2px solid rgba(23,33,47,0.2);
-  border-top-color: #17212f; border-radius: 50%; animation: spin .6s linear infinite;
-  vertical-align: middle; margin-right: 6px;
+  display: none; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: currentColor; border-radius: 50%; animation: spin .6s linear infinite;
+  vertical-align: middle; margin-right: 7px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.login-card button[type="submit"].loading .btn-text { display: none; }
-.login-card button[type="submit"].loading .spinner { display: inline-block; }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.2s; } }
+button[type="submit"].loading .btn-text { display: none; }
+button[type="submit"].loading .spinner { display: inline-block; }
 
-/* === Error === */
-.login-card .err {
-  margin-top: 12px; font-size: 12px; color: #ffb4ab; background: rgba(186,26,26,0.15);
-  border: 1px solid rgba(255,180,171,0.25); border-radius: 8px; padding: 9px 12px;
-  display: flex; align-items: center; gap: 8px;
-  opacity: 0; transform: translateY(-4px); max-height: 0; overflow: hidden;
-  transition: opacity .25s ease, transform .25s ease, max-height .3s ease, padding .3s ease, margin .3s ease;
-  padding-top: 0; padding-bottom: 0; margin-top: 0;
+.err {
+  margin-top: 14px; font-size: 12.5px; color: var(--on-error-container); background: var(--error-container);
+  border: 1px solid color-mix(in srgb, var(--error) 30%, transparent); border-radius: 8px; padding: 0 12px;
+  display: flex; align-items: center; gap: 8px; opacity: 0; max-height: 0; overflow: hidden;
+  transition: opacity .2s ease, max-height .25s ease, padding .25s ease, margin .25s ease;
 }
-.login-card .err.visible {
-  opacity: 1; transform: translateY(0); max-height: 80px;
-  padding: 9px 12px; margin-top: 12px;
-}
-.login-card .err svg { flex-shrink: 0; width: 14px; height: 14px; }
+.err.visible { opacity: 1; max-height: 80px; padding: 10px 12px; margin-top: 14px; }
+.err svg { flex-shrink: 0; width: 14px; height: 14px; }
 
-/* === Hint === */
-.login-card .hint { margin-top: 14px; font-size: 10.5px; color: rgba(255,255,255,0.25); text-align: center; letter-spacing: 0.02em; }
+.hint { margin-top: 20px; font-size: 11px; color: var(--outline); text-align: center; letter-spacing: 0.01em; }
 
 /* === Responsive === */
-@media (max-width: 720px) {
-  .login-card { left: 16px; right: 16px; width: auto; bottom: 24px; padding: 22px; }
-  .brand-mark { left: 20px; top: 24px; }
-  .brand-mark .label-main { font-size: 17px; }
-  .hotspot { display: none; }
+@media (max-width: 860px) {
+  body { grid-template-columns: 1fr; }
+  .identity { min-height: 240px; padding: 32px; }
+  .identity-body h1 { font-size: 24px; }
+  .identity-body p { display: none; }
+  .identity-stats { display: none; }
+  .identity .tower { width: 220px; height: 220px; }
+  .form-panel { padding: 32px 24px; }
 }
 </style>
 </head>
 <body>
 
-<div class="scene" id="scene">
-  <!-- Siluet gardu induk & menara transmisi.
-       Ganti dengan foto asli GI Situbondo: set CSS var --photo,
-       mis. style="--photo: url('assets/gi-situbondo.jpg')", lalu hapus svg ini. -->
-  <svg class="silhouette" viewBox="0 0 1200 500" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <g stroke="#0a1018" stroke-width="3" fill="none" opacity="0.92">
-      <path d="M180 500 L220 260 L260 500 M180 500 L260 500 M195 420 L245 420 M200 360 L240 360 M205 310 L235 310"/>
-      <line x1="130" y1="270" x2="310" y2="270"/>
-      <line x1="150" y1="292" x2="290" y2="292"/>
-    </g>
-    <g stroke="#0a1018" stroke-width="3" fill="none" opacity="0.88">
-      <path d="M700 500 L745 240 L790 500 M700 500 L790 500 M715 430 L775 430 M722 365 L768 365 M728 305 L762 305"/>
-      <line x1="640" y1="250" x2="850" y2="250"/>
-    </g>
-    <g stroke="#0a1018" stroke-width="3" fill="none" opacity="0.82">
-      <path d="M980 500 L1015 300 L1050 500 M980 500 L1050 500 M990 420 L1040 420 M995 360 L1035 360"/>
-    </g>
-    <rect x="380" y="360" width="92" height="140" fill="#0a1018" opacity="0.92"/>
-    <rect x="396" y="330" width="14" height="30" fill="#0a1018" opacity="0.92"/>
-    <rect x="442" y="330" width="14" height="30" fill="#0a1018" opacity="0.92"/>
-    <circle cx="520" cy="410" r="26" fill="none" stroke="#0a1018" stroke-width="3" opacity="0.88"/>
-    <line x1="0" y1="500" x2="1200" y2="500" stroke="#0a1018" stroke-width="60" opacity="0.55"/>
+<div class="identity">
+  <div class="grid-lines" aria-hidden="true"></div>
+  <svg class="tower" viewBox="0 0 200 200" fill="none" stroke-width="1.6" aria-hidden="true">
+    <path d="M100 20 L60 190 M100 20 L140 190 M75 100 L125 100 M68 130 L132 130 M62 160 L138 160"/>
+    <path d="M40 55 L160 55 M30 78 L170 78"/>
   </svg>
 
-  <div class="overlay"></div>
-
-  <!-- Brand mark -->
   <div class="brand-mark">
     <div class="logo-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
     </div>
-    <div class="label">
-      <span class="label-main">PLN GI Suite</span>
-      <span class="label-sub">GI Situbondo</span>
+    <div>
+      <div class="label-main">PLN GI Suite</div>
+      <div class="label-sub">Gardu Induk Situbondo</div>
     </div>
   </div>
 
-  <!-- Hotspots interaktif -->
-  <div id="hotspot-layer"></div>
+  <div class="identity-body">
+    <h1>Monitoring &amp; dokumentasi gardu induk dalam satu sistem.</h1>
+    <p>Peta tower, kondisi peralatan, counter, dan anomali — terpusat untuk tim operasional GI Situbondo.</p>
+  </div>
 
-  <!-- Login card -->
-  <div class="login-card">
-    <div class="card-header">
-      <h1>Masuk</h1>
-      <span class="badge">Internal</span>
-    </div>
-    <p class="sub">Monitoring &amp; dokumen GI Situbondo</p>
+  <div class="identity-stats">
+    <div><div class="stat-val">417</div><div class="stat-label">Tower termonitor</div></div>
+    <div><div class="stat-val">150 kV</div><div class="stat-label">Jalur SUTT</div></div>
+    <div><div class="stat-val">5</div><div class="stat-label">Modul operasional</div></div>
+  </div>
+</div>
 
-    <div class="divider"></div>
+<div class="form-panel">
+  <div class="form-inner">
+    <div class="eyebrow">Akses internal</div>
+    <h2>Masuk</h2>
+    <p class="sub">Masukkan kode akses tim untuk melanjutkan.</p>
 
     <form id="login-form" autocomplete="off">
       <div class="field">
@@ -274,20 +211,6 @@ html, body { height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
 
 <script src="shared/api.js"></script>
 <script>
-  // Hotspots — posisi dalam persen
-  const HOTSPOTS = [
-    { left: 35, top: 63, title: 'Trafo daya', desc: 'Peralatan utama gardu induk' },
-    { left: 43, top: 78, title: 'Bay penghantar', desc: 'Titik sambung ke jalur transmisi' },
-    { left: 62, top: 45, title: 'Menara transmisi', desc: '417 tower termonitor' },
-    { left: 84, top: 57, title: 'Jalur SUTT 150 kV', desc: '3 penghantar aktif' }
-  ];
-  const layer = document.getElementById('hotspot-layer');
-  layer.innerHTML = HOTSPOTS.map((h) => `
-    <div class="hotspot" style="left:${h.left}%; top:${h.top}%;" tabindex="0" role="button" aria-label="${h.title}">
-      <div class="tooltip"><strong>${h.title}</strong><span>${h.desc}</span></div>
-    </div>`).join('');
-
-  // Login logic
   if (getPassword()) window.location.replace('dashboard.html');
 
   const form = document.getElementById('login-form');
