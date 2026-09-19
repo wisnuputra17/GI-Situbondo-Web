@@ -2,243 +2,691 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PLN GI Suite — Masuk</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GI Situbondo — Monitoring System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* === Design tokens from shared/tailwind-config.js === */
-:root {
-  --sc-lowest:#ffffff; --sc-low:#f5f7fa; --sc:#eef1f6; --sc-high:#e5e9f0; --sc-highest:#dde2ea;
-  --on-surface:#10182b; --on-surface-variant:#5b6472;
-  --outline:#9aa3b2; --outline-variant:#d5dae2;
-  --primary:#10182b; --on-primary:#ffffff;
-  --secondary:#0f7a44; --on-secondary:#ffffff;
-  --panel:#0b1220; --panel-line:rgba(255,255,255,0.08);
-  --accent:#3d7bff;
-  --error:#c22b2b; --on-error:#ffffff; --error-container:#fbe1e1; --on-error-container:#7a1717;
-}
-html.dark {
-  --sc-lowest:#0d1219; --sc-low:#111826; --sc:#161f2e; --sc-high:#1c2739; --sc-highest:#223044;
-  --on-surface:#e7ebf2; --on-surface-variant:#96a1b3;
-  --outline:#3a4557; --outline-variant:#242f42;
-  --primary:#e7ebf2; --on-primary:#0b1220;
-  --secondary:#4fd18b; --on-secondary:#052e16;
-  --panel:#080c14; --panel-line:rgba(255,255,255,0.07);
-  --accent:#6d9bff;
-  --error:#f2867f; --on-error:#450a0a; --error-container:#3a1414; --on-error-container:#f2b3ad;
-}
-html { color-scheme: light; }
-html.dark { color-scheme: dark; }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Inter',system-ui,sans-serif;background:#05070D;color:#E6EDF7;-webkit-font-smoothing:antialiased;overflow:hidden}
+.page{display:flex;height:100vh}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-body {
-  font-family: 'Inter', -apple-system, sans-serif;
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  min-height: 100vh; background: var(--sc-lowest);
+/* ============ LEFT ============ */
+.left{flex:1.35;position:relative;overflow:hidden;background:#05070D;cursor:grab}
+.left:active{cursor:grabbing}
+#three{position:absolute;inset:0;z-index:1;display:block}
+.left::before{
+  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 45% at 25% 20%,rgba(11,37,69,.75) 0%,transparent 65%),
+    linear-gradient(180deg,rgba(5,7,13,.75) 0%,transparent 25%,transparent 65%,rgba(5,7,13,.85) 100%);
 }
+.noise{
+  position:absolute;inset:0;z-index:3;pointer-events:none;opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode:overlay;
+}
+.hdr{position:absolute;top:36px;left:48px;z-index:5;display:flex;align-items:center;gap:14px;font-size:12.5px;color:#7A8CA3;pointer-events:none}
+.hdr .logo{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(150deg,#0EA5E9,#1D4ED8);
+  display:grid;place-items:center;position:relative;
+  box-shadow:0 0 0 1px rgba(56,189,248,.3),0 8px 24px -8px rgba(14,165,233,.6);
+}
+.hdr .logo::after{content:'';position:absolute;inset:-4px;border-radius:12px;background:radial-gradient(circle,rgba(56,189,248,.3),transparent 70%);animation:pulseLogo 3s ease-in-out infinite}
+@keyframes pulseLogo{50%{opacity:.35}}
+.hdr .logo svg{width:18px;height:18px;position:relative;z-index:1}
+.hdr b{color:#E6EDF7;font-weight:500}
+.hdr .dot{width:3px;height:3px;border-radius:50%;background:#3B4A60}
 
-/* === Left: identity panel === */
-.identity {
-  position: relative; background: var(--panel); color: #fff;
-  display: flex; flex-direction: column; justify-content: space-between;
-  padding: 48px; overflow: hidden;
+.hero{position:absolute;top:110px;left:48px;z-index:5;max-width:520px;pointer-events:none}
+.pill{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:6px 12px 6px 10px;border-radius:100px;
+  background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.22);
+  backdrop-filter:blur(8px);
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  letter-spacing:1.4px;text-transform:uppercase;color:#7DD3FC;margin-bottom:22px;
 }
-.identity .grid-lines {
-  position: absolute; inset: 0; opacity: 0.5;
-  background-image:
-    linear-gradient(var(--panel-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--panel-line) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 90% 70% at 30% 20%, #000 30%, transparent 85%);
+.pill i{width:6px;height:6px;border-radius:50%;background:#38BDF8;box-shadow:0 0 10px #38BDF8;animation:blinkDot 1.8s ease-in-out infinite}
+@keyframes blinkDot{50%{opacity:.3}}
+.hero h1{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:clamp(36px,4.4vw,58px);font-weight:600;
+  line-height:1.02;letter-spacing:-.035em;color:#F4F8FF;
+  margin-bottom:18px;text-shadow:0 2px 30px rgba(0,0,0,.7);
 }
-.identity .tower {
-  position: absolute; right: -40px; bottom: -20px; width: 340px; height: 340px;
-  opacity: 0.9; stroke: rgba(255,255,255,0.14);
+.hero h1 .accent{
+  background:linear-gradient(120deg,#7DD3FC 0%,#38BDF8 45%,#0EA5E9 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 20px rgba(56,189,248,.35));
 }
+.hero > p{font-size:14.5px;line-height:1.7;color:#94A3B8;max-width:420px;margin-bottom:26px}
+.stats{display:flex;gap:0;align-items:stretch;max-width:440px;border-top:1px solid rgba(148,163,184,.15);padding-top:18px}
+.stat{flex:1;padding-right:20px;position:relative}
+.stat:not(:last-child)::after{content:'';position:absolute;right:10px;top:2px;bottom:2px;width:1px;background:linear-gradient(180deg,transparent,rgba(148,163,184,.18),transparent)}
+.stat:last-child{padding-right:0}
+.stat b{font-family:'Space Grotesk',sans-serif;display:block;font-size:24px;font-weight:600;color:#F4F8FF;letter-spacing:-.02em;line-height:1;margin-bottom:6px}
+.stat b sup{font-size:12px;color:#38BDF8;margin-left:2px;font-weight:500}
+.stat span{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#586C86;font-weight:500}
 
-.brand-mark { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; }
-.brand-mark .logo-icon {
-  width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.08);
-  display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.14); flex-shrink: 0;
+.hint{
+  position:absolute;bottom:64px;left:50%;transform:translateX(-50%);z-index:5;pointer-events:none;
+  display:flex;gap:20px;align-items:center;padding:9px 16px;border-radius:100px;
+  background:rgba(8,12,22,.6);border:1px solid rgba(148,163,184,.12);backdrop-filter:blur(12px);
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.6px;color:#7A8CA3;
 }
-.brand-mark .logo-icon svg { width: 19px; height: 19px; color: var(--accent); }
-.brand-mark .label-main { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 18px; letter-spacing: -0.01em; }
-.brand-mark .label-sub { font-family: 'Inter', sans-serif; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-top: 1px; }
+.hint span{display:inline-flex;align-items:center;gap:7px}
+.hint svg{width:13px;height:13px;color:#38BDF8}
+.hint .kbd{padding:2px 6px;border-radius:4px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);color:#7DD3FC;font-size:9.5px}
 
-.identity-body { position: relative; z-index: 2; max-width: 420px; }
-.identity-body h1 {
-  font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 32px; line-height: 1.25;
-  letter-spacing: -0.01em; margin-bottom: 14px;
+.ftr{
+  position:absolute;bottom:24px;left:48px;right:48px;z-index:5;
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  letter-spacing:.8px;color:#3B4A60;text-transform:uppercase;pointer-events:none;
 }
-.identity-body p { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.55); }
+.ftr .r{display:flex;gap:16px;align-items:center}
+.ftr .r span{display:inline-flex;align-items:center;gap:6px;color:#586C86}
+.ftr .r i{width:5px;height:5px;border-radius:50%;background:#4ADE80;box-shadow:0 0 8px #4ADE80}
 
-.identity-stats { position: relative; z-index: 2; display: flex; gap: 32px; }
-.identity-stats .stat-val { font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 22px; color: #fff; }
-.identity-stats .stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.tip{
+  position:absolute;z-index:8;pointer-events:none;padding:9px 12px;border-radius:9px;
+  background:rgba(8,12,22,.95);border:1px solid rgba(56,189,248,.3);backdrop-filter:blur(10px);
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.4px;white-space:nowrap;
+  box-shadow:0 8px 24px -8px rgba(0,0,0,.8);opacity:0;transform:translate(-50%,calc(-100% - 14px));
+  transition:opacity .15s ease;
+}
+.tip.on{opacity:1}
+.tip b{display:block;color:#7DD3FC;font-weight:500;font-size:10px;letter-spacing:1px;margin-bottom:3px}
+.tip span{color:#94A3B8}
 
-/* === Right: form panel === */
-.form-panel {
-  display: flex; align-items: center; justify-content: center; padding: 48px;
-  background: var(--sc-lowest);
+/* ============ RIGHT ============ */
+.right{flex:1;background:#080B14;display:flex;align-items:center;justify-content:center;padding:60px 48px;position:relative;border-left:1px solid rgba(148,163,184,.06)}
+.right::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(14,165,233,.05),transparent 60%);pointer-events:none}
+.form{width:100%;max-width:380px;position:relative;z-index:1}
+.form .top{margin-bottom:36px}
+.form h2{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;letter-spacing:-.02em;color:#F4F8FF;margin-bottom:8px}
+.form .top p{font-size:13.5px;color:#7A8CA3;line-height:1.6}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:#586C86;font-weight:500;margin-bottom:8px}
+.field .wrap{position:relative}
+.field input{
+  width:100%;padding:14px 42px 14px 16px;background:#0D1220;
+  border:1px solid rgba(148,163,184,.1);border-radius:11px;color:#F4F8FF;font-size:14px;
+  font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s,background .2s;
 }
-.form-inner { width: 100%; max-width: 340px; }
-.form-inner .eyebrow {
-  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--secondary); margin-bottom: 10px;
-}
-.form-inner h2 { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 26px; color: var(--on-surface); letter-spacing: -0.01em; margin-bottom: 6px; }
-.form-inner p.sub { font-size: 13px; color: var(--on-surface-variant); margin-bottom: 32px; line-height: 1.5; }
+.field input::placeholder{color:#3B4A60}
+.field input:hover{border-color:rgba(148,163,184,.2)}
+.field input:focus{background:#0F1626;border-color:#38BDF8;box-shadow:0 0 0 4px rgba(56,189,248,.08)}
+.field .icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#3B4A60;pointer-events:none;transition:color .2s}
+.field input:focus ~ .icon{color:#38BDF8}
 
-.field { margin-bottom: 18px; }
-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--on-surface-variant); display: block; margin-bottom: 7px; }
-.input-wrap { position: relative; }
-.input-wrap .lock-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--outline); pointer-events: none; }
-input[type="password"], input[type="text"] {
-  width: 100%; background: var(--sc-lowest); border: 1.5px solid var(--outline-variant);
-  border-radius: 10px; padding: 12px 14px 12px 40px; color: var(--on-surface); font-size: 14.5px;
-  font-family: 'Inter', sans-serif; transition: border-color .15s, box-shadow .15s; outline: none;
-}
-input::placeholder { color: var(--outline); }
-input:hover { border-color: var(--outline); }
-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.field.error input{border-color:#EF4444 !important;box-shadow:0 0 0 4px rgba(239,68,68,.1) !important}
+.error-msg{display:none;margin-top:6px;font-size:11.5px;color:#F87171;font-family:'JetBrains Mono',monospace;letter-spacing:.2px;align-items:center;gap:6px}
+.error-msg.on{display:flex}
+.error-msg svg{width:12px;height:12px}
 
-button[type="submit"] {
-  width: 100%; margin-top: 6px; background: var(--primary); color: var(--on-primary); border: none;
-  border-radius: 10px; padding: 13px; font-size: 14.5px; font-weight: 600; cursor: pointer;
-  font-family: 'Inter', sans-serif; transition: opacity .15s, transform .1s;
-}
-button[type="submit"]:hover:not(:disabled) { opacity: 0.92; }
-button[type="submit"]:active:not(:disabled) { transform: translateY(1px); }
-button[type="submit"]:disabled { opacity: 0.6; cursor: default; }
-.spinner {
-  display: none; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.25);
-  border-top-color: currentColor; border-radius: 50%; animation: spin .6s linear infinite;
-  vertical-align: middle; margin-right: 7px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.2s; } }
-button[type="submit"].loading .btn-text { display: none; }
-button[type="submit"].loading .spinner { display: inline-block; }
+.alert{display:none;margin-bottom:16px;padding:11px 13px;border-radius:9px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#FCA5A5;font-size:12.5px;line-height:1.5;align-items:flex-start;gap:9px}
+.alert.on{display:flex}
+.alert svg{width:15px;height:15px;flex-shrink:0;margin-top:1px;color:#EF4444}
 
-.err {
-  margin-top: 14px; font-size: 12.5px; color: var(--on-error-container); background: var(--error-container);
-  border: 1px solid color-mix(in srgb, var(--error) 30%, transparent); border-radius: 8px; padding: 0 12px;
-  display: flex; align-items: center; gap: 8px; opacity: 0; max-height: 0; overflow: hidden;
-  transition: opacity .2s ease, max-height .25s ease, padding .25s ease, margin .25s ease;
-}
-.err.visible { opacity: 1; max-height: 80px; padding: 10px 12px; margin-top: 14px; }
-.err svg { flex-shrink: 0; width: 14px; height: 14px; }
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.form.shake{animation:shake .45s cubic-bezier(.36,.07,.19,.97)}
 
-.hint { margin-top: 20px; font-size: 11px; color: var(--outline); text-align: center; letter-spacing: 0.01em; }
-
-/* === Responsive === */
-@media (max-width: 860px) {
-  body { grid-template-columns: 1fr; }
-  .identity { min-height: 240px; padding: 32px; }
-  .identity-body h1 { font-size: 24px; }
-  .identity-body p { display: none; }
-  .identity-stats { display: none; }
-  .identity .tower { width: 220px; height: 220px; }
-  .form-panel { padding: 32px 24px; }
+.btn{
+  width:100%;padding:14px;border:none;border-radius:11px;font-family:'Inter',sans-serif;
+  font-weight:600;font-size:14px;color:#fff;cursor:pointer;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#38BDF8 0%,#0284C7 100%);
+  box-shadow:0 8px 24px -8px rgba(14,165,233,.5),inset 0 1px 0 rgba(255,255,255,.15);
+  transition:transform .15s,box-shadow .25s;
 }
+.btn:hover{transform:translateY(-1px);box-shadow:0 14px 30px -8px rgba(14,165,233,.65),inset 0 1px 0 rgba(255,255,255,.2)}
+.btn::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transform:skewX(-20deg);transition:left .6s}
+.btn:hover::after{left:120%}
+.btn.loading{pointer-events:none;color:transparent}
+.btn.loading::before{content:'';position:absolute;top:50%;left:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border:2px solid rgba(5,7,13,.25);border-top-color:#05070D;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes successFlash{
+  0%{box-shadow:0 8px 24px -8px rgba(14,165,233,.5),inset 0 1px 0 rgba(255,255,255,.15)}
+  50%{box-shadow:0 0 0 6px rgba(74,222,128,.25),0 12px 32px -8px rgba(74,222,128,.6),inset 0 1px 0 rgba(255,255,255,.25)}
+  100%{box-shadow:0 0 0 12px rgba(74,222,128,0),0 8px 24px -8px rgba(14,165,233,.5),inset 0 1px 0 rgba(255,255,255,.15)}
+}
+.btn.success{background:linear-gradient(135deg,#4ADE80,#16A34A) !important;animation:successFlash .8s ease-out}
+
+.row-between{display:flex;justify-content:space-between;align-items:center;margin:4px 0 24px;font-size:12.5px}
+.check{display:flex;align-items:center;gap:8px;color:#7A8CA3;cursor:pointer}
+.check input{appearance:none;width:14px;height:14px;border-radius:4px;border:1px solid rgba(148,163,184,.25);background:#0D1220;cursor:pointer;position:relative;transition:.15s}
+.check input:checked{background:#38BDF8;border-color:#38BDF8}
+.check input:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #05070D;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.row-between a{color:#38BDF8;text-decoration:none}
+.row-between a:hover{color:#7DD3FC}
+.divider{display:flex;align-items:center;gap:14px;margin:24px 0;color:#3B4A60;font-size:11px;letter-spacing:1.5px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(148,163,184,.1)}
+.alt{text-align:center;font-size:12.5px;color:#586C86}
+.alt a{color:#38BDF8;text-decoration:none;font-weight:500}
+
+@media(max-width:960px){.left{display:none}.right{flex:1;border-left:none}}
 </style>
 </head>
 <body>
 
-<div class="identity">
-  <div class="grid-lines" aria-hidden="true"></div>
-  <svg class="tower" viewBox="0 0 200 200" fill="none" stroke-width="1.6" aria-hidden="true">
-    <path d="M100 20 L60 190 M100 20 L140 190 M75 100 L125 100 M68 130 L132 130 M62 160 L138 160"/>
-    <path d="M40 55 L160 55 M30 78 L170 78"/>
-  </svg>
+<div class="page">
+  <!-- ============ LEFT ============ -->
+  <div class="left" id="left">
+    <canvas id="three"></canvas>
+    <div class="noise"></div>
 
-  <div class="brand-mark">
-    <div class="logo-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    <div class="hdr">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" fill="#fff"/></svg>
+      </div>
+      <b>PT PLN (Persero)</b>
+      <span class="dot"></span>
+      <span>Transmisi Jawa Timur</span>
     </div>
-    <div>
-      <div class="label-main">PLN GI Suite</div>
-      <div class="label-sub">Gardu Induk Situbondo</div>
+
+    <div class="hero">
+      <div class="pill"><i></i> Gardu Induk · 150 kV · Situbondo</div>
+      <h1>Monitoring<br>Gardu Induk <span class="accent">Situbondo</span></h1>
+      <p>Platform pemantauan real-time untuk operasional, keandalan, dan keselamatan jaringan transmisi tenaga listrik.</p>
+      <div class="stats">
+        <div class="stat"><b>150<sup>kV</sup></b><span>Tegangan</span></div>
+        <div class="stat"><b>24<sup>/7</sup></b><span>Monitoring</span></div>
+        <div class="stat"><b>99.9<sup>%</sup></b><span>Keandalan</span></div>
+      </div>
     </div>
+
+    <div class="hint">
+      <span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+        Drag untuk memutar
+      </span>
+      <span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M5 9l7-7 7 7M5 15l7 7 7-7"/></svg>
+        Scroll zoom
+      </span>
+      <span class="kbd">Hover untuk info</span>
+    </div>
+
+    <div class="ftr">
+      <span>© 2025 · PLN Transmisi</span>
+      <div class="r">
+        <span><i></i> SYSTEM ONLINE</span>
+        <span id="clock">--:--:-- WIB</span>
+      </div>
+    </div>
+
+    <div class="tip" id="tip"></div>
   </div>
 
-  <div class="identity-body">
-    <h1>Monitoring &amp; dokumentasi gardu induk dalam satu sistem.</h1>
-    <p>Peta tower, kondisi peralatan, counter, dan anomali — terpusat untuk tim operasional GI Situbondo.</p>
-  </div>
+  <!-- ============ RIGHT ============ -->
+  <div class="right">
+    <form class="form" id="loginForm" autocomplete="on" novalidate>
+      <div class="top">
+        <h2>Selamat datang kembali</h2>
+        <p>Masuk untuk mengakses sistem monitoring GI Situbondo.</p>
+      </div>
 
-  <div class="identity-stats">
-    <div><div class="stat-val">417</div><div class="stat-label">Tower termonitor</div></div>
-    <div><div class="stat-val">150 kV</div><div class="stat-label">Jalur SUTT</div></div>
-    <div><div class="stat-val">5</div><div class="stat-label">Modul operasional</div></div>
-  </div>
-</div>
+      <div class="alert" id="alertBox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="alertText">Username atau password salah. Coba lagi.</span>
+      </div>
 
-<div class="form-panel">
-  <div class="form-inner">
-    <div class="eyebrow">Akses internal</div>
-    <h2>Masuk</h2>
-    <p class="sub">Masukkan kode akses tim untuk melanjutkan.</p>
-
-    <form id="login-form" autocomplete="off">
-      <div class="field">
-        <label for="pw">Kode akses</label>
-        <div class="input-wrap">
-          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
-          </svg>
-          <input id="pw" type="password" placeholder="••••••••" autocomplete="current-password" autofocus>
+      <div class="field" id="fieldUser">
+        <label for="u">Username</label>
+        <div class="wrap">
+          <input id="u" name="username" type="text" placeholder="masukkan username" autocomplete="username" autofocus>
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="error-msg" id="errUser">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Username wajib diisi</span>
         </div>
       </div>
-      <button type="submit" id="btn-login">
-        <span class="spinner"></span>
-        <span class="btn-text">Masuk</span>
-      </button>
+
+      <div class="field" id="fieldPass">
+        <label for="p">Password</label>
+        <div class="wrap">
+          <input id="p" name="password" type="password" placeholder="masukkan password" autocomplete="current-password">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div class="error-msg" id="errPass">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Password wajib diisi</span>
+        </div>
+      </div>
+
+      <div class="row-between">
+        <label class="check"><input type="checkbox" id="remember"> Ingat saya</label>
+        <a href="#" onclick="event.preventDefault();alert('Hubungi administrator: ext. 1234')">Lupa password?</a>
+      </div>
+
+      <button class="btn" type="submit" id="loginBtn">Masuk ke Sistem</button>
+
+      <div class="divider">ATAU</div>
+      <div class="alt">Butuh akses? <a href="#">Hubungi administrator</a></div>
     </form>
-
-    <div class="err" id="err">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      <span id="err-text"></span>
-    </div>
-
-    <div class="hint">Akses terbatas tim internal</div>
   </div>
 </div>
 
-<script src="shared/api.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-  if (getPassword()) window.location.replace('dashboard.html');
+/* ============================================================
+   THREE.JS — 3D SUBSTATION SCENE (4 TRAFO)
+============================================================ */
+(function(){
+  const canvas = document.getElementById('three');
+  const left   = document.getElementById('left');
+  const tip    = document.getElementById('tip');
+  const W = () => left.clientWidth;
+  const H = () => left.clientHeight;
 
-  const form = document.getElementById('login-form');
-  const btn = document.getElementById('btn-login');
-  const errBox = document.getElementById('err');
-  const errText = document.getElementById('err-text');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W(), H());
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const pw = document.getElementById('pw').value;
-    errBox.classList.remove('visible');
-    btn.classList.add('loading'); btn.disabled = true; btn.querySelector('.btn-text').textContent = 'Memeriksa…';
-    try {
-      const res = await verifyPassword(pw);
-      if (res.ok) {
-        setPassword(pw);
-        window.location.href = 'dashboard.html';
-      } else {
-        errText.textContent = res.error;
-        errBox.classList.add('visible');
-        btn.classList.remove('loading'); btn.disabled = false; btn.querySelector('.btn-text').textContent = 'Masuk';
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x05070D, 0.014);
+  const camera = new THREE.PerspectiveCamera(42, W()/H(), 0.1, 500);
+
+  scene.add(new THREE.AmbientLight(0x1E3A8A, 0.55));
+  scene.add(new THREE.HemisphereLight(0x38BDF8, 0x05070D, 0.55));
+  const key = new THREE.DirectionalLight(0x7DD3FC, 1.1);
+  key.position.set(20,30,15); key.castShadow = true;
+  key.shadow.mapSize.set(2048,2048);
+  key.shadow.camera.left=-50; key.shadow.camera.right=50;
+  key.shadow.camera.top=50;   key.shadow.camera.bottom=-50;
+  key.shadow.camera.near=1;   key.shadow.camera.far=120;
+  key.shadow.bias=-0.0005;
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0x38BDF8, 0.6); rim.position.set(-20,10,-20); scene.add(rim);
+  const pl1 = new THREE.PointLight(0x38BDF8, 1.2, 30); pl1.position.set(0,6,5); scene.add(pl1);
+  const pl2 = new THREE.PointLight(0x0EA5E9, 0.9, 30); pl2.position.set(-14,5,-10); scene.add(pl2);
+  const pl3 = new THREE.PointLight(0x0EA5E9, 0.9, 30); pl3.position.set(14,5,-10); scene.add(pl3);
+
+  const matSteel = new THREE.MeshStandardMaterial({ color:0x1E40AF, metalness:0.85, roughness:0.35, emissive:0x0F2444, emissiveIntensity:0.35 });
+  const matSteelBright = new THREE.MeshStandardMaterial({ color:0x60A5FA, metalness:0.9, roughness:0.25, emissive:0x1E40AF, emissiveIntensity:0.45 });
+  const matGlow = new THREE.MeshStandardMaterial({ color:0x38BDF8, emissive:0x38BDF8, emissiveIntensity:1.6, metalness:0.4, roughness:0.4 });
+  const matGlowSoft = new THREE.MeshStandardMaterial({ color:0x7DD3FC, emissive:0x38BDF8, emissiveIntensity:0.9, metalness:0.5, roughness:0.4 });
+  const matTank = new THREE.MeshStandardMaterial({ color:0x0F2444, metalness:0.75, roughness:0.5, emissive:0x081428, emissiveIntensity:0.35 });
+  const matGround = new THREE.MeshStandardMaterial({ color:0x060A14, roughness:0.92, metalness:0.15 });
+  const matWindow = new THREE.MeshStandardMaterial({ color:0x7DD3FC, emissive:0x38BDF8, emissiveIntensity:2.2, metalness:0.3, roughness:0.3 });
+  const matWire = new THREE.MeshStandardMaterial({ color:0x7DD3FC, emissive:0x38BDF8, emissiveIntensity:0.8, metalness:0.6, roughness:0.35 });
+  const matPulse = new THREE.MeshBasicMaterial({ color:0x7DD3FC, transparent:true, opacity:0.95 });
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(180,180), matGround);
+  ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+  const grid = new THREE.GridHelper(180, 90, 0x1E40AF, 0x142a52);
+  grid.material.opacity = 0.28; grid.material.transparent = true; grid.position.y = 0.02; scene.add(grid);
+
+  function cyl(a,b,r,mat,seg=6){
+    const d = new THREE.Vector3().subVectors(b,a), l = d.length();
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r,r,l,seg), mat);
+    m.position.copy(a).lerp(b,0.5);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d.clone().normalize());
+    m.castShadow = true; return m;
+  }
+  function box(w,h,d,mat){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.castShadow=true; m.receiveShadow=true; return m; }
+  function sphere(r,mat,seg=12){ const m=new THREE.Mesh(new THREE.SphereGeometry(r,seg,seg),mat); m.castShadow=true; return m; }
+  const interactive = [];
+
+  function createTower(H=16, baseW=3.2, topW=0.8){
+    const g = new THREE.Group();
+    const corners = [[-1,-1],[1,-1],[1,1],[-1,1]];
+    corners.forEach(([cx,cz])=> g.add(cyl(new THREE.Vector3(cx*baseW/2,0,cz*baseW/2), new THREE.Vector3(cx*topW/2,H,cz*topW/2), 0.07, matSteelBright)));
+    const levels = [0.08,0.22,0.4,0.58,0.76,0.92];
+    for(let li=0; li<levels.length; li++){
+      const t=levels[li], y=H*t, w=baseW+(topW-baseW)*t;
+      const pts=[new THREE.Vector3(-w/2,y,-w/2), new THREE.Vector3(w/2,y,-w/2), new THREE.Vector3(w/2,y,w/2), new THREE.Vector3(-w/2,y,w/2)];
+      for(let i=0;i<4;i++) g.add(cyl(pts[i], pts[(i+1)%4], 0.045, matSteel));
+      if(li<levels.length-1){
+        const tn=levels[li+1], yn=H*tn, wn=baseW+(topW-baseW)*tn;
+        const ptsN=[new THREE.Vector3(-wn/2,yn,-wn/2), new THREE.Vector3(wn/2,yn,-wn/2), new THREE.Vector3(wn/2,yn,wn/2), new THREE.Vector3(-wn/2,yn,wn/2)];
+        for(let i=0;i<4;i++){ const j=(i+1)%4; g.add(cyl(pts[i], ptsN[j], 0.03, matSteel)); g.add(cyl(pts[j], ptsN[i], 0.03, matSteel)); }
       }
-    } catch (err) {
-      errText.textContent = 'Tidak bisa menghubungi server: ' + err.message;
-      errBox.classList.add('visible');
-      btn.classList.remove('loading'); btn.disabled = false; btn.querySelector('.btn-text').textContent = 'Masuk';
+    }
+    [{y:H*0.78,w:4.4},{y:H*0.58,w:3.6}].forEach(({y,w})=>{
+      g.add(cyl(new THREE.Vector3(-w,y,0), new THREE.Vector3(w,y,0), 0.07, matSteelBright));
+      g.add(cyl(new THREE.Vector3(-w,y,0), new THREE.Vector3(-w*0.5,y-1.2,0), 0.04, matSteel));
+      g.add(cyl(new THREE.Vector3(w,y,0), new THREE.Vector3(w*0.5,y-1.2,0), 0.04, matSteel));
+      g.add(cyl(new THREE.Vector3(-w,y,0), new THREE.Vector3(-w,y-0.6,0), 0.09, matGlow, 6));
+      g.add(cyl(new THREE.Vector3(w,y,0), new THREE.Vector3(w,y-0.6,0), 0.09, matGlow, 6));
+    });
+    g.add(cyl(new THREE.Vector3(0,H,0), new THREE.Vector3(0,H+1.8,0), 0.06, matSteelBright));
+    const s = sphere(0.12, matGlow, 8); s.position.set(0,H+1.9,0); g.add(s);
+    return g;
+  }
+
+  function createTransformer(){
+    const g = new THREE.Group();
+    const tank = box(3.2,2.4,2.2, matTank); tank.position.y = 1.35; g.add(tank);
+    const cons = new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,2.6,16), matTank);
+    cons.rotation.z = Math.PI/2; cons.position.set(0.4,2.8,0); cons.castShadow = true; g.add(cons);
+    for(let i=0;i<9;i++){ const fin = box(0.05,1.9,1.9, matSteelBright); fin.position.set(-1.75 - i*0.13, 1.35, 0); g.add(fin); }
+    for(let i=0;i<3;i++){
+      const x = -0.95 + i*0.95;
+      const bsh = new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.13,1.5,10), matGlowSoft);
+      bsh.position.set(x,3.4,0); bsh.castShadow = true; g.add(bsh);
+      for(let k=0;k<4;k++){
+        const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,0.05,10), matGlow);
+        disc.position.set(x, 3.0+k*0.3, 0); g.add(disc);
+      }
+    }
+    for(let i=0;i<2;i++){
+      const lv = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.1,0.7,8), matGlowSoft);
+      lv.rotation.z = Math.PI/2; lv.position.set(1.8, 2.0+i*0.55, 0); g.add(lv);
+    }
+    g.add(cyl(new THREE.Vector3(-1.2,0,0.9), new THREE.Vector3(-1.2,0.1,0.9), 0.03, matGlowSoft));
+    g.add(cyl(new THREE.Vector3( 1.2,0,0.9), new THREE.Vector3( 1.2,0.1,0.9), 0.03, matGlowSoft));
+    return g;
+  }
+
+  function createBuilding(){
+    const g = new THREE.Group();
+    const base = box(6.5,2.4,3.2, matSteel); base.position.y = 1.2; g.add(base);
+    const roof = box(6.7,0.15,3.4, matSteelBright); roof.position.y = 2.45; g.add(roof);
+    for(let i=0;i<5;i++){ const win = box(0.7,0.5,0.05, matWindow); win.position.set(-2.3+i*1.15, 1.5, 1.62); g.add(win); }
+    const door = box(0.9,1.5,0.05, matGlowSoft); door.position.set(0,0.95,1.62); g.add(door);
+    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,2.5,6), matSteelBright); ant.position.set(2.2,3.8,0); g.add(ant);
+    const bulb = sphere(0.13, matGlow, 10); bulb.position.set(2.2,5.1,0); g.add(bulb);
+    const halo = sphere(0.28, new THREE.MeshBasicMaterial({ color:0x38BDF8, transparent:true, opacity:0.35 }), 12);
+    halo.position.copy(bulb.position); halo.userData.pulse = true; g.add(halo);
+    return g;
+  }
+
+  function createGantry(){
+    const g = new THREE.Group();
+    const colH = 7;
+    [-10,10].forEach(x=>{ const t=createTower(colH,2.4,1.2); t.position.set(x,0,0); g.add(t); });
+    g.add(cyl(new THREE.Vector3(-10,colH*0.94,0), new THREE.Vector3(10,colH*0.94,0), 0.08, matGlow, 8));
+    g.add(cyl(new THREE.Vector3(-10,colH*0.86,0), new THREE.Vector3(10,colH*0.86,0), 0.08, matGlowSoft, 8));
+    const bayX = [-8.75,-6.25,-3.75,-1.25,1.25,3.75,6.25,8.75];
+    bayX.forEach((x,i)=>{
+      const bay = new THREE.Group();
+      bay.add(cyl(new THREE.Vector3(x,colH*0.86,0), new THREE.Vector3(x,colH*0.72,0), 0.06, matGlowSoft));
+      bay.add(cyl(new THREE.Vector3(x,colH*0.72,0), new THREE.Vector3(x-0.35,colH*0.62,0), 0.05, matGlowSoft));
+      bay.add(cyl(new THREE.Vector3(x,colH*0.72,0), new THREE.Vector3(x+0.35,colH*0.62,0), 0.05, matGlowSoft));
+      const pmt = box(0.6,0.9,0.6, matSteel); pmt.position.set(x,colH*0.5,0); bay.add(pmt);
+      const ct = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.25,14), matGlowSoft); ct.position.set(x,colH*0.38,0); ct.castShadow = true; bay.add(ct);
+      for(let k=0;k<4;k++){ const ins = new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,0.06,10), matGlow); ins.position.set(x, colH*0.3-k*0.5, 0); bay.add(ins); }
+      bay.add(cyl(new THREE.Vector3(x,colH*0.35,0), new THREE.Vector3(x,0.1,0), 0.04, matSteel));
+      bay.traverse(o=>{ if(o.isMesh) interactive.push(o); });
+      bay.userData.hit = { name:`BAY-${i+1}`, info:`PMT CLOSED · 150 kV · Normal` };
+      g.add(bay);
+    });
+    return g;
+  }
+
+  const pulses = [];
+  function addWire(a,b,sag=2.2,radius=0.05){
+    const mid = new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5); mid.y -= sag;
+    const curve = new THREE.QuadraticBezierCurve3(a,mid,b);
+    const geo = new THREE.TubeGeometry(curve,60,radius,6,false);
+    scene.add(new THREE.Mesh(geo, matWire));
+    return curve;
+  }
+  function addPulse(curve, speed=0.08, delay=0){
+    const s = new THREE.Mesh(new THREE.SphereGeometry(0.16,10,10), matPulse.clone());
+    s.userData = { curve, t:delay, speed };
+    scene.add(s); pulses.push(s);
+  }
+
+  const towerPositions = [{x:-18,z:-22,H:17},{x:0,z:-22,H:18},{x:18,z:-22,H:17}];
+  const towers = [];
+  towerPositions.forEach(({x,z,H})=>{
+    const t = createTower(H,3.4,0.9); t.position.set(x,0,z);
+    t.traverse(o=>{ if(o.isMesh) interactive.push(o); });
+    t.userData.hit = { name: x<0?'TOWER T-11':x>0?'TOWER T-13':'TOWER T-12', info:'SUTT 150 kV · Online' };
+    scene.add(t); towers.push({group:t,H});
+  });
+
+  for(let i=0;i<towers.length-1;i++){
+    const a=towers[i], b=towers[i+1];
+    [{yA:a.H*0.78,yB:b.H*0.78,xo:-4.0},{yA:a.H*0.78,yB:b.H*0.78,xo:4.0},{yA:a.H*0.58,yB:b.H*0.58,xo:-3.2},{yA:a.H*0.58,yB:b.H*0.58,xo:3.2}].forEach(({yA,yB,xo})=>{
+      const c = addWire(new THREE.Vector3(a.group.position.x+xo, yA-0.7, a.group.position.z), new THREE.Vector3(b.group.position.x+xo, yB-0.7, b.group.position.z), 3.5, 0.05);
+      addPulse(c, 0.06+Math.random()*0.04, Math.random());
+    });
+  }
+
+  const gantry = createGantry(); gantry.position.set(0,0,-7); scene.add(gantry);
+
+  const tMid = towers[1];
+  for(let k=0;k<3;k++){
+    const c = addWire(new THREE.Vector3(tMid.group.position.x-3+k*3, tMid.H*0.78-0.7, tMid.group.position.z), new THREE.Vector3(-3+k*3, 6.6, -7), 3, 0.05);
+    addPulse(c, 0.07+Math.random()*0.04, Math.random());
+  }
+
+  const trafoConfig = [
+    { x:-11,  z:2, name:'TRAFO-1', info:'150/20 kV · 60 MVA · NORMAL' },
+    { x:-4.5, z:2, name:'TRAFO-2', info:'150/20 kV · 60 MVA · NORMAL' },
+    { x: 4.5, z:2, name:'TRAFO-3', info:'150/20 kV · 60 MVA · NORMAL' },
+    { x: 11,  z:2, name:'TRAFO-4', info:'150/20 kV · 60 MVA · NORMAL' }
+  ];
+  trafoConfig.forEach(cfg=>{
+    const t = createTransformer(); t.position.set(cfg.x,0,cfg.z);
+    t.traverse(o=>{ if(o.isMesh) interactive.push(o); });
+    t.userData.hit = { name:cfg.name, info:cfg.info };
+    scene.add(t);
+  });
+
+  [{bx:-8.75,tx:-11},{bx:-6.25,tx:-4.5},{bx:6.25,tx:4.5},{bx:8.75,tx:11}].forEach(({bx,tx})=>{
+    const c = addWire(new THREE.Vector3(bx,3.2,-7), new THREE.Vector3(tx,3.4,0), 0.9, 0.05);
+    addPulse(c, 0.09, Math.random());
+  });
+
+  const bld = createBuilding(); bld.position.set(0,0,6.5);
+  bld.traverse(o=>{ if(o.isMesh) interactive.push(o); });
+  bld.userData.hit = { name:'GEDUNG KONTROL', info:'SCADA · RTU Online · 23°C' };
+  scene.add(bld);
+
+  for(let i=0;i<25;i++){
+    const x=(Math.random()-0.5)*70, z=(Math.random()-0.5)*70;
+    if(Math.abs(x)<14 && Math.abs(z)<9) continue;
+    const dot = new THREE.Mesh(new THREE.CircleGeometry(0.06+Math.random()*0.06,8),
+      new THREE.MeshBasicMaterial({ color:0x38BDF8, transparent:true, opacity:0.3+Math.random()*0.4 }));
+    dot.rotation.x = -Math.PI/2; dot.position.set(x,0.03,z); scene.add(dot);
+  }
+
+  let theta=0.6, phi=1.15, radius=46;
+  let targetTheta=theta, targetPhi=phi, targetRadius=radius;
+  let autoRotate=true, idleTimer=null;
+  const target = new THREE.Vector3(0,4,-6);
+  let dragging=false, lx=0, ly=0;
+
+  canvas.addEventListener('pointerdown', e=>{ dragging=true; lx=e.clientX; ly=e.clientY; autoRotate=false; if(idleTimer) clearTimeout(idleTimer); canvas.style.cursor='grabbing'; });
+  window.addEventListener('pointerup', ()=>{ if(!dragging) return; dragging=false; canvas.style.cursor='grab'; idleTimer=setTimeout(()=>{ autoRotate=true; }, 2500); });
+  window.addEventListener('pointermove', e=>{ if(!dragging) return; const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY; targetTheta-=dx*0.006; targetPhi-=dy*0.006; targetPhi=Math.max(0.25,Math.min(1.45,targetPhi)); });
+  canvas.addEventListener('wheel', e=>{ e.preventDefault(); targetRadius += e.deltaY*0.035; targetRadius=Math.max(18,Math.min(95,targetRadius)); }, {passive:false});
+
+  let touchDist=0;
+  canvas.addEventListener('touchstart', e=>{ if(e.touches.length===2){ const dx=e.touches[0].clientX-e.touches[1].clientX, dy=e.touches[0].clientY-e.touches[1].clientY; touchDist=Math.hypot(dx,dy); } }, {passive:true});
+  canvas.addEventListener('touchmove', e=>{ if(e.touches.length===2){ const dx=e.touches[0].clientX-e.touches[1].clientX, dy=e.touches[0].clientY-e.touches[1].clientY; const d=Math.hypot(dx,dy); targetRadius+=(touchDist-d)*0.15; targetRadius=Math.max(18,Math.min(95,targetRadius)); touchDist=d; } }, {passive:true});
+
+  const ray = new THREE.Raycaster();
+  const mouse = new THREE.Vector2(-2,-2);
+  canvas.addEventListener('pointermove', e=>{ const r=canvas.getBoundingClientRect(); mouse.x=((e.clientX-r.left)/r.width)*2-1; mouse.y=-((e.clientY-r.top)/r.height)*2+1; });
+  canvas.addEventListener('pointerleave', ()=>{ mouse.x=-2; mouse.y=-2; tip.classList.remove('on'); });
+
+  function checkHover(){
+    ray.setFromCamera(mouse,camera);
+    const hits = ray.intersectObjects(interactive,false);
+    if(hits.length){
+      let cur = hits[0].object;
+      while(cur && !cur.userData.hit) cur = cur.parent;
+      if(cur){
+        const r = canvas.getBoundingClientRect();
+        tip.style.left = ((mouse.x+1)/2*r.width)+'px';
+        tip.style.top  = ((1-mouse.y)/2*r.height)+'px';
+        tip.innerHTML = `<b>${cur.userData.hit.name}</b><span>${cur.userData.hit.info}</span>`;
+        tip.classList.add('on');
+        return;
+      }
+    }
+    tip.classList.remove('on');
+  }
+
+  function resize(){ renderer.setSize(W(),H()); camera.aspect=W()/H(); camera.updateProjectionMatrix(); }
+  window.addEventListener('resize', resize);
+
+  const clock = new THREE.Clock();
+  function animate(){
+    const t = clock.getElapsedTime();
+    if(autoRotate) targetTheta += 0.0022;
+    theta += (targetTheta-theta)*0.08;
+    phi   += (targetPhi-phi)*0.08;
+    radius+= (targetRadius-radius)*0.08;
+    const x = target.x + radius*Math.sin(phi)*Math.cos(theta);
+    const y = target.y + radius*Math.cos(phi);
+    const z = target.z + radius*Math.sin(phi)*Math.sin(theta);
+    camera.position.set(x,y,z); camera.lookAt(target);
+    pulses.forEach(p=>{
+      p.userData.t += p.userData.speed*0.016;
+      if(p.userData.t>1) p.userData.t-=1;
+      p.position.copy(p.userData.curve.getPointAt(p.userData.t));
+      p.scale.setScalar(0.6 + Math.sin(t*8 + p.userData.t*10)*0.15);
+    });
+    scene.traverse(o=>{ if(o.userData.pulse){ const s=1+Math.sin(t*3)*0.25; o.scale.setScalar(s); o.material.opacity=0.2+Math.sin(t*3)*0.15+0.15; } });
+    pl1.intensity = 1.0 + Math.sin(t*1.8)*0.25;
+    checkHover();
+    renderer.render(scene,camera);
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+/* ============================================================
+   JAM WIB
+============================================================ */
+(function(){
+  const el = document.getElementById('clock');
+  function upd(){
+    const now = new Date();
+    const wib = new Date(now.getTime() + now.getTimezoneOffset()*60000 + 7*3600*1000);
+    const p = n => String(n).padStart(2,'0');
+    el.textContent = `${p(wib.getHours())}:${p(wib.getMinutes())}:${p(wib.getSeconds())} WIB`;
+  }
+  upd(); setInterval(upd, 1000);
+})();
+
+/* ============================================================
+   LOGIN — HARDCODE
+   ------------------------------------------------------------
+   Username : GI SITUBONDO
+   Password : Situbondo1987
+============================================================ */
+(function(){
+  const VALID_USERS = [
+    { username: 'GI SITUBONDO', password: 'Situbondo1987', role: 'Administrator', name: 'Admin GI Situbondo' }
+  ];
+  const DASHBOARD_URL = 'dashboard.html';
+
+  const form     = document.getElementById('loginForm');
+  const btn      = document.getElementById('loginBtn');
+  const inputU   = document.getElementById('u');
+  const inputP   = document.getElementById('p');
+  const fieldU   = document.getElementById('fieldUser');
+  const fieldP   = document.getElementById('fieldPass');
+  const errU     = document.getElementById('errUser').querySelector('span');
+  const errP     = document.getElementById('errPass').querySelector('span');
+  const alertBox = document.getElementById('alertBox');
+  const alertTxt = document.getElementById('alertText');
+  const remember = document.getElementById('remember');
+
+  // Auto-redirect kalau sudah login
+  const saved = sessionStorage.getItem('gi_user') || localStorage.getItem('gi_user');
+  if (saved){
+    try { JSON.parse(saved); window.location.href = DASHBOARD_URL; return; }
+    catch(e){}
+  }
+
+  // Isi username kalau "Ingat saya"
+  const rememberedUser = localStorage.getItem('gi_remember_user');
+  if (rememberedUser){
+    inputU.value = rememberedUser;
+    remember.checked = true;
+    inputP.focus();
+  }
+
+  function clearErrors(){
+    fieldU.classList.remove('error');
+    fieldP.classList.remove('error');
+    document.getElementById('errUser').classList.remove('on');
+    document.getElementById('errPass').classList.remove('on');
+    alertBox.classList.remove('on');
+  }
+  function setFieldError(field, errEl, msg){
+    field.classList.add('error');
+    errEl.textContent = msg;
+    field.querySelector('.error-msg').classList.add('on');
+  }
+  function shake(){ form.classList.add('shake'); setTimeout(()=>form.classList.remove('shake'), 500); }
+
+  form.addEventListener('submit', async e=>{
+    e.preventDefault();
+    clearErrors();
+
+    const u = inputU.value.trim().replace(/\s+/g, ' ');
+    const p = inputP.value;
+
+    let hasError = false;
+    if (!u){ setFieldError(fieldU, errU, 'Username wajib diisi'); hasError = true; }
+    if (!p){ setFieldError(fieldP, errP, 'Password wajib diisi'); hasError = true; }
+    if (hasError){ shake(); return; }
+
+    btn.classList.add('loading');
+    btn.textContent = 'Memverifikasi...';
+    await new Promise(r => setTimeout(r, 850));
+
+    const user = VALID_USERS.find(x =>
+      x.username.toLowerCase() === u.toLowerCase() && x.password === p
+    );
+
+    if (user){
+      btn.classList.remove('loading');
+      btn.classList.add('success');
+      btn.textContent = '✓ Berhasil, mengalihkan...';
+
+      const session = { username: user.username, name: user.name, role: user.role, loginAt: Date.now() };
+      if (remember.checked){
+        localStorage.setItem('gi_user', JSON.stringify(session));
+        localStorage.setItem('gi_remember_user', user.username);
+      } else {
+        sessionStorage.setItem('gi_user', JSON.stringify(session));
+        localStorage.removeItem('gi_remember_user');
+      }
+      setTimeout(()=>{ window.location.href = DASHBOARD_URL; }, 700);
+    } else {
+      btn.classList.remove('loading');
+      btn.textContent = 'Masuk ke Sistem';
+      shake();
+      const usernameExists = VALID_USERS.some(x => x.username.toLowerCase() === u.toLowerCase());
+      if (usernameExists){
+        setFieldError(fieldP, errP, 'Password salah');
+        inputP.value = '';
+        inputP.focus();
+      } else {
+        alertTxt.textContent = 'Username atau password salah. Coba lagi.';
+        alertBox.classList.add('on');
+        setFieldError(fieldU, errU, 'Username tidak ditemukan');
+        inputU.focus();
+      }
     }
   });
+
+  inputU.addEventListener('input', ()=>{
+    if (fieldU.classList.contains('error')){ fieldU.classList.remove('error'); document.getElementById('errUser').classList.remove('on'); }
+    alertBox.classList.remove('on');
+  });
+  inputP.addEventListener('input', ()=>{
+    if (fieldP.classList.contains('error')){ fieldP.classList.remove('error'); document.getElementById('errPass').classList.remove('on'); }
+    alertBox.classList.remove('on');
+  });
+})();
 </script>
 </body>
 </html>
