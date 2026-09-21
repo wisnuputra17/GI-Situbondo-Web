@@ -26,7 +26,10 @@ const SHEET_HEADERS = {
   counter_log: ['timestamp', 'id_peralatan', 'jenis_counter', 'nilai', 'oleh'],
   jaring_master: ['id_jaring', 'baris', 'kolom', 'bay', 'ukuran', 'samping', 'kondisi', 'tahun_pasang', 'catatan', 'updated_at'],
   jaring_kerusakan_log: ['timestamp', 'id_jaring', 'kondisi', 'jenis_kerusakan', 'catatan', 'oleh'],
-  anomali_log: ['timestamp', 'id_peralatan', 'deskripsi', 'status', 'oleh']
+  anomali_log: ['timestamp', 'id_peralatan', 'deskripsi', 'status', 'oleh'],
+  personil_master: ['id_personil', 'nama', 'jabatan', 'updated_at'],
+  alat_master: ['id_alat', 'nama_alat', 'kategori', 'kondisi', 'status', 'catatan', 'updated_at'],
+  peminjaman_log: ['id_pinjam', 'id_alat', 'id_personil', 'status', 'tanggal_pinjam', 'foto_pinjam_url', 'catatan_pinjam', 'tanggal_kembali', 'foto_kembali_url', 'catatan_kembali']
 };
 
 function doGet(e) {
@@ -76,6 +79,8 @@ function doPost(e) {
         return jsonOut({ ok: true, data: createFolder(body.path, body.name) });
       case 'deleteFolder':
         return jsonOut({ ok: true, data: deleteFolder(body.folderId) });
+      case 'notifyTelegram':
+        return jsonOut({ ok: true, data: notifyTelegram(body.message) });
       default:
         return jsonOut({ ok: false, error: 'Unknown action: ' + body.action });
     }
@@ -247,6 +252,34 @@ function uploadFile(path, fileName, mimeType, base64) {
   const blob = Utilities.newBlob(bytes, mimeType, fileName);
   const file = folder.createFile(blob);
   return { id: file.getId(), name: file.getName(), url: file.getUrl() };
+}
+
+// ---------- Notifikasi Telegram ----------
+/**
+ * Kirim pesan ke Telegram bot GI Situbondo. Token & chat id disimpan di
+ * Script Properties (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID) — bukan di kode
+ * sumber, supaya tidak ikut ter-commit ke GitHub (sama seperti ACCESS_PASSWORD).
+ * Kegagalan kirim TIDAK melempar error ke pemanggil (peminjaman tetap
+ * tersimpan walau notifikasi gagal) — hanya dicatat di return value.
+ */
+function notifyTelegram(message) {
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  const chatId = PropertiesService.getScriptProperties().getProperty('TELEGRAM_CHAT_ID');
+  if (!token || !chatId) {
+    return { sent: false, reason: 'TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID belum diset di Script Properties' };
+  }
+  try {
+    const res = UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
+      muteHttpExceptions: true
+    });
+    const body = JSON.parse(res.getContentText());
+    return { sent: !!body.ok, reason: body.ok ? '' : (body.description || 'gagal tanpa keterangan') };
+  } catch (err) {
+    return { sent: false, reason: err.message };
+  }
 }
 
 // ---------- Output ----------

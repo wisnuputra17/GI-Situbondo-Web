@@ -26,6 +26,7 @@ features/               → satu modul per folder
   data-peralatan/        → switchgear + denah jaring pengaman
   counter/               → pembacaan counter peralatan & laju pemakaian
   anomali/               → gabungan temuan dari tower, peralatan, dan jaring
+  peminjaman/             → peminjaman alat kantor, monitoring, notifikasi Telegram
   (tiap modul: index.html = tampilan, db.js = logika data)
 index.html              → Landing + login (gerbang masuk)
 dashboard.html          → Dashboard (metrik, peta ringkas, tabel anomali terbuka)
@@ -84,6 +85,9 @@ berikut:
 | `jaring_master` | id_jaring, baris, kolom, bay, ukuran, samping, kondisi, tahun_pasang, catatan, updated_at |
 | `jaring_kerusakan_log` | timestamp, id_jaring, kondisi, jenis_kerusakan, catatan, oleh |
 | `anomali_log` | timestamp, id_peralatan, deskripsi, status, oleh |
+| `personil_master` | id_personil, nama, jabatan, updated_at |
+| `alat_master` | id_alat, nama_alat, kategori, kondisi, status, catatan, updated_at |
+| `peminjaman_log` | id_pinjam, id_alat, id_personil, status, tanggal_pinjam, foto_pinjam_url, catatan_pinjam, tanggal_kembali, foto_kembali_url, catatan_kembali |
 
 Skema ini disiapkan di awal untuk semua modul, meski baru sheet `profil_gi`
 dan `anomali_log` yang dipakai halaman beranda saat ini — modul lain akan
@@ -120,13 +124,32 @@ lewat Google Drive.
 | Data Peralatan · Switchgear | ✅ Grid kartu/tabel, riwayat kondisi, impor dari spreadsheet |
 | Data Peralatan · Jaring Pengaman | ✅ Denah interaktif 42 jaring (8×9), monitoring usia & kerusakan |
 | Tema gelap/terang | ✅ Tombol di topbar, tersimpan di localStorage |
-| Counter Peralatan | ✅ Pembacaan berurutan, laju/bulan, ambang, deteksi pembacaan mundur |
+| Counter Peralatan | ✅ Struktur per bay (PMT/LA/OLTC, fasa R/S/T), tanpa ambang batas |
+| Peminjaman Peralatan | ✅ Database alat & personil, pinjam/kembalikan dgn foto wajib, notifikasi Telegram |
 | Anomali | ✅ Gabungan temuan menara + peralatan + jaring, riwayat terbuka & selesai |
 
 **Catatan skema:** kolom `lat` dan `lng` ditambahkan ke `profil_gi` (untuk marker
 GI di peta). Kalau sheet `profil_gi` sudah pernah dipakai sebelumnya dengan
 skema lama, hapus isi sheet itu dulu (biarkan backend buat ulang otomatis
 dengan header baru) — atau tambah kolom `lat`/`lng` manual di Sheets.
+
+## Setup notifikasi Telegram (modul Peminjaman Peralatan)
+
+1. Di Telegram, chat **@BotFather** → `/newbot` → ikuti instruksi → catat
+   **token** yang diberikan (format `123456789:ABC...`).
+2. Kirim pesan apa saja ke bot barunya (supaya bot punya riwayat chat).
+3. Buka `https://api.telegram.org/bot<TOKEN>/getUpdates` di browser, cari
+   `"chat":{"id": ...}` — itu **chat_id** tujuan notifikasi.
+4. Di Apps Script → **Project Settings → Script Properties**, tambahkan:
+
+   | Key | Value |
+   |---|---|
+   | `TELEGRAM_BOT_TOKEN` | token dari langkah 1 |
+   | `TELEGRAM_CHAT_ID` | chat id dari langkah 3 |
+
+5. Selesai — setiap ada peminjaman/pengembalian alat, pesan otomatis terkirim.
+   Kalau properti ini belum diset, peminjaman tetap tersimpan normal; hanya
+   notifikasinya yang dilewati (dicatat di console, tidak menggagalkan transaksi).
 
 ## Uji otomatis
 

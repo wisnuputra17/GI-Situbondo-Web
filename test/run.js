@@ -123,6 +123,48 @@ console.log('\n=== PLN GI Suite — uji fungsi murni ===\n');
   });
 }
 
+// ------------------------------------------------------------ peminjaman
+{
+  const m = muatModul('features/peminjaman/db.js');
+
+  uji('labelKondisi: kunci dikenal', () => sama(m.labelKondisi('perlu_perbaikan'), 'Perlu perbaikan'));
+  uji('labelKondisi: kunci asing dikembalikan apa adanya', () => sama(m.labelKondisi('ngawur'), 'ngawur'));
+
+  const alatList = [
+    { id_alat: 'A1', nama_alat: 'Bor tangan', kategori: 'Perkakas', kondisi: 'baik', status: 'dipinjam' },
+    { id_alat: 'A2', nama_alat: 'Multimeter', kategori: 'Alat Ukur', kondisi: 'baik', status: 'tersedia' }
+  ];
+  const personilList = [
+    { id_personil: 'P1', nama: 'Budi', jabatan: 'Teknisi' }
+  ];
+  const peminjamanList = [
+    { id_pinjam: 'J1', id_alat: 'A1', id_personil: 'P1', status: 'dipinjam', tanggal_pinjam: '2026-09-01T00:00:00Z' },
+    { id_pinjam: 'J0', id_alat: 'A1', id_personil: 'P1', status: 'dikembalikan', tanggal_pinjam: '2026-08-01T00:00:00Z', tanggal_kembali: '2026-08-05T00:00:00Z' }
+  ];
+  const r = m.rangkumAlat(alatList, peminjamanList, personilList);
+  const a1 = r.find((x) => x.id_alat === 'A1');
+  const a2 = r.find((x) => x.id_alat === 'A2');
+
+  uji('rangkumAlat: riwayat terurut terbaru dulu', () => sama(a1.riwayat[0].id_pinjam, 'J1'));
+  uji('rangkumAlat: peminjamAktif terisi utk alat dipinjam', () => sama(a1.peminjamAktif.nama, 'Budi'));
+  uji('rangkumAlat: peminjamAktif null utk alat tersedia', () => sama(a2.peminjamAktif, null));
+  uji('rangkumAlat: jumlahDipinjam menghitung seluruh riwayat', () => sama(a1.jumlahDipinjam, 2));
+
+  uji('ringkasPeminjaman: hitung total/tersedia/dipinjam', () => {
+    const s = m.ringkasPeminjaman(r);
+    sama([s.total, s.tersedia, s.dipinjam], [2, 1, 1]);
+  });
+
+  uji('teksNotifPinjam: memuat nama alat & peminjam', () => {
+    const teks = m.teksNotifPinjam(alatList[0], personilList[0]);
+    benar(teks.includes('Bor tangan') && teks.includes('Budi'));
+  });
+  uji('teksNotifKembali: memuat nama alat & peminjam', () => {
+    const teks = m.teksNotifKembali(alatList[0], personilList[0]);
+    benar(teks.includes('Bor tangan') && teks.includes('Budi') && teks.includes('Pengembalian'));
+  });
+}
+
 // ---------------------------------------------------------------- anomali
 {
   const m = muatModul('features/anomali/db.js');
@@ -415,7 +457,10 @@ console.log('\n=== PLN GI Suite — uji fungsi murni ===\n');
     peralatan_master: ['id_peralatan', 'jenis', 'bay'],
     counter_log: ['id_peralatan', 'jenis_counter', 'nilai'],
     kondisi_log: ['id_peralatan', 'kondisi'],
-    tower_anomali_log: ['id_tower', 'jenis_anomali']
+    tower_anomali_log: ['id_tower', 'jenis_anomali'],
+    personil_master: ['id_personil', 'nama'],
+    alat_master: ['id_alat', 'nama_alat', 'status'],
+    peminjaman_log: ['id_pinjam', 'id_alat', 'id_personil', 'status']
   };
 
   Object.keys(wajib).forEach((sheet) => {
