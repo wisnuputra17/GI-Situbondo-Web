@@ -28,78 +28,61 @@
         <div><p class="font-bold text-xs uppercase tracking-wide mb-0.5">Terjadi kesalahan</p><p id="error-message" class="text-xs"></p></div>
       </div>
 
-      <div class="grid grid-cols-4 gap-5">
-        <div class="bg-surface-container-lowest p-5 rounded shadow-sm border-l-4 border-primary">
-          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Counter dipantau</span>
-          <div class="mt-1"><span id="m-seri" class="text-3xl font-headline font-extrabold">–</span></div>
-          <p id="m-seri-sub" class="text-[11px] text-on-surface-variant mt-0.5">&nbsp;</p>
-        </div>
-        <div class="bg-surface-container-lowest p-5 rounded shadow-sm border-l-4 border-error">
-          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Lewat ambang</span>
-          <div class="mt-1"><span id="m-lewat" class="text-3xl font-headline font-extrabold">–</span></div>
-          <p class="text-[11px] text-on-surface-variant mt-0.5">perlu tindak lanjut</p>
-        </div>
-        <div class="bg-surface-container-lowest p-5 rounded shadow-sm border-l-4 border-tertiary">
-          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Mendekati ambang</span>
-          <div class="mt-1"><span id="m-dekat" class="text-3xl font-headline font-extrabold">–</span></div>
-          <p class="text-[11px] text-on-surface-variant mt-0.5">≥ 80% dari ambang</p>
-        </div>
-        <div class="bg-surface-container-lowest p-5 rounded shadow-sm border-l-4 border-outline">
-          <span class="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">Perlu dicek</span>
-          <div class="mt-1"><span id="m-anomali" class="text-3xl font-headline font-extrabold">–</span></div>
-          <p class="text-[11px] text-on-surface-variant mt-0.5">pembacaan turun</p>
-        </div>
-      </div>
-
-      <div class="bg-surface-container-low border border-outline-variant/25 rounded-lg px-4 py-3 flex items-start gap-2.5">
-        <span class="material-symbols-outlined text-base text-tertiary">info</span>
-        <p class="text-xs text-on-surface-variant leading-relaxed">
-          Ambang tiap jenis counter (mis. 2000 kali kerja PMT) adalah <b>perkiraan awal</b>, bukan ketentuan resmi.
-          Sesuaikan dengan instruksi pemeliharaan yang berlaku di unit — angkanya ada di <span class="font-mono">JENIS_COUNTER</span> pada db.js.
-        </p>
-      </div>
-
-      <section class="bg-surface-container-lowest rounded shadow-sm border border-outline-variant/10 overflow-hidden">
-        <div class="p-5 border-b border-outline-variant/10 bg-surface-container-low/30 flex flex-wrap gap-3 items-center justify-between">
-          <div class="flex gap-3 items-center flex-grow min-w-0">
-            <div class="relative flex-grow max-w-sm">
-              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
-              <input id="cari" placeholder="Cari ID peralatan…" class="w-full bg-surface-container-low border-none rounded py-2 pl-10 pr-4 text-sm text-on-surface focus:ring-1 focus:ring-primary">
-            </div>
-            <select id="filter-jenis" class="text-sm border border-outline-variant/40 rounded py-2 px-3 bg-surface-container-lowest text-on-surface">
-              <option value="">Semua jenis counter</option>
-            </select>
-            <select id="filter-status" class="text-sm border border-outline-variant/40 rounded py-2 px-3 bg-surface-container-lowest text-on-surface">
-              <option value="">Semua status</option>
-              <option value="lewat">Lewat ambang</option>
-              <option value="dekat">Mendekati ambang</option>
-              <option value="aman">Aman</option>
-              <option value="mundur">Pembacaan turun</option>
-            </select>
-          </div>
-          <button id="btn-catat" class="text-xs font-bold bg-primary text-on-primary rounded px-4 py-2 flex items-center gap-1.5 shrink-0">
-            <span class="material-symbols-outlined text-sm">add</span> Catat pembacaan
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="inline-flex bg-surface-container-low rounded-lg p-1 gap-1">
+          <button id="tab-monitor" class="px-4 py-2 rounded-md text-xs font-bold flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">grid_view</span> Monitoring
+          </button>
+          <button id="tab-isi" class="px-4 py-2 rounded-md text-xs font-bold flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">edit_note</span> Isi Counter
           </button>
         </div>
-
-        <div class="overflow-x-auto min-h-[300px]">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-surface-container-low/50">
-                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Peralatan</th>
-                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Jenis counter</th>
-                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10 text-right">Nilai terakhir</th>
-                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10 text-right">Δ terakhir</th>
-                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Tren</th>
-                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Terhadap ambang</th>
-                <th class="px-4 py-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10">Dibaca</th>
-              </tr>
-            </thead>
-            <tbody id="tbody" class="divide-y divide-outline-variant/10"></tbody>
-          </table>
+        <div id="monitor-filter" class="flex gap-3 items-center">
+          <div class="relative flex-grow max-w-sm">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+            <input id="cari" placeholder="Cari bay…" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded py-2 pl-10 pr-4 text-sm">
+          </div>
+          <select id="filter-jenis" class="text-sm border border-outline-variant/40 rounded py-2 px-3 bg-surface-container-lowest">
+            <option value="">Semua jenis bay</option>
+            <option value="trafo">Bay Trafo</option>
+            <option value="penghantar">Bay Penghantar</option>
+            <option value="kopel">Bay Kopel</option>
+          </select>
         </div>
-        <div id="footer" class="p-4 border-t border-outline-variant/10 text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter bg-surface-container-low/20"></div>
-      </section>
+      </div>
+
+      <!-- ---------- Mode Monitoring ---------- -->
+      <div id="view-monitor">
+        <div id="grid-bay" class="grid grid-cols-3 gap-5"></div>
+      </div>
+
+      <!-- ---------- Mode Isi Counter ---------- -->
+      <div id="view-isi" class="hidden space-y-5">
+        <div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant/10 p-5 max-w-xl">
+          <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1.5">Pilih bay</label>
+          <select id="sel-bay" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
+            <option value="">— pilih bay —</option>
+          </select>
+        </div>
+        <form id="form-isi" class="hidden bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant/10 p-5 max-w-xl space-y-4">
+          <div>
+            <h3 id="isi-judul" class="font-headline font-bold text-base"></h3>
+            <p class="text-[11px] text-on-surface-variant mt-0.5">Isi slot yang ada pembacaan hari ini saja — kosongkan yang tidak diukur.</p>
+          </div>
+          <div id="isi-slot-list" class="grid grid-cols-2 gap-3"></div>
+          <div class="grid grid-cols-2 gap-3 pt-2 border-t border-outline-variant/10">
+            <div>
+              <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Tanggal baca</label>
+              <input name="tanggal" type="date" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Dibaca oleh</label>
+              <input name="oleh" value="Wisnu" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-primary text-on-primary rounded-lg py-2.5 text-sm font-bold">Simpan pembacaan</button>
+        </form>
+      </div>
 
       <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-sm px-4 py-2.5 rounded-lg shadow-lg z-[1500]"></div>
     </div>
@@ -113,7 +96,7 @@
   <script src="../../shared/shell.js"></script>
   <script src="./db.js"></script>
   <script>
-    let logs = [], rangkuman = [], peralatan = [];
+    let logs = [], ringkasan = {}, mode = 'monitor';
 
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -122,117 +105,124 @@
     function hideError() { $('error-banner').classList.add('hidden'); }
     function closeModal() { $('modal-root').innerHTML = ''; }
 
-    function badgeAmbang(r) {
-      if (r.statusAmbang === null) return '<span class="text-[11px] text-on-surface-variant">tanpa ambang</span>';
-      const pct = Math.min(r.pctAmbang, 130);
-      const warna = r.statusAmbang === 'lewat' ? 'bg-error' : r.statusAmbang === 'dekat' ? 'bg-tertiary' : 'bg-secondary';
-      const sisa = perkiraanBulan(r);
-      return `
-        <div class="min-w-[130px]">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[11px] font-bold ${r.statusAmbang === 'lewat' ? 'text-error' : r.statusAmbang === 'dekat' ? 'text-tertiary' : 'text-on-surface-variant'}">
-              ${Math.round(r.pctAmbang)}%</span>
-            <span class="text-[10px] text-on-surface-variant">dari ${formatNumber(r.ambang)}</span>
-          </div>
-          <div class="h-1.5 w-full bg-surface-container-high rounded overflow-hidden">
-            <div class="h-full ${warna}" style="width:${Math.min(pct, 100)}%"></div>
-          </div>
-          ${sisa !== null && sisa > 0 && sisa < 120
-            ? `<p class="text-[10px] text-on-surface-variant mt-1">± ${sisa < 1 ? 'kurang dari 1' : Math.round(sisa)} bulan lagi</p>` : ''}
-        </div>`;
+    function setTab(m) {
+      mode = m;
+      const aktif = 'bg-surface-container-lowest shadow-sm text-primary';
+      const nonaktif = 'text-on-surface-variant';
+      $('tab-monitor').className = 'px-4 py-2 rounded-md text-xs font-bold flex items-center gap-1.5 ' + (m === 'monitor' ? aktif : nonaktif);
+      $('tab-isi').className = 'px-4 py-2 rounded-md text-xs font-bold flex items-center gap-1.5 ' + (m === 'isi' ? aktif : nonaktif);
+      $('view-monitor').classList.toggle('hidden', m !== 'monitor');
+      $('view-isi').classList.toggle('hidden', m !== 'isi');
+      $('monitor-filter').classList.toggle('hidden', m !== 'monitor');
     }
 
-    function sparkline(r) {
-      if (r.data.length < 2) return '<span class="text-[11px] text-outline">1 pembacaan</span>';
-      const pts = titikSparkline(r.data, 84, 26);
-      const warna = r.mundur ? '#ba1a1a' : 'currentColor';
-      return `<svg width="84" height="26" viewBox="0 0 84 26" class="text-primary overflow-visible">
-        <polyline points="${pts}" fill="none" stroke="${warna}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
-        ${r.data.map((d, i) => { const p = pts.split(' ')[i].split(','); return `<circle cx="${p[0]}" cy="${p[1]}" r="1.8" fill="${warna}"/>`; }).join('')}
+    // ---------- Monitoring: grid kartu per bay ----------
+    function sparkline(data) {
+      if (data.length < 2) return '';
+      const pts = titikSparkline(data, 64, 20);
+      return `<svg width="64" height="20" viewBox="0 0 64 20" class="text-primary overflow-visible">
+        <polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>`;
     }
 
-    function isiFilterJenis() {
-      const ada = [...new Set(rangkuman.map((r) => r.jenis_counter))];
-      $('filter-jenis').innerHTML = '<option value="">Semua jenis counter</option>' +
-        ada.map((k) => `<option value="${esc(k)}">${esc(jenisCounter(k).label)}</option>`).join('');
+    /** Satu kotak slot tunggal (PMT di trafo/kopel, OLTC). */
+    function kotakSlotTunggal(idBay, slot) {
+      const r = ringkasan[idBay + '|' + slot.key];
+      return `
+        <div class="bg-surface-container-low/40 rounded p-3 cursor-pointer hover:bg-surface-container-low/70" data-slot="${esc(idBay)}|${esc(slot.key)}">
+          <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">${esc(slot.kelompok)}</p>
+          ${r ? `
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span class="text-2xl font-headline font-extrabold tabular-nums">${formatNumber(r.nilai)}</span>
+              <span class="text-[10px] text-on-surface-variant">kali</span>
+            </div>
+            <p class="text-[10px] text-on-surface-variant mt-1">diisi ${esc(timeAgo(r.terakhir))}${r.mundur ? ' · <span class="text-error font-bold">cek input</span>' : ''}</p>
+          ` : `<span class="text-sm text-outline italic">belum ada pembacaan</span>`}
+        </div>`;
     }
 
-    function renderRingkasan() {
-      const s = ringkasCounter(rangkuman);
-      $('m-seri').textContent = formatNumber(s.totalSeri);
-      $('m-seri-sub').textContent = s.peralatan ? `pada ${s.peralatan} peralatan` : 'belum ada pembacaan';
-      $('m-lewat').textContent = formatNumber(s.lewatAmbang);
-      $('m-dekat').textContent = formatNumber(s.dekatAmbang);
-      $('m-anomali').textContent = formatNumber(s.anomaliInput);
+    /** Grid 3 kolom R/S/T untuk satu kelompok (LA atau PMT-fasa). */
+    function kotakSlotFasa(idBay, kelompok, slotFasa) {
+      const cells = slotFasa.map((slot) => {
+        const r = ringkasan[idBay + '|' + slot.key];
+        return `
+          <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70" data-slot="${esc(idBay)}|${esc(slot.key)}">
+            <p class="text-[9px] text-on-surface-variant">${esc(slot.fasa)}</p>
+            ${r ? `<span class="text-sm font-bold tabular-nums${r.mundur ? ' text-error' : ''}">${formatNumber(r.nilai)}</span>`
+                : `<span class="text-xs text-outline italic">–</span>`}
+          </div>`;
+      }).join('');
+      return `
+        <div>
+          <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide mb-1.5">${esc(kelompok)}</p>
+          <div class="grid grid-cols-3 gap-2">${cells}</div>
+        </div>`;
     }
 
-    function renderTabel() {
-      const q = $('cari').value.trim().toLowerCase();
-      const fj = $('filter-jenis').value;
-      const fs = $('filter-status').value;
+    function kartuBay(bay) {
+      const slots = slotUntukBay(bay.jenis);
+      const semuaKosong = slots.every((s) => !ringkasan[bay.id + '|' + s.key]);
+      const badge = semuaKosong
+        ? `<span class="text-[10px] font-bold text-outline bg-surface-container-high px-2 py-0.5 rounded">belum diisi</span>` : '';
 
-      const data = rangkuman.filter((r) => {
-        if (fj && r.jenis_counter !== fj) return false;
-        if (fs === 'mundur' && !r.mundur) return false;
-        if (fs && fs !== 'mundur' && r.statusAmbang !== fs) return false;
-        if (!q) return true;
-        return (r.id_peralatan + ' ' + jenisCounter(r.jenis_counter).label).toLowerCase().includes(q);
-      });
-
-      const tb = $('tbody');
-      if (!data.length) {
-        tb.innerHTML = `<tr><td colspan="7" class="px-6 py-16 text-center">
-          <span class="material-symbols-outlined text-4xl text-outline-variant">speed</span>
-          <p class="text-sm text-on-surface-variant mt-2">${rangkuman.length ? 'Tidak ada yang cocok dengan filter.' : 'Belum ada pembacaan counter.'}</p>
-          ${rangkuman.length ? '' : '<p class="text-xs text-outline mt-1">Mulai dengan tombol "Catat pembacaan".</p>'}
-        </td></tr>`;
-        $('footer').textContent = '';
-        return;
+      let isi;
+      if (bay.jenis === 'trafo') {
+        const pmt = slots.find((s) => s.kelompok === 'PMT');
+        const la = slots.filter((s) => s.kelompok === 'LA');
+        const oltc = slots.find((s) => s.kelompok === 'OLTC');
+        isi = kotakSlotTunggal(bay.id, pmt) + kotakSlotFasa(bay.id, 'LA', la) + kotakSlotTunggal(bay.id, oltc);
+      } else if (bay.jenis === 'kopel') {
+        const pmt = slots.find((s) => s.kelompok === 'PMT');
+        const la = slots.filter((s) => s.kelompok === 'LA');
+        isi = kotakSlotTunggal(bay.id, pmt) + kotakSlotFasa(bay.id, 'LA', la);
+      } else {
+        const pmt = slots.filter((s) => s.kelompok === 'PMT');
+        const la = slots.filter((s) => s.kelompok === 'LA');
+        isi = kotakSlotFasa(bay.id, 'PMT', pmt) + kotakSlotFasa(bay.id, 'LA', la);
       }
 
-      tb.innerHTML = data.map((r) => {
-        const j = jenisCounter(r.jenis_counter);
-        const info = peralatan.find((p) => p.id_peralatan === r.id_peralatan);
-        return `
-        <tr class="hover:bg-surface-container-low/40 cursor-pointer" data-seri="${esc(r.id_peralatan)}|${esc(r.jenis_counter)}">
-          <td class="px-4 py-3">
-            <div class="text-sm font-bold font-mono">${esc(r.id_peralatan)}</div>
-            ${info ? `<div class="text-[11px] text-on-surface-variant">${esc(info.jenis)}${info.bay ? ' · ' + esc(info.bay) : ''}</div>`
-                   : '<div class="text-[11px] text-error">tidak ada di daftar peralatan</div>'}
-          </td>
-          <td class="px-4 py-3 text-xs">${esc(j.label)}</td>
-          <td class="px-4 py-3 text-right">
-            <span class="text-sm font-bold tabular-nums">${formatNumber(r.nilai)}</span>
-            <span class="text-[10px] text-on-surface-variant ml-0.5">${esc(j.satuan)}</span>
-          </td>
-          <td class="px-4 py-3 text-right">
-            ${r.delta === null ? '<span class="text-[11px] text-outline">–</span>'
-              : `<span class="text-xs font-bold tabular-nums ${r.mundur ? 'text-error' : 'text-on-surface-variant'}">${r.delta > 0 ? '+' : ''}${formatNumber(r.delta)}</span>
-                 ${r.lajuBulan ? `<div class="text-[10px] text-on-surface-variant">${formatNumber(Math.round(r.lajuBulan))}/bln</div>` : ''}`}
-          </td>
-          <td class="px-4 py-3">${sparkline(r)}</td>
-          <td class="px-4 py-3">${badgeAmbang(r)}</td>
-          <td class="px-4 py-3">
-            <div class="text-xs">${formatDate(r.terakhir)}</div>
-            <div class="text-[10px] text-on-surface-variant">${esc(r.oleh) || '–'} · ${r.jumlahBaca}× baca</div>
-          </td>
-        </tr>`;
-      }).join('');
-
-      $('footer').textContent = `Menampilkan ${data.length} dari ${rangkuman.length} counter`;
-      tb.querySelectorAll('[data-seri]').forEach((el) =>
-        el.addEventListener('click', () => detailSeri(...el.dataset.seri.split('|'))));
+      return `
+        <div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant/10 overflow-hidden" data-bay-card="${esc(bay.id)}">
+          <div class="px-4 py-3 bg-surface-container-low/50 border-b border-outline-variant/10 flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold font-mono">${esc(bay.label.toUpperCase())}</h3>
+              <p class="text-[10px] text-on-surface-variant uppercase tracking-wide">${esc(JENIS_BAY[bay.jenis].label)}</p>
+            </div>
+            ${badge}
+          </div>
+          <div class="p-4 space-y-3">${isi}</div>
+        </div>`;
     }
 
-    // ---------- Detail satu seri ----------
-    function detailSeri(id, jenis) {
-      const r = rangkuman.find((x) => x.id_peralatan === id && x.jenis_counter === jenis);
-      if (!r) return;
-      const j = jenisCounter(jenis);
-      const sisa = perkiraanBulan(r);
+    function renderGrid() {
+      const q = $('cari').value.trim().toLowerCase();
+      const fj = $('filter-jenis').value;
+      const data = BAY_LIST.filter((b) => {
+        if (fj && b.jenis !== fj) return false;
+        if (q && !b.label.toLowerCase().includes(q)) return false;
+        return true;
+      });
+      const grid = $('grid-bay');
+      if (!data.length) {
+        grid.innerHTML = `<div class="col-span-3 text-center py-16 text-sm text-on-surface-variant">Tidak ada bay yang cocok dengan filter.</div>`;
+        return;
+      }
+      grid.innerHTML = data.map(kartuBay).join('');
+      grid.querySelectorAll('[data-slot]').forEach((el) =>
+        el.addEventListener('click', () => {
+          const [idBay, slotKey] = el.dataset.slot.split('|');
+          detailSlot(idBay, slotKey);
+        }));
+    }
 
-      const rows = r.data.slice().reverse().map((d, i, arr) => {
+    // ---------- Detail satu slot (riwayat + trendline) ----------
+    function detailSlot(idBay, slotKey) {
+      const bay = bayById(idBay);
+      const slot = slotBay(idBay).find((s) => s.key === slotKey);
+      const r = ringkasan[idBay + '|' + slotKey];
+      if (!bay || !slot) return;
+
+      const rows = (r ? r.data.slice().reverse() : []).map((d, i, arr) => {
         const sb = arr[i + 1];
         const dl = sb ? d.nilai - sb.nilai : null;
         return `<tr class="border-b border-outline-variant/15">
@@ -250,20 +240,16 @@
         <div class="modal-backdrop">
           <div class="bg-surface-container-lowest text-on-surface rounded-xl shadow-2xl w-[600px] max-h-[88vh] flex flex-col overflow-hidden">
             <div class="p-5 border-b border-outline-variant/20">
-              <h2 class="font-headline font-bold text-lg font-mono">${esc(id)}</h2>
-              <p class="text-xs text-on-surface-variant mt-0.5">${esc(j.label)}</p>
+              <h2 class="font-headline font-bold text-lg font-mono">${esc(bay.label)}</h2>
+              <p class="text-xs text-on-surface-variant mt-0.5">${esc(labelSlot(slot))}</p>
               <div class="flex items-baseline gap-2 mt-2">
-                <span class="font-headline font-extrabold text-3xl tabular-nums">${formatNumber(r.nilai)}</span>
-                <span class="text-sm text-on-surface-variant">${esc(j.satuan)}</span>
-                ${r.ambang ? `<span class="text-xs ml-2 ${r.statusAmbang === 'lewat' ? 'text-error' : r.statusAmbang === 'dekat' ? 'text-tertiary' : 'text-on-surface-variant'}">
-                  ${Math.round(r.pctAmbang)}% dari ambang ${formatNumber(r.ambang)}</span>` : ''}
+                <span class="font-headline font-extrabold text-3xl tabular-nums">${r ? formatNumber(r.nilai) : '–'}</span>
+                <span class="text-sm text-on-surface-variant">kali</span>
               </div>
-              ${r.mundur ? `<p class="text-xs text-error mt-2 bg-error-container/40 border border-error/30 rounded p-2">
+              ${r && r.mundur ? `<p class="text-xs text-error mt-2 bg-error-container/40 border border-error/30 rounded p-2">
                 Pembacaan terakhir lebih kecil dari sebelumnya. Counter mekanis normalnya hanya bertambah —
                 periksa apakah ada salah input, atau peralatan memang diganti/di-reset.</p>` : ''}
-              ${sisa !== null && sisa > 0 && sisa < 120 ? `<p class="text-xs text-on-surface-variant mt-2">
-                Dengan laju ${formatNumber(Math.round(r.lajuBulan))} ${esc(j.satuan)}/bulan, ambang diperkirakan tercapai
-                dalam ± ${sisa < 1 ? 'kurang dari 1' : Math.round(sisa)} bulan.</p>` : ''}
+              ${r && r.data.length > 1 ? `<div class="mt-2">${sparkline(r.data)}</div>` : ''}
             </div>
             <div class="overflow-y-auto flex-grow">
               <table class="w-full text-left">
@@ -276,131 +262,110 @@
                     <th></th>
                   </tr>
                 </thead>
-                <tbody>${rows}</tbody>
+                <tbody>${rows || `<tr><td colspan="5" class="px-3 py-8 text-center text-sm text-on-surface-variant">Belum ada pembacaan.</td></tr>`}</tbody>
               </table>
             </div>
             <div class="p-4 border-t border-outline-variant/20 flex gap-2 shrink-0">
               <button id="tutup" class="flex-grow border border-outline-variant/40 rounded-lg py-2 text-xs font-bold">Tutup</button>
-              <button id="tambah-baca" class="px-4 py-2 bg-primary text-on-primary rounded-lg text-xs font-bold">Catat pembacaan baru</button>
+              <button id="tambah-baca" class="px-4 py-2 bg-primary text-on-primary rounded-lg text-xs font-bold">Isi counter bay ini</button>
             </div>
           </div>
         </div>`;
       $('tutup').addEventListener('click', closeModal);
-      $('tambah-baca').addEventListener('click', () => formCatat(id, jenis));
+      $('tambah-baca').addEventListener('click', () => { closeModal(); setTab('isi'); $('sel-bay').value = idBay; $('sel-bay').dispatchEvent(new Event('change')); });
       document.querySelectorAll('[data-hapus]').forEach((b) =>
         b.addEventListener('click', async (e) => {
           e.stopPropagation();
           b.disabled = true;
-          try { await hapusPembacaan(b.dataset.hapus, id, jenis); closeModal(); await muat(); toast('Pembacaan dihapus'); }
+          try { await hapusPembacaan(b.dataset.hapus, idBay, slotKey); closeModal(); await muat(); toast('Pembacaan dihapus'); }
           catch (err) { showError('Gagal menghapus: ' + err.message); }
         }));
     }
 
-    // ---------- Form catat ----------
-    function formCatat(idAwal, jenisAwal) {
-      // Tanggal LOKAL, bukan `toISOString().slice(0,10)` yang memberi tanggal
-      // UTC — di WIB (UTC+7) itu membuat form default ke KEMARIN setiap kali
-      // dibuka antara pukul 00:00 dan 07:00.
+    // ---------- Mode Isi Counter ----------
+    function isiOpsiBay() {
+      $('sel-bay').innerHTML = '<option value="">— pilih bay —</option>' +
+        BAY_LIST.map((b) => `<option value="${esc(b.id)}">${esc(b.label)} — ${esc(JENIS_BAY[b.jenis].label)}</option>`).join('');
+    }
+
+    function tampilkanFormIsi(idBay) {
+      const bay = bayById(idBay);
+      const form = $('form-isi');
+      if (!bay) { form.classList.add('hidden'); return; }
+      form.classList.remove('hidden');
+
+      const slots = slotUntukBay(bay.jenis);
+      $('isi-judul').textContent = `${bay.label} — ${JENIS_BAY[bay.jenis].label}`;
+      $('isi-slot-list').innerHTML = slots.map((s) => {
+        const r = ringkasan[idBay + '|' + s.key];
+        return `
+          <div>
+            <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">${esc(labelSlot(s))}</label>
+            <input name="slot__${esc(s.key)}" type="number" step="any" min="0" inputmode="decimal" placeholder="${r ? formatNumber(r.nilai) : 'belum ada'}"
+                   class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface tabular-nums">
+            ${r ? `<p class="text-[10px] text-on-surface-variant mt-0.5">terakhir: ${formatNumber(r.nilai)} · ${esc(timeAgo(r.terakhir))}</p>` : ''}
+          </div>`;
+      }).join('');
+
       const kini = new Date();
       const hariIni = `${kini.getFullYear()}-${String(kini.getMonth() + 1).padStart(2, '0')}-${String(kini.getDate()).padStart(2, '0')}`;
-      const opsiPeralatan = peralatan.length
-        ? peralatan.map((p) => `<option value="${esc(p.id_peralatan)}" ${idAwal === p.id_peralatan ? 'selected' : ''}>${esc(p.id_peralatan)} — ${esc(p.jenis)}</option>`).join('')
-        : '';
+      form.querySelector('[name=tanggal]').value = hariIni;
+    }
 
-      $('modal-root').innerHTML = `
-        <div class="modal-backdrop">
-          <div class="bg-surface-container-lowest text-on-surface rounded-xl shadow-2xl w-[480px] p-6">
-            <h2 class="font-headline font-bold text-lg mb-4">Catat pembacaan counter</h2>
-            <form id="form-c" class="space-y-3">
-              <div>
-                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Peralatan *</label>
-                ${peralatan.length ? `
-                  <select name="id_peralatan" required class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
-                    ${opsiPeralatan}
-                  </select>` : `
-                  <input name="id_peralatan" value="${esc(idAwal || '')}" required placeholder="PMT-01"
-                         class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface font-mono">
-                  <p class="text-[11px] text-tertiary mt-1">Daftar peralatan masih kosong — ID diketik manual. Isi dulu di menu Data Peralatan agar bisa dipilih.</p>`}
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Jenis counter *</label>
-                <select name="jenis_counter" required id="sel-jenis" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
-                  ${JENIS_COUNTER.map((j) => `<option value="${j.key}" ${jenisAwal === j.key ? 'selected' : ''}>${esc(j.label)}${j.satuan ? ' (' + j.satuan + ')' : ''}</option>`).join('')}
-                </select>
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Nilai *</label>
-                  <input name="nilai" type="number" step="any" min="0" required inputmode="decimal"
-                         class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface tabular-nums">
-                </div>
-                <div>
-                  <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Tanggal baca</label>
-                  <input name="tanggal" type="date" value="${hariIni}"
-                         class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
-                </div>
-              </div>
-              <div id="info-sebelum" class="text-[11px] text-on-surface-variant"></div>
-              <div>
-                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Dibaca oleh</label>
-                <input name="oleh" value="Wisnu" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
-              </div>
-              <div class="flex gap-2 pt-2">
-                <button type="button" id="batal" class="flex-1 border border-outline-variant/40 rounded-lg py-2 text-sm font-medium">Batal</button>
-                <button type="submit" class="flex-1 bg-primary text-on-primary rounded-lg py-2 text-sm font-bold">Simpan</button>
-              </div>
-            </form>
-          </div>
-        </div>`;
+    function bootstrapIsi() {
+      isiOpsiBay();
+      $('sel-bay').addEventListener('change', (e) => tampilkanFormIsi(e.target.value));
 
-      $('batal').addEventListener('click', closeModal);
-
-      // tampilkan nilai terakhir sebagai acuan supaya salah input lebih mudah ketahuan
-      const perbaruiInfo = () => {
-        const f = $('form-c');
-        const id = f.id_peralatan.value, jn = f.jenis_counter.value;
-        const r = rangkuman.find((x) => x.id_peralatan === id && x.jenis_counter === jn);
-        $('info-sebelum').innerHTML = r
-          ? `Pembacaan terakhir: <b class="tabular-nums">${formatNumber(r.nilai)}</b> ${esc(jenisCounter(jn).satuan)} pada ${formatDate(r.terakhir)}.`
-          : 'Belum ada pembacaan sebelumnya untuk kombinasi ini.';
-      };
-      $('form-c').addEventListener('change', perbaruiInfo);
-      perbaruiInfo();
-
-      $('form-c').addEventListener('submit', async (e) => {
+      $('form-isi').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const d = Object.fromEntries(new FormData(e.target).entries());
-        const r = rangkuman.find((x) => x.id_peralatan === d.id_peralatan && x.jenis_counter === d.jenis_counter);
-        if (r && Number(d.nilai) < r.nilai) {
-          const ok = confirm(`Nilai yang dimasukkan (${formatNumber(Number(d.nilai))}) lebih kecil dari pembacaan terakhir (${formatNumber(r.nilai)}).\n\nCounter mekanis normalnya hanya bertambah. Tetap simpan?`);
+        const idBay = $('sel-bay').value;
+        if (!idBay) return;
+        const fd = new FormData(e.target);
+        const tanggal = fd.get('tanggal');
+        const oleh = fd.get('oleh');
+        const nilaiPerSlot = {};
+        for (const [k, v] of fd.entries()) {
+          if (k.startsWith('slot__') && String(v).trim() !== '') nilaiPerSlot[k.slice(6)] = v;
+        }
+        if (!Object.keys(nilaiPerSlot).length) { alert('Isi minimal satu slot counter.'); return; }
+
+        // Peringatan kalau ada nilai yang tampak mundur dari pembacaan terakhir.
+        const mundurList = Object.entries(nilaiPerSlot)
+          .filter(([slot, v]) => {
+            const r = ringkasan[idBay + '|' + slot];
+            return r && Number(v) < r.nilai;
+          });
+        if (mundurList.length) {
+          const ok = confirm(`${mundurList.length} slot nilainya lebih kecil dari pembacaan terakhir. Counter mekanis normalnya hanya bertambah.\n\nTetap simpan?`);
           if (!ok) return;
         }
-        const b = e.target.querySelector('[type=submit]');
-        b.disabled = true; b.textContent = 'Menyimpan…';
+
+        const btn = e.target.querySelector('[type=submit]');
+        btn.disabled = true; btn.textContent = 'Menyimpan…';
         try {
-          await addPembacaan(d);
-          closeModal(); await muat(); toast('Pembacaan tersimpan');
-        } catch (err) { b.disabled = false; b.textContent = 'Simpan'; alert('Gagal: ' + err.message); }
+          await addPembacaanBanyak(idBay, nilaiPerSlot, tanggal, oleh);
+          await muat();
+          tampilkanFormIsi(idBay); // refresh angka "terakhir" di form
+          toast(`Tersimpan ${Object.keys(nilaiPerSlot).length} pembacaan untuk ${bayById(idBay).label}`);
+        } catch (err) {
+          alert('Gagal: ' + err.message);
+        } finally {
+          btn.disabled = false; btn.textContent = 'Simpan pembacaan';
+        }
       });
     }
 
     // ---------- Bootstrap ----------
     async function muat() {
       try {
-        const [lg, pr] = await Promise.all([loadCounterLog(), apiLoad('peralatan_master')]);
-        logs = lg;
-        peralatan = pr.filter((p) => p && p.id_peralatan)
-          .map((p) => ({ id_peralatan: String(p.id_peralatan), jenis: p.jenis || '', bay: p.bay || '' }))
-          .sort((a, b) => a.id_peralatan.localeCompare(b.id_peralatan));
-        rangkuman = rangkumCounter(logs);
+        logs = await loadCounterLog();
+        ringkasan = rangkumCounter(logs);
         hideError();
       } catch (err) {
-        logs = []; rangkuman = []; peralatan = [];
+        logs = []; ringkasan = {};
         showError(err.message);
       }
-      isiFilterJenis();
-      renderRingkasan();
-      renderTabel();
+      renderGrid();
     }
 
     async function bootstrap() {
@@ -408,12 +373,14 @@
       c.innerHTML = '';
       c.appendChild($('ct-template').content.cloneNode(true));
 
-      $('btn-catat').addEventListener('click', () => formCatat(null, null));
-      $('cari').addEventListener('input', renderTabel);
-      $('filter-jenis').addEventListener('change', renderTabel);
-      $('filter-status').addEventListener('change', renderTabel);
+      setTab('monitor');
+      $('tab-monitor').addEventListener('click', () => setTab('monitor'));
+      $('tab-isi').addEventListener('click', () => setTab('isi'));
+      $('cari').addEventListener('input', renderGrid);
+      $('filter-jenis').addEventListener('change', renderGrid);
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
+      bootstrapIsi();
       await muat();
     }
 

@@ -1,30 +1,77 @@
 /**
  * features/counter/db.js
- * Logika data modul Counter Peralatan.
+ * Logika data modul Counter Peralatan — GI Situbondo.
  *
- * Counter dicatat sebagai pembacaan berurutan (bukan nilai tunggal yang
- * ditimpa), supaya selisih antar pembacaan dan laju pemakaian bisa dihitung.
+ * Struktur: 10 BAY, tiap bay punya beberapa SLOT counter (PMT/LA/OLTC,
+ * sebagian per fasa R/S/T). Counter dicatat sebagai pembacaan berurutan
+ * (bukan nilai tunggal yang ditimpa) supaya selisih & laju pemakaian bisa
+ * dihitung. Pencatatan dilakukan sewaktu-waktu (tidak terjadwal tetap).
+ *
+ * Tidak ada konsep "ambang batas" — counter berapapun nilainya dianggap
+ * aman. Yang dipantau di sini murni nilai terkini, tren, dan kualitas input
+ * (pembacaan yang tampak mundur/salah ketik).
+ *
  * Sheet: counter_log (timestamp, id_peralatan, jenis_counter, nilai, oleh).
+ * Nama kolom sheet dipertahankan (skema lama, tanpa migrasi Code.gs):
+ *   id_peralatan  → diisi ID BAY (mis. 'TRAFO-1', 'PTN-1')
+ *   jenis_counter → diisi SLOT key (mis. 'PMT', 'LA-R', 'OLTC', 'PMT-S')
  */
 
 /**
- * Jenis counter yang lazim dipantau di gardu induk.
- * `ambang` = perkiraan awal batas perhatian — WAJIB disesuaikan dengan
- * ketentuan pemeliharaan yang berlaku di unit, bukan angka baku.
+ * 10 bay di GI Situbondo. `jenis` menentukan slot counter apa saja yang
+ * dipunyai bay tsb (lihat slotUntukBay).
  */
-const JENIS_COUNTER = [
-  { key: 'kerja_pmt',    label: 'Jumlah kerja PMT',      satuan: 'kali',  ambang: 2000 },
-  { key: 'trip_gangguan',label: 'Trip karena gangguan',  satuan: 'kali',  ambang: 20 },
-  { key: 'jam_operasi',  label: 'Jam operasi',           satuan: 'jam',   ambang: 40000 },
-  { key: 'kerja_pms',    label: 'Jumlah kerja PMS',      satuan: 'kali',  ambang: 1000 },
-  { key: 'operasi_la',   label: 'Kerja LA (arrester)',   satuan: 'kali',  ambang: 10 },
-  { key: 'jam_kompresor',label: 'Jam kerja kompresor',   satuan: 'jam',   ambang: 5000 },
-  { key: 'start_genset', label: 'Start genset',          satuan: 'kali',  ambang: 500 },
-  { key: 'lain',         label: 'Lain-lain',             satuan: '',      ambang: null }
+const BAY_LIST = [
+  { id: 'TRAFO-1', label: 'Trafo 1', jenis: 'trafo' },
+  { id: 'TRAFO-2', label: 'Trafo 2', jenis: 'trafo' },
+  { id: 'TRAFO-3', label: 'Trafo 3', jenis: 'trafo' },
+  { id: 'BWI-1', label: 'Banyuwangi #1', jenis: 'penghantar' },
+  { id: 'BWI-2', label: 'Banyuwangi #2', jenis: 'penghantar' },
+  { id: 'KOPEL', label: 'Kopel', jenis: 'kopel' },
+  { id: 'BDW-1', label: 'Bondowoso #1', jenis: 'penghantar' },
+  { id: 'BDW-2', label: 'Bondowoso #2', jenis: 'penghantar' },
+  { id: 'PTN-1', label: 'Paiton #1', jenis: 'penghantar' },
+  { id: 'PTN-2', label: 'Paiton #2', jenis: 'penghantar' }
 ];
 
-function jenisCounter(key) {
-  return JENIS_COUNTER.find((j) => j.key === key) || JENIS_COUNTER[JENIS_COUNTER.length - 1];
+/** Label untuk jenis bay, dipakai di sub-judul kartu & filter. */
+const JENIS_BAY = {
+  trafo: { label: 'Bay Trafo' },
+  penghantar: { label: 'Bay Penghantar' },
+  kopel: { label: 'Bay Kopel' }
+};
+
+function bayById(id) {
+  return BAY_LIST.find((b) => b.id === id) || null;
+}
+
+/**
+ * Slot counter per jenis bay. Semua satuannya 'kali' (jumlah kerja/operasi).
+ *   - trafo:      PMT (1), LA Fasa R/S/T (3), OLTC (1)      = 5 slot
+ *   - kopel:      PMT (1), LA Fasa R/S/T (3)                = 4 slot
+ *   - penghantar: PMT Fasa R/S/T (3), LA Fasa R/S/T (3)     = 6 slot
+ */
+function slotUntukBay(jenisBay) {
+  const la = ['R', 'S', 'T'].map((f) => ({ key: `LA-${f}`, kelompok: 'LA', fasa: f }));
+  if (jenisBay === 'trafo') {
+    return [{ key: 'PMT', kelompok: 'PMT', fasa: null }, ...la, { key: 'OLTC', kelompok: 'OLTC', fasa: null }];
+  }
+  if (jenisBay === 'kopel') {
+    return [{ key: 'PMT', kelompok: 'PMT', fasa: null }, ...la];
+  }
+  // penghantar
+  const pmt = ['R', 'S', 'T'].map((f) => ({ key: `PMT-${f}`, kelompok: 'PMT', fasa: f }));
+  return [...pmt, ...la];
+}
+
+function labelSlot(slot) {
+  return slot.fasa ? `${slot.kelompok} · Fasa ${slot.fasa}` : slot.kelompok;
+}
+
+/** Semua slot milik satu bay (dari id bay), atau [] kalau bay tak dikenal. */
+function slotBay(idBay) {
+  const bay = bayById(idBay);
+  return bay ? slotUntukBay(bay.jenis) : [];
 }
 
 // ---------- Baca / tulis ----------
@@ -65,22 +112,22 @@ async function loadCounterLog() {
     .filter((r) => Number.isFinite(Number(r.nilai)) && String(r.nilai).trim() !== '')
     .map((r) => ({
       timestamp: r.timestamp || '',
-      id_peralatan: String(r.id_peralatan),
-      jenis_counter: String(r.jenis_counter),
+      id_bay: String(r.id_peralatan),
+      slot: String(r.jenis_counter),
       nilai: Number(r.nilai),
       oleh: r.oleh || ''
     }))
     .sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp)));
 }
 
-async function addPembacaan({ id_peralatan, jenis_counter, nilai, tanggal, oleh }) {
+async function addPembacaan({ id_bay, slot, nilai, tanggal, oleh }) {
   const angka = Number(nilai);
   if (!Number.isFinite(angka)) throw new Error('Nilai counter harus berupa angka');
 
   const row = {
     timestamp: stempelWaktu(tanggal),
-    id_peralatan,
-    jenis_counter,
+    id_peralatan: id_bay,
+    jenis_counter: slot,
     nilai: angka,
     oleh: oleh || 'Wisnu'
   };
@@ -88,30 +135,49 @@ async function addPembacaan({ id_peralatan, jenis_counter, nilai, tanggal, oleh 
   return row;
 }
 
-/** Hapus satu pembacaan (mis. salah input). Dicocokkan dari timestamp + id. */
-async function hapusPembacaan(timestamp, id_peralatan, jenis_counter) {
+/**
+ * Simpan beberapa slot bay sekaligus (mode "Isi Counter") — satu kunjungan
+ * biasanya mengisi banyak slot dalam bay yang sama. Slot yang dikosongkan
+ * user dilewati, bukan disimpan sebagai 0.
+ */
+async function addPembacaanBanyak(idBay, nilaiPerSlot, tanggal, oleh) {
+  const hasil = [];
+  for (const [slot, nilai] of Object.entries(nilaiPerSlot)) {
+    if (nilai === '' || nilai === null || nilai === undefined) continue;
+    hasil.push(await addPembacaan({ id_bay: idBay, slot, nilai, tanggal, oleh }));
+  }
+  return hasil;
+}
+
+/** Hapus satu pembacaan (mis. salah input). Dicocokkan dari timestamp + bay + slot. */
+async function hapusPembacaan(timestamp, idBay, slot) {
   const semua = await loadCounterLog();
   const sisa = semua.filter((r) =>
-    !(r.timestamp === timestamp && r.id_peralatan === id_peralatan && r.jenis_counter === jenis_counter));
-  await apiSave('counter_log', sisa);
+    !(r.timestamp === timestamp && r.id_bay === idBay && r.slot === slot));
+  await apiSave('counter_log', sisa.map((r) => ({
+    timestamp: r.timestamp, id_peralatan: r.id_bay, jenis_counter: r.slot, nilai: r.nilai, oleh: r.oleh
+  })));
   return semua.length - sisa.length;
 }
 
 // ---------- Pengolahan ----------
 
 /**
- * Kelompokkan pembacaan per peralatan + jenis counter, lalu hitung turunannya:
- * nilai terakhir, selisih dari pembacaan sebelumnya, dan laju per bulan.
+ * Kelompokkan pembacaan per bay + slot, lalu hitung turunannya: nilai
+ * terakhir, selisih dari pembacaan sebelumnya, dan laju per bulan.
+ * Hasil berupa map "idBay|slot" -> ringkasan, supaya gampang dicocokkan ke
+ * struktur BAY_LIST/slotBay saat render kartu.
  */
 function rangkumCounter(logs) {
   const seri = {};
   logs.forEach((l) => {
-    const k = l.id_peralatan + '|' + l.jenis_counter;
-    if (!seri[k]) seri[k] = { id_peralatan: l.id_peralatan, jenis_counter: l.jenis_counter, data: [] };
+    const k = l.id_bay + '|' + l.slot;
+    if (!seri[k]) seri[k] = { id_bay: l.id_bay, slot: l.slot, data: [] };
     seri[k].data.push(l);
   });
 
-  return Object.values(seri).map((s) => {
+  const out = {};
+  Object.values(seri).forEach((s) => {
     const d = s.data.sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp)));
     const akhir = d[d.length - 1];
     const sebelum = d.length > 1 ? d[d.length - 2] : null;
@@ -125,41 +191,16 @@ function rangkumCounter(logs) {
       if (hari > 0.5 && delta >= 0) lajuBulan = (delta / hari) * 30;
     }
 
-    const j = jenisCounter(s.jenis_counter);
-    const pctAmbang = j.ambang ? (akhir.nilai / j.ambang) * 100 : null;
-
-    return {
+    out[s.id_bay + '|' + s.slot] = {
       ...s, data: d,
       nilai: akhir.nilai,
       terakhir: akhir.timestamp,
       oleh: akhir.oleh,
       jumlahBaca: d.length,
-      delta, lajuBulan, mundur,
-      ambang: j.ambang,
-      pctAmbang,
-      statusAmbang: pctAmbang === null ? null : (pctAmbang >= 100 ? 'lewat' : pctAmbang >= 80 ? 'dekat' : 'aman')
+      delta, lajuBulan, mundur
     };
-  }).sort((a, b) =>
-    a.id_peralatan.localeCompare(b.id_peralatan) || a.jenis_counter.localeCompare(b.jenis_counter));
-}
-
-/** Perkiraan bulan tersisa sampai menyentuh ambang, berdasarkan laju terakhir. */
-function perkiraanBulan(r) {
-  if (!r.ambang || !r.lajuBulan || r.lajuBulan <= 0) return null;
-  const sisa = r.ambang - r.nilai;
-  if (sisa <= 0) return 0;
-  return sisa / r.lajuBulan;
-}
-
-/** Ringkasan untuk kartu metrik. */
-function ringkasCounter(rangkuman) {
-  return {
-    totalSeri: rangkuman.length,
-    peralatan: new Set(rangkuman.map((r) => r.id_peralatan)).size,
-    lewatAmbang: rangkuman.filter((r) => r.statusAmbang === 'lewat').length,
-    dekatAmbang: rangkuman.filter((r) => r.statusAmbang === 'dekat').length,
-    anomaliInput: rangkuman.filter((r) => r.mundur).length
-  };
+  });
+  return out;
 }
 
 /** Titik-titik untuk sparkline (dinormalkan ke kotak w x h). */

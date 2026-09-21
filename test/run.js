@@ -55,41 +55,39 @@ console.log('\n=== PLN GI Suite — uji fungsi murni ===\n');
 {
   const m = muatModul('features/counter/db.js');
 
-  uji('jenisCounter: kunci dikenal', () => {
-    sama(m.jenisCounter('kerja_pmt').satuan, 'kali');
+  uji('BAY_LIST: 10 bay terdaftar', () => sama(m.BAY_LIST.length, 10));
+  uji('bayById: ditemukan', () => sama(m.bayById('KOPEL').jenis, 'kopel'));
+  uji('bayById: tak dikenal -> null', () => sama(m.bayById('NGAWUR'), null));
+
+  uji('slotUntukBay: trafo 5 slot (PMT, LA-R/S/T, OLTC)', () => {
+    sama(m.slotUntukBay('trafo').map((s) => s.key), ['PMT', 'LA-R', 'LA-S', 'LA-T', 'OLTC']);
   });
-  uji('jenisCounter: kunci asing jatuh ke Lain-lain', () => {
-    sama(m.jenisCounter('ngawur').key, 'lain');
+  uji('slotUntukBay: kopel 4 slot (PMT, LA-R/S/T)', () => {
+    sama(m.slotUntukBay('kopel').map((s) => s.key), ['PMT', 'LA-R', 'LA-S', 'LA-T']);
   });
+  uji('slotUntukBay: penghantar 6 slot (PMT R/S/T, LA R/S/T)', () => {
+    sama(m.slotUntukBay('penghantar').map((s) => s.key), ['PMT-R', 'PMT-S', 'PMT-T', 'LA-R', 'LA-S', 'LA-T']);
+  });
+  uji('labelSlot: slot berfasa', () => sama(m.labelSlot({ kelompok: 'LA', fasa: 'R' }), 'LA · Fasa R'));
+  uji('labelSlot: slot tanpa fasa', () => sama(m.labelSlot({ kelompok: 'OLTC', fasa: null }), 'OLTC'));
 
   const logs = [
-    { timestamp: '2026-01-01T00:00:00Z', id_peralatan: 'PMT-01', jenis_counter: 'kerja_pmt', nilai: 1500, oleh: 'A' },
-    { timestamp: '2026-04-01T00:00:00Z', id_peralatan: 'PMT-01', jenis_counter: 'kerja_pmt', nilai: 1700, oleh: 'A' },
-    { timestamp: '2026-07-01T00:00:00Z', id_peralatan: 'PMT-01', jenis_counter: 'kerja_pmt', nilai: 1950, oleh: 'A' },
-    { timestamp: '2026-01-01T00:00:00Z', id_peralatan: 'PMT-02', jenis_counter: 'kerja_pmt', nilai: 2100, oleh: 'B' },
-    { timestamp: '2026-06-01T00:00:00Z', id_peralatan: 'PMT-02', jenis_counter: 'kerja_pmt', nilai: 2050, oleh: 'B' }
+    { timestamp: '2026-01-01T00:00:00Z', id_bay: 'TRAFO-1', slot: 'OLTC', nilai: 1500, oleh: 'A' },
+    { timestamp: '2026-04-01T00:00:00Z', id_bay: 'TRAFO-1', slot: 'OLTC', nilai: 1700, oleh: 'A' },
+    { timestamp: '2026-07-01T00:00:00Z', id_bay: 'TRAFO-1', slot: 'OLTC', nilai: 1950, oleh: 'A' },
+    { timestamp: '2026-01-01T00:00:00Z', id_bay: 'PTN-1', slot: 'PMT-R', nilai: 2100, oleh: 'B' },
+    { timestamp: '2026-06-01T00:00:00Z', id_bay: 'PTN-1', slot: 'PMT-R', nilai: 2050, oleh: 'B' }
   ];
-  const r = m.rangkumCounter(logs);
+  const rMap = m.rangkumCounter(logs);
+  const r0 = rMap['TRAFO-1|OLTC'];
+  const r1 = rMap['PTN-1|PMT-R'];
 
-  uji('rangkumCounter: satu seri per peralatan+jenis', () => sama(r.length, 2));
-  uji('rangkumCounter: nilai terakhir diambil dari pembacaan terbaru', () => sama(r[0].nilai, 1950));
-  uji('rangkumCounter: delta dihitung dari pembacaan sebelumnya', () => sama(r[0].delta, 250));
-  uji('rangkumCounter: laju per bulan wajar', () => dekat(r[0].lajuBulan, 82.4, 1));
-  uji('rangkumCounter: counter turun ditandai mundur', () => benar(r[1].mundur));
-  uji('rangkumCounter: counter mundur tidak menghitung laju', () => sama(r[1].lajuBulan, null));
-  uji('rangkumCounter: status ambang 1950/2000 = dekat', () => sama(r[0].statusAmbang, 'dekat'));
-  uji('rangkumCounter: status ambang 2050/2000 = lewat', () => sama(r[1].statusAmbang, 'lewat'));
-
-  uji('perkiraanBulan: positif saat masih di bawah ambang', () => benar(m.perkiraanBulan(r[0]) > 0));
-  uji('perkiraanBulan: null tanpa laju', () => sama(m.perkiraanBulan(r[1]), null));
-  uji('perkiraanBulan: 0 saat sudah melewati ambang', () => {
-    sama(m.perkiraanBulan({ ambang: 100, nilai: 150, lajuBulan: 10 }), 0);
-  });
-
-  uji('ringkasCounter: hitung seri, peralatan, dan anomali', () => {
-    const s = m.ringkasCounter(r);
-    sama([s.totalSeri, s.peralatan, s.lewatAmbang, s.dekatAmbang, s.anomaliInput], [2, 2, 1, 1, 1]);
-  });
+  uji('rangkumCounter: satu seri per bay+slot', () => sama(Object.keys(rMap).length, 2));
+  uji('rangkumCounter: nilai terakhir diambil dari pembacaan terbaru', () => sama(r0.nilai, 1950));
+  uji('rangkumCounter: delta dihitung dari pembacaan sebelumnya', () => sama(r0.delta, 250));
+  uji('rangkumCounter: laju per bulan wajar', () => dekat(r0.lajuBulan, 82.4, 1));
+  uji('rangkumCounter: counter turun ditandai mundur', () => benar(r1.mundur));
+  uji('rangkumCounter: counter mundur tidak menghitung laju', () => sama(r1.lajuBulan, null));
 
   uji('titikSparkline: kosong bila data < 2', () => sama(m.titikSparkline([logs[0]], 80, 20), ''));
   uji('titikSparkline: titik pertama & terakhir menyentuh tepi', () => {
