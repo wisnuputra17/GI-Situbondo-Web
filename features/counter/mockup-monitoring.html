@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOCKUP — Monitoring Counter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../../shared/tailwind-config.js"></script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+  body { font-family: 'Inter', sans-serif; }
+  h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+</style>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+
+  <div class="p-8 space-y-6 max-w-[1500px] mx-auto w-full">
+
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-headline font-extrabold">Counter Peralatan — GI Situbondo</h1>
+        <p class="text-xs text-on-surface-variant mt-0.5">MOCKUP — data dummy, belum tersambung</p>
+      </div>
+      <div class="inline-flex bg-surface-container-low rounded-lg p-1 gap-1">
+        <button class="px-4 py-2 rounded-md text-xs font-bold bg-surface-container-lowest shadow-sm text-primary flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">grid_view</span> Monitoring
+        </button>
+        <button class="px-4 py-2 rounded-md text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">edit_note</span> Isi Counter
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="flex gap-3 items-center">
+      <div class="relative flex-grow max-w-sm">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+        <input placeholder="Cari bay…" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded py-2 pl-10 pr-4 text-sm">
+      </div>
+      <select class="text-sm border border-outline-variant/40 rounded py-2 px-3 bg-surface-container-lowest">
+        <option>Semua jenis bay</option>
+        <option>Trafo</option>
+        <option>Penghantar</option>
+        <option>Kopel</option>
+      </select>
+    </div>
+
+    <!-- Grid kartu per bay -->
+    <div class="grid grid-cols-3 gap-5">
+
+      <!-- Kartu: Bay Trafo (PMT, LA-R/S/T, OLTC) -->
+      <div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant/10 overflow-hidden">
+        <div class="px-4 py-3 bg-surface-container-low/50 border-b border-outline-variant/10 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold font-mono">TRAFO 1</h3>
+            <p class="text-[10px] text-on-surface-variant uppercase tracking-wide">Bay Trafo</p>
+          </div>
+        </div>
+        <div class="p-4 space-y-3">
+          <div class="bg-surface-container-low/40 rounded p-3 cursor-pointer hover:bg-surface-container-low/70">
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">PMT</p>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span class="text-2xl font-headline font-extrabold tabular-nums">1.240</span>
+              <span class="text-[10px] text-on-surface-variant">kali</span>
+            </div>
+            <p class="text-[10px] text-on-surface-variant mt-1">diisi 3 hari lalu</p>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide mb-1.5">LA</p>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">R</p>
+                <span class="text-sm font-bold tabular-nums">18</span>
+              </div>
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">S</p>
+                <span class="text-sm font-bold tabular-nums">9</span>
+              </div>
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">T</p>
+                <span class="text-sm font-bold tabular-nums">17</span>
+              </div>
+            </div>
+          </div>
+          <div class="bg-surface-container-low/40 rounded p-3 cursor-pointer hover:bg-surface-container-low/70">
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">OLTC</p>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span class="text-2xl font-headline font-extrabold tabular-nums">6.812</span>
+              <span class="text-[10px] text-on-surface-variant">kali</span>
+            </div>
+            <p class="text-[10px] text-on-surface-variant mt-1">diisi 3 hari lalu</p>
+          </div>
+          <p class="text-[10px] text-on-surface-variant">diisi 3 hari lalu · oleh Wisnu</p>
+        </div>
+      </div>
+
+      <!-- Kartu: Bay Penghantar (PMT R/S/T, LA R/S/T) -->
+      <div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant/10 overflow-hidden">
+        <div class="px-4 py-3 bg-surface-container-low/50 border-b border-outline-variant/10 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold font-mono">PAITON #1</h3>
+            <p class="text-[10px] text-on-surface-variant uppercase tracking-wide">Bay Penghantar</p>
+          </div>
+        </div>
+        <div class="p-4 space-y-3">
+          <div>
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide mb-1.5">PMT</p>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">R</p>
+                <span class="text-sm font-bold tabular-nums">402</span>
+              </div>
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">S</p>
+                <span class="text-sm font-bold tabular-nums">398</span>
+              </div>
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">T</p>
+                <span class="text-sm font-bold tabular-nums">401</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide mb-1.5">LA</p>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">R</p>
+                <span class="text-sm font-bold tabular-nums">4</span>
+              </div>
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">S</p>
+                <span class="text-sm font-bold tabular-nums">4</span>
+              </div>
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">T</p>
+                <span class="text-sm font-bold tabular-nums">5</span>
+              </div>
+            </div>
+          </div>
+          <p class="text-[10px] text-on-surface-variant">diisi 1 hari lalu · oleh Wisnu</p>
+        </div>
+      </div>
+
+      <!-- Kartu: Bay Kopel (PMT, LA R/S/T) -->
+      <div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant/10 overflow-hidden">
+        <div class="px-4 py-3 bg-surface-container-low/50 border-b border-outline-variant/10 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold font-mono">KOPEL</h3>
+            <p class="text-[10px] text-on-surface-variant uppercase tracking-wide">Bay Kopel</p>
+          </div>
+          <span class="text-[10px] font-bold text-outline bg-surface-container-high px-2 py-0.5 rounded">belum diisi</span>
+        </div>
+        <div class="p-4 space-y-3">
+          <div class="bg-surface-container-low/40 rounded p-3 cursor-pointer hover:bg-surface-container-low/70">
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">PMT</p>
+            <span class="text-sm text-outline italic">belum ada pembacaan</span>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide mb-1.5">LA</p>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">R</p>
+                <span class="text-xs text-outline italic">–</span>
+              </div>
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">S</p>
+                <span class="text-xs text-outline italic">–</span>
+              </div>
+              <div class="bg-surface-container-low/40 rounded p-2 text-center cursor-pointer hover:bg-surface-container-low/70">
+                <p class="text-[9px] text-on-surface-variant">T</p>
+                <span class="text-xs text-outline italic">–</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="bg-surface-container-low border border-outline-variant/25 rounded-lg px-4 py-3 flex items-start gap-2.5">
+      <span class="material-symbols-outlined text-base text-tertiary">info</span>
+      <p class="text-xs text-on-surface-variant leading-relaxed">
+        Klik salah satu angka slot (mis. "LA · T") untuk buka detail: riwayat pembacaan + trendline.
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
