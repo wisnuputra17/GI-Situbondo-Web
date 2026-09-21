@@ -654,9 +654,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:#05070D;color:#E6EDF7;-
       const session = { username: user.username, name: user.name, role: user.role, loginAt: Date.now() };
       if (remember.checked){
         localStorage.setItem('gi_user', JSON.stringify(session));
+        localStorage.setItem('pln_gi_pw', user.password);
         localStorage.setItem('gi_remember_user', user.username);
       } else {
         sessionStorage.setItem('gi_user', JSON.stringify(session));
+        sessionStorage.setItem('pln_gi_pw', user.password);
         localStorage.removeItem('gi_remember_user');
       }
       setTimeout(()=>{ window.location.href = DASHBOARD_URL; }, 700);

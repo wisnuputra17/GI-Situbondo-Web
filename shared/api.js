@@ -36,6 +36,8 @@ function requireAuth(rootPrefix = '') {
 
 function logout(rootPrefix = '') {
   clearPassword();
+  sessionStorage.removeItem('gi_user');
+  localStorage.removeItem('gi_user');
   window.location.replace(rootPrefix + 'index.html');
 }
 
