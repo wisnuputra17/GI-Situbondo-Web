@@ -193,18 +193,31 @@
     /** Kirim notif Telegram tanpa memblokir alur utama kalau gagal. */
     async function kirimNotif(teks) {
       try {
-        console.log('Kirim notif:', teks);
+        console.log('📤 Kirim notif Telegram:', teks.substring(0, 50) + '...');
         const hasil = await apiNotifyTelegram(teks);
-        console.log('Notif response:', hasil);
-        if (!hasil.sent) {
-          console.warn('Notifikasi Telegram gagal:', hasil.reason || hasil.results);
-          // Jangan throw error, hanya log supaya tidak block workflow
+        console.log('📥 Notif response:', hasil);
+        
+        if (!hasil) {
+          console.warn('❌ Response kosong dari backend');
+          return;
+        }
+        
+        // hasil bisa berupa: { sent: true/false, results: [...] } atau { sent: false, reason: "..." }
+        if (hasil.sent === true) {
+          console.log('✅ Notif terkirim ke semua');
+        } else if (hasil.sent === false) {
+          const reason = hasil.reason || (hasil.results ? 'Lihat results' : 'Unknown error');
+          console.warn('⚠️  Notifikasi Telegram gagal:', reason);
+          if (hasil.results && Array.isArray(hasil.results)) {
+            hasil.results.forEach(r => {
+              console.warn(`   - ${r.chatId}: ${r.reason || (r.sent ? 'OK' : 'Failed')}`);
+            });
+          }
         } else {
-          console.log('✅ Notif terkirim');
+          console.warn('⚠️  Notifikasi status tidak jelas:', hasil);
         }
       } catch (err) {
-        console.warn('Notifikasi Telegram error:', err.message);
-        // Jangan throw error, hanya log
+        console.error('❌ Notifikasi Telegram error:', err.message);
       }
     }
 
