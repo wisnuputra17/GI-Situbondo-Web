@@ -313,7 +313,8 @@ function notifyTelegram(message) {
 // ---------- Setup Properties ----------
 /**
  * Fungsi setup otomatis: set TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS, 
- * ACCESS_PASSWORD, dan bersihkan/initialize alat_master sheet.
+ * ACCESS_PASSWORD, initialize alat_master + personil_master sheets,
+ * dan populate sample data personil (4 admin GI Situbondo).
  * Jalankan ini SEKALI via endpoint: ?setup=telegram
  */
 function setupTelegram() {
@@ -338,6 +339,31 @@ function setupTelegram() {
     Logger.log('⚠️  Gagal initialize alat_master: ' + err.message);
   }
   
+  // Initialize personil_master dengan data sample (4 admin)
+  try {
+    const sheet = getOrCreateSheet('personil_master');
+    sheet.clearContents();
+    const headers = SHEET_HEADERS['personil_master'];
+    sheet.appendRow(headers);
+    
+    // Data 4 admin GI Situbondo
+    const samplePersonil = [
+      { id_personil: 'PER-FAJAR', nama: 'Fajar Bagus', jabatan: 'Teknisi Senior', updated_at: new Date().toISOString() },
+      { id_personil: 'PER-WISNU', nama: 'Wisnu Putra', jabatan: 'Engineer', updated_at: new Date().toISOString() },
+      { id_personil: 'PER-ADM01', nama: 'Admin 3', jabatan: 'Administrator', updated_at: new Date().toISOString() },
+      { id_personil: 'PER-ADM02', nama: 'Admin 4', jabatan: 'Supervisor', updated_at: new Date().toISOString() }
+    ];
+    
+    samplePersonil.forEach(p => {
+      const row = headers.map(h => (p[h] !== undefined ? p[h] : ''));
+      sheet.appendRow(row);
+    });
+    
+    Logger.log('✅ personil_master sheet di-initialize dengan 4 sample data');
+  } catch (err) {
+    Logger.log('⚠️  Gagal initialize personil_master: ' + err.message);
+  }
+  
   Logger.log('✅ Telegram & Access properties berhasil di-setup:');
   Logger.log('   TELEGRAM_BOT_TOKEN: ' + token.substring(0, 20) + '...');
   Logger.log('   TELEGRAM_CHAT_IDS: ' + chatIds);
@@ -345,7 +371,7 @@ function setupTelegram() {
   
   return {
     ok: true,
-    message: 'Properties & sheets setup berhasil',
+    message: 'Properties & sheets setup berhasil (dengan sample personil)',
     token: token.substring(0, 20) + '...',
     chatIds: chatIds,
     accessPassword: accessPassword
