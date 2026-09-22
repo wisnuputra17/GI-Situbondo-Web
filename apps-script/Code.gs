@@ -35,6 +35,12 @@ const SHEET_HEADERS = {
 function doGet(e) {
   try {
     const params = e.parameter || {};
+    
+    // Setup endpoint: GET dengan parameter setup=telegram
+    if (params.setup === 'telegram') {
+      return jsonOut(setupTelegram());
+    }
+    
     if (params.action === 'ping') {
       return jsonOut({ ok: true, message: 'PLN GI Suite backend aktif' });
     }
@@ -293,6 +299,32 @@ function notifyTelegram(message) {
   
   const allSent = results.every(r => r.sent);
   return { sent: allSent, results: results };
+}
+
+// ---------- Setup Properties ----------
+/**
+ * Fungsi setup otomatis: set TELEGRAM_BOT_TOKEN dan TELEGRAM_CHAT_IDS
+ * ke Script Properties. Jalankan ini SEKALI via clasp run setupTelegram
+ */
+function setupTelegram() {
+  const props = PropertiesService.getScriptProperties();
+  
+  const token = '8910259474:AAH8Uvi3DDxUP95Gddkapsf3ytJ1o9b6qRk';
+  const chatIds = '2138968822,6531471803';
+  
+  props.setProperty('TELEGRAM_BOT_TOKEN', token);
+  props.setProperty('TELEGRAM_CHAT_IDS', chatIds);
+  
+  Logger.log('✅ Telegram properties berhasil di-setup:');
+  Logger.log('   TELEGRAM_BOT_TOKEN: ' + token.substring(0, 20) + '...');
+  Logger.log('   TELEGRAM_CHAT_IDS: ' + chatIds);
+  
+  return {
+    ok: true,
+    message: 'Properties setup berhasil',
+    token: token.substring(0, 20) + '...',
+    chatIds: chatIds
+  };
 }
 
 // ---------- Output ----------
