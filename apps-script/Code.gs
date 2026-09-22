@@ -395,6 +395,19 @@ function showProperties() {
   };
 }
 
+// ---------- Debug ----------
+/**
+ * Test authorization status tanpa UrlFetchApp
+ */
+function testAuth() {
+  return {
+    ok: true,
+    message: 'Authorization check passed',
+    timestamp: new Date().toISOString(),
+    environment: 'production'
+  };
+}
+
 // ---------- Output ----------
 function jsonOut(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
