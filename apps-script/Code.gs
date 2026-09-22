@@ -308,7 +308,7 @@ function notifyTelegram(message) {
 // ---------- Setup Properties ----------
 /**
  * Fungsi setup otomatis: set TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS, 
- * dan ACCESS_PASSWORD ke Script Properties.
+ * ACCESS_PASSWORD, dan bersihkan/initialize alat_master sheet.
  * Jalankan ini SEKALI via endpoint: ?setup=telegram
  */
 function setupTelegram() {
@@ -322,6 +322,17 @@ function setupTelegram() {
   props.setProperty('TELEGRAM_CHAT_IDS', chatIds);
   props.setProperty('ACCESS_PASSWORD', accessPassword);
   
+  // Bersihkan dan re-initialize alat_master sheet
+  try {
+    const sheet = getOrCreateSheet('alat_master');
+    sheet.clearContents();
+    const headers = SHEET_HEADERS['alat_master'];
+    sheet.appendRow(headers);
+    Logger.log('✅ alat_master sheet di-initialize dengan headers: ' + headers.join(', '));
+  } catch (err) {
+    Logger.log('⚠️  Gagal initialize alat_master: ' + err.message);
+  }
+  
   Logger.log('✅ Telegram & Access properties berhasil di-setup:');
   Logger.log('   TELEGRAM_BOT_TOKEN: ' + token.substring(0, 20) + '...');
   Logger.log('   TELEGRAM_CHAT_IDS: ' + chatIds);
@@ -329,7 +340,7 @@ function setupTelegram() {
   
   return {
     ok: true,
-    message: 'Properties setup berhasil',
+    message: 'Properties & sheets setup berhasil',
     token: token.substring(0, 20) + '...',
     chatIds: chatIds,
     accessPassword: accessPassword
