@@ -256,30 +256,43 @@ function uploadFile(path, fileName, mimeType, base64) {
 
 // ---------- Notifikasi Telegram ----------
 /**
- * Kirim pesan ke Telegram bot GI Situbondo. Token & chat id disimpan di
- * Script Properties (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID) — bukan di kode
+ * Kirim pesan ke Telegram bot GI Situbondo. Token & chat ids disimpan di
+ * Script Properties (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS) — bukan di kode
  * sumber, supaya tidak ikut ter-commit ke GitHub (sama seperti ACCESS_PASSWORD).
+ * TELEGRAM_CHAT_IDS format: comma-separated list (e.g., "123456789,987654321,111222333")
  * Kegagalan kirim TIDAK melempar error ke pemanggil (peminjaman tetap
  * tersimpan walau notifikasi gagal) — hanya dicatat di return value.
  */
 function notifyTelegram(message) {
   const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
-  const chatId = PropertiesService.getScriptProperties().getProperty('TELEGRAM_CHAT_ID');
-  if (!token || !chatId) {
-    return { sent: false, reason: 'TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID belum diset di Script Properties' };
+  const chatIdsStr = PropertiesService.getScriptProperties().getProperty('TELEGRAM_CHAT_IDS');
+  if (!token || !chatIdsStr) {
+    return { sent: false, reason: 'TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_IDS belum diset di Script Properties' };
   }
-  try {
-    const res = UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
-      muteHttpExceptions: true
-    });
-    const body = JSON.parse(res.getContentText());
-    return { sent: !!body.ok, reason: body.ok ? '' : (body.description || 'gagal tanpa keterangan') };
-  } catch (err) {
-    return { sent: false, reason: err.message };
+  
+  const chatIds = chatIdsStr.split(',').map(id => id.trim()).filter(Boolean);
+  if (chatIds.length === 0) {
+    return { sent: false, reason: 'TELEGRAM_CHAT_IDS kosong atau format salah' };
   }
+  
+  const results = [];
+  chatIds.forEach(chatId => {
+    try {
+      const res = UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
+        muteHttpExceptions: true
+      });
+      const body = JSON.parse(res.getContentText());
+      results.push({ chatId: chatId, sent: !!body.ok, reason: body.ok ? '' : (body.description || 'gagal tanpa keterangan') });
+    } catch (err) {
+      results.push({ chatId: chatId, sent: false, reason: err.message });
+    }
+  });
+  
+  const allSent = results.every(r => r.sent);
+  return { sent: allSent, results: results };
 }
 
 // ---------- Output ----------
