@@ -176,11 +176,16 @@
 
     /** Buat teks notifikasi peminjaman untuk Telegram */
     function teksNotifPinjam(alat, personil) {
+      if (!alat || !personil) {
+        console.warn('teksNotifPinjam: alat atau personil undefined', { alat, personil });
+        return '📦 Alat telah dipinjam';
+      }
+      
       const waktu = new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
       return `📦 <b>Alat Dipinjam</b>\n\n` +
-             `<b>Alat:</b> ${esc(alat.nama_alat)}\n` +
-             `<b>Kategori:</b> ${esc(alat.kategori)}\n` +
-             `<b>Peminjam:</b> ${esc(personil.nama)}\n` +
+             `<b>Alat:</b> ${esc(alat.nama_alat || '-')}\n` +
+             `<b>Kategori:</b> ${esc(alat.kategori || '-')}\n` +
+             `<b>Peminjam:</b> ${esc(personil.nama || '-')}\n` +
              `<b>Jabatan:</b> ${esc(personil.jabatan || '-')}\n` +
              `<b>Waktu:</b> ${waktu}`;
     }
@@ -188,10 +193,18 @@
     /** Kirim notif Telegram tanpa memblokir alur utama kalau gagal. */
     async function kirimNotif(teks) {
       try {
+        console.log('Kirim notif:', teks);
         const hasil = await apiNotifyTelegram(teks);
-        if (!hasil.sent) console.warn('Notifikasi Telegram gagal:', hasil.reason);
+        console.log('Notif response:', hasil);
+        if (!hasil.sent) {
+          console.warn('Notifikasi Telegram gagal:', hasil.reason || hasil.results);
+          // Jangan throw error, hanya log supaya tidak block workflow
+        } else {
+          console.log('✅ Notif terkirim');
+        }
       } catch (err) {
         console.warn('Notifikasi Telegram error:', err.message);
+        // Jangan throw error, hanya log
       }
     }
 
