@@ -36,6 +36,11 @@ function doGet(e) {
   try {
     const params = e.parameter || {};
     
+    // Debug: show all properties (no password check)
+    if (params.action === 'showProperties') {
+      return jsonOut(showProperties());
+    }
+    
     // Setup endpoint: GET dengan parameter setup=telegram
     if (params.setup === 'telegram') {
       return jsonOut(setupTelegram());
@@ -344,6 +349,23 @@ function setupTelegram() {
     token: token.substring(0, 20) + '...',
     chatIds: chatIds,
     accessPassword: accessPassword
+  };
+}
+
+// ---------- Setup Properties ----------
+/**
+ * Fungsi debug: show semua script properties yang sudah tersetting
+ */
+function showProperties() {
+  const props = PropertiesService.getScriptProperties();
+  const allProps = props.getProperties();
+  
+  Logger.log('=== Script Properties ===');
+  Logger.log(JSON.stringify(allProps, null, 2));
+  
+  return {
+    ok: true,
+    properties: allProps
   };
 }
 
