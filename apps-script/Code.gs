@@ -62,6 +62,12 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse((e.postData && e.postData.contents) || '{}');
+    
+    // notifyTelegram bypass password check (notification, tidak modifikasi data)
+    if (body.action === 'notifyTelegram') {
+      return jsonOut({ ok: true, data: notifyTelegram(body.message) });
+    }
+    
     checkPassword(body.password);
 
     switch (body.action) {
@@ -85,8 +91,6 @@ function doPost(e) {
         return jsonOut({ ok: true, data: createFolder(body.path, body.name) });
       case 'deleteFolder':
         return jsonOut({ ok: true, data: deleteFolder(body.folderId) });
-      case 'notifyTelegram':
-        return jsonOut({ ok: true, data: notifyTelegram(body.message) });
       default:
         return jsonOut({ ok: false, error: 'Unknown action: ' + body.action });
     }
@@ -303,27 +307,32 @@ function notifyTelegram(message) {
 
 // ---------- Setup Properties ----------
 /**
- * Fungsi setup otomatis: set TELEGRAM_BOT_TOKEN dan TELEGRAM_CHAT_IDS
- * ke Script Properties. Jalankan ini SEKALI via clasp run setupTelegram
+ * Fungsi setup otomatis: set TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS, 
+ * dan ACCESS_PASSWORD ke Script Properties.
+ * Jalankan ini SEKALI via endpoint: ?setup=telegram
  */
 function setupTelegram() {
   const props = PropertiesService.getScriptProperties();
   
   const token = '8910259474:AAH8Uvi3DDxUP95Gddkapsf3ytJ1o9b6qRk';
   const chatIds = '2138968822,6531471803';
+  const accessPassword = 'Situbondo1987';
   
   props.setProperty('TELEGRAM_BOT_TOKEN', token);
   props.setProperty('TELEGRAM_CHAT_IDS', chatIds);
+  props.setProperty('ACCESS_PASSWORD', accessPassword);
   
-  Logger.log('✅ Telegram properties berhasil di-setup:');
+  Logger.log('✅ Telegram & Access properties berhasil di-setup:');
   Logger.log('   TELEGRAM_BOT_TOKEN: ' + token.substring(0, 20) + '...');
   Logger.log('   TELEGRAM_CHAT_IDS: ' + chatIds);
+  Logger.log('   ACCESS_PASSWORD: ' + accessPassword);
   
   return {
     ok: true,
     message: 'Properties setup berhasil',
     token: token.substring(0, 20) + '...',
-    chatIds: chatIds
+    chatIds: chatIds,
+    accessPassword: accessPassword
   };
 }
 
