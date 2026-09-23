@@ -154,7 +154,7 @@ async function pinjamAlat({ id_alat, id_personil, foto_pinjam_url, catatan_pinja
  * (bukan tambah baris baru) + tandai alat 'tersedia'. Kondisi alat saat
  * kembali bisa disesuaikan (mis. jadi 'perlu_perbaikan') dari catatan.
  */
-async function kembalikanAlat({ id_pinjam, foto_kembali_url, catatan_kembali, kondisi_setelah }) {
+async function kembalikanAlat({ id_pinjam, id_alat, foto_kembali_url, kondisi_kembali, catatan_kembali }) {
   if (!foto_kembali_url) throw new Error('Foto kondisi alat wajib diunggah saat mengembalikan');
 
   const semua = await loadPeminjaman();
@@ -172,7 +172,13 @@ async function kembalikanAlat({ id_pinjam, foto_kembali_url, catatan_kembali, ko
       }
     : p);
   await apiSave('peminjaman_log', updated);
-  await updateAlatStatus(target.id_alat, 'tersedia', kondisi_setelah || undefined);
+  
+  // Map kondisi from UI to internal value
+  let kondisiInternal = 'baik';
+  if (kondisi_kembali === 'rusak_ringan') kondisiInternal = 'perlu_perbaikan';
+  else if (kondisi_kembali === 'rusak_berat') kondisiInternal = 'rusak';
+  
+  await updateAlatStatus(id_alat || target.id_alat, 'tersedia', kondisiInternal);
   return updated.find((p) => p.id_pinjam === id_pinjam);
 }
 

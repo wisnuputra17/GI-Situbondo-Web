@@ -56,6 +56,9 @@
           <button id="tab-pinjam" class="px-4 py-2 rounded-md text-xs font-bold flex items-center gap-1.5">
             <span class="material-symbols-outlined text-sm">assignment_turned_in</span> Pinjam Alat
           </button>
+          <button id="tab-kembali" class="px-4 py-2 rounded-md text-xs font-bold flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">assignment_return</span> Kembalikan
+          </button>
           <button id="tab-kelola" class="px-4 py-2 rounded-md text-xs font-bold flex items-center gap-1.5">
             <span class="material-symbols-outlined text-sm">settings</span> Kelola Data
           </button>
@@ -105,6 +108,43 @@
             <textarea name="catatan" rows="2" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface"></textarea>
           </div>
           <button type="submit" class="w-full bg-primary text-on-primary rounded-lg py-2.5 text-sm font-bold">Pinjam sekarang</button>
+        </form>
+      </div>
+
+      <!-- ---------- Mode Kembalikan ---------- -->
+      <div id="view-kembali" class="hidden max-w-xl">
+        <form id="form-kembali" class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant/10 p-5 space-y-4">
+          <h3 class="font-headline font-bold text-base">Kembalikan Alat</h3>
+          <div>
+            <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Alat yang dipinjam *</label>
+            <select name="id_pinjam" required class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
+              <option value="">— pilih alat yang akan dikembalikan —</option>
+            </select>
+          </div>
+          <div id="info-pinjam" class="hidden bg-surface-container-low rounded-lg p-4 space-y-2 text-sm">
+            <p><span class="text-on-surface-variant">Peminjam:</span> <span id="kembali-peminjam" class="font-bold">-</span></p>
+            <p><span class="text-on-surface-variant">Dipinjam sejak:</span> <span id="kembali-waktu" class="font-bold">-</span></p>
+            <p><span class="text-on-surface-variant">Catatan pinjam:</span> <span id="kembali-catatan">-</span></p>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Foto kondisi alat saat dikembalikan (wajib) *</label>
+            <input name="foto_kembali" type="file" accept="image/*" capture="environment" required
+                   class="w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:bg-primary file:text-on-primary file:text-xs file:font-bold">
+            <img id="preview-kembali" class="hidden mt-2 rounded max-h-40 border border-outline-variant/20">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Kondisi alat</label>
+            <select name="kondisi_kembali" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
+              <option value="baik">Baik</option>
+              <option value="rusak_ringan">Rusak Ringan</option>
+              <option value="rusak_berat">Rusak Berat</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Catatan pengembalian (opsional)</label>
+            <textarea name="catatan_kembali" rows="2" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface"></textarea>
+          </div>
+          <button type="submit" class="w-full bg-primary text-on-primary rounded-lg py-2.5 text-sm font-bold">Kembalikan Alat</button>
         </form>
       </div>
 
@@ -227,13 +267,16 @@
       const nonaktif = 'text-on-surface-variant';
       $('tab-monitor').className = 'px-4 py-2 rounded-md text-xs font-bold flex items-center gap-1.5 ' + (m === 'monitor' ? aktif : nonaktif);
       $('tab-pinjam').className = 'px-4 py-2 rounded-md text-xs font-bold flex items-center gap-1.5 ' + (m === 'pinjam' ? aktif : nonaktif);
+      $('tab-kembali').className = 'px-4 py-2 rounded-md text-xs font-bold flex items-center gap-1.5 ' + (m === 'kembali' ? aktif : nonaktif);
       $('tab-kelola').className = 'px-4 py-2 rounded-md text-xs font-bold flex items-center gap-1.5 ' + (m === 'kelola' ? aktif : nonaktif);
       $('view-monitor').classList.toggle('hidden', m !== 'monitor');
       $('view-pinjam').classList.toggle('hidden', m !== 'pinjam');
+      $('view-kembali').classList.toggle('hidden', m !== 'kembali');
       $('view-kelola').classList.toggle('hidden', m !== 'kelola');
       $('monitor-filter').classList.toggle('hidden', m !== 'monitor');
       if (m === 'kelola') renderKelola();
       if (m === 'pinjam') isiOpsiPinjam();
+      if (m === 'kembali') isiOpsiKembali();
     }
 
     // ---------- Monitoring: grid kartu per alat ----------
@@ -456,6 +499,124 @@
       });
     }
 
+    // ---------- Mode Kembalikan ----------
+    let peminjamanList = [];
+
+    async function muatPeminjaman() {
+      try {
+        const res = await apiLoad('peminjaman_log');
+        peminjamanList = (res || []).filter(p => p.status === 'dipinjam');
+      } catch (err) {
+        console.error('Gagal load peminjaman:', err);
+        peminjamanList = [];
+      }
+    }
+
+    function isiOpsiKembali() {
+      const form = $('form-kembali');
+      const dipinjam = alatList.filter(a => a.status === 'dipinjam');
+      
+      if (!dipinjam.length) {
+        form.id_pinjam.innerHTML = '<option value="">Tidak ada alat yang sedang dipinjam</option>';
+        $('info-pinjam').classList.add('hidden');
+        return;
+      }
+      
+      form.id_pinjam.innerHTML = '<option value="">— pilih alat yang akan dikembalikan —</option>' +
+        peminjamanList.map(p => {
+          const alat = alatList.find(a => a.id_alat === p.id_alat);
+          const personil = personilList.find(x => x.id_personil === p.id_personil);
+          const namaAlat = alat ? alat.nama_alat : p.id_alat;
+          const namaPeminjam = personil ? personil.nama : p.id_personil;
+          return `<option value="${esc(p.id_pinjam)}" data-alat="${esc(p.id_alat)}" data-personil="${esc(p.id_personil)}" data-waktu="${esc(p.waktu_pinjam)}" data-catatan="${esc(p.catatan_pinjam || '-')}">${esc(namaAlat)} — dipinjam oleh ${esc(namaPeminjam)}</option>`;
+        }).join('');
+        
+      form.id_pinjam.addEventListener('change', function() {
+        const opt = this.options[this.selectedIndex];
+        if (!opt.value) {
+          $('info-pinjam').classList.add('hidden');
+          return;
+        }
+        const personil = personilList.find(p => p.id_personil === opt.dataset.personil);
+        $('kembali-peminjam').textContent = personil ? personil.nama : opt.dataset.personil;
+        $('kembali-waktu').textContent = opt.dataset.waktu || '-';
+        $('kembali-catatan').textContent = opt.dataset.catatan || '-';
+        $('info-pinjam').classList.remove('hidden');
+      });
+    }
+
+    function teksNotifKembali(alat, personil, kondisi) {
+      if (!alat || !personil) {
+        console.error('teksNotifKembali: alat atau personil null', {alat, personil});
+        return null;
+      }
+      const waktu = new Date().toLocaleString('id-ID', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      const kondisiText = kondisi === 'baik' ? '✅ Baik' : (kondisi === 'rusak_ringan' ? '⚠️ Rusak Ringan' : '❌ Rusak Berat');
+      return `📦 <b>Alat Dikembalikan</b>\n\n<b>Alat:</b> ${alat.nama_alat || '-'}\n<b>Kategori:</b> ${alat.kategori || '-'}\n<b>Dikembalikan oleh:</b> ${personil.nama || '-'}\n<b>Jabatan:</b> ${personil.jabatan || '-'}\n<b>Kondisi:</b> ${kondisiText}\n<b>Waktu:</b> ${waktu}`;
+    }
+
+    function bootstrapKembali() {
+      const form = $('form-kembali');
+      
+      form.foto_kembali.addEventListener('change', () => {
+        const f = form.foto_kembali.files[0];
+        const img = $('preview-kembali');
+        if (!f) { img.classList.add('hidden'); return; }
+        img.src = URL.createObjectURL(f);
+        img.classList.remove('hidden');
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const idPinjam = fd.get('id_pinjam');
+        const file = fd.get('foto_kembali');
+        const kondisi = fd.get('kondisi_kembali');
+        const catatan = fd.get('catatan_kembali');
+        
+        if (!idPinjam) { alert('Pilih alat yang akan dikembalikan.'); return; }
+        if (!file || !file.size) { alert('Foto kondisi alat wajib diunggah.'); return; }
+
+        const pinjaman = peminjamanList.find(p => p.id_pinjam === idPinjam);
+        if (!pinjaman) { alert('Data peminjaman tidak ditemukan.'); return; }
+
+        const btn = e.target.querySelector('[type=submit]');
+        btn.disabled = true; btn.textContent = 'Mengunggah foto…';
+        
+        try {
+          const fotoUrl = await unggahFotoPeminjaman(file, `kembali-${pinjaman.id_alat}`);
+          btn.textContent = 'Menyimpan…';
+          
+          await kembalikanAlat({
+            id_pinjam: idPinjam,
+            id_alat: pinjaman.id_alat,
+            foto_kembali_url: fotoUrl,
+            kondisi_kembali: kondisi,
+            catatan_kembali: catatan
+          });
+          
+          await muat();
+          await muatPeminjaman();
+
+          const alat = alatList.find(a => a.id_alat === pinjaman.id_alat);
+          const personil = personilList.find(p => p.id_personil === pinjaman.id_personil);
+          toast(`${alat ? alat.nama_alat : 'Alat'} berhasil dikembalikan`);
+          
+          const notifText = teksNotifKembali(alat, personil, kondisi);
+          if (notifText) await kirimNotif(notifText);
+
+          e.target.reset();
+          $('preview-kembali').classList.add('hidden');
+          $('info-pinjam').classList.add('hidden');
+          isiOpsiKembali();
+        } catch (err) {
+          alert('Gagal: ' + err.message);
+        } finally {
+          btn.disabled = false; btn.textContent = 'Kembalikan Alat';
+        }
+      });
+    }
+
     // ---------- Mode Kelola Data ----------
     function renderKelola() {
       $('daftar-alat-kelola').innerHTML = alatList.length
@@ -536,14 +697,17 @@
       setTab('monitor');
       $('tab-monitor').addEventListener('click', () => setTab('monitor'));
       $('tab-pinjam').addEventListener('click', () => setTab('pinjam'));
+      $('tab-kembali').addEventListener('click', () => setTab('kembali'));
       $('tab-kelola').addEventListener('click', () => setTab('kelola'));
       $('cari').addEventListener('input', renderGrid);
       $('filter-status').addEventListener('change', renderGrid);
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
       bootstrapPinjam();
+      bootstrapKembali();
       bootstrapKelola();
       await muat();
+      await muatPeminjaman();
     }
 
     if (requireAuth('../../')) {
