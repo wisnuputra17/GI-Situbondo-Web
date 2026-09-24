@@ -62,7 +62,7 @@
           </div>
         </div>
 
-        <div id="penghantar-filter" class="bg-surface-container-lowest/95 backdrop-blur-md rounded-lg shadow-md border border-outline-variant/10 p-4">
+        <div id="penghantar-filter" class="bg-surface-container-lowest/98 backdrop-blur-md rounded-lg shadow-md border border-outline-variant/10 p-4">
           <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Penghantar</p>
           <div id="penghantar-list" class="space-y-1.5"></div>
         </div>
@@ -302,8 +302,8 @@
         <label class="flex items-center gap-2 cursor-pointer text-xs">
           <input type="checkbox" value="${ph}" ${activePenghantar.has(ph) ? 'checked' : ''} class="ph-toggle rounded border-outline-variant/40">
           <span class="w-2.5 h-1 rounded" style="background:${PENGHANTAR_COLOR[ph] || '#999'}"></span>
-          <span class="flex-grow text-on-surface font-medium">${ph}</span>
-          <span class="text-on-surface-variant">${counts[ph].total}</span>
+          <span class="flex-grow text-on-surface font-bold">${ph}</span>
+          <span class="text-on-surface font-semibold">${counts[ph].total}</span>
           ${counts[ph].anomali ? `<span class="text-error font-bold">(${counts[ph].anomali})</span>` : ''}
         </label>`).join('');
 
