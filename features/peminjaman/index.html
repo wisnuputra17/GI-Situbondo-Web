@@ -159,7 +159,10 @@
             <select name="kondisi" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface"></select>
             <textarea name="catatan" rows="2" placeholder="Catatan (opsional)"
                       class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface"></textarea>
-            <button type="submit" class="w-full bg-primary text-on-primary rounded-lg py-2 text-sm font-bold">Simpan alat</button>
+            <div class="flex gap-2">
+              <button type="submit" class="flex-1 bg-primary text-on-primary rounded-lg py-2 text-sm font-bold">Simpan alat</button>
+              <button type="button" id="btn-batal-alat" class="hidden px-4 bg-surface-container text-on-surface rounded-lg py-2 text-sm font-bold border border-outline-variant/40" onclick="batalEditAlat()">Batal</button>
+            </div>
           </form>
           <div id="daftar-alat-kelola" class="pt-2 border-t border-outline-variant/10 space-y-1.5 max-h-64 overflow-y-auto"></div>
         </div>
@@ -170,7 +173,10 @@
                    class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
             <input name="jabatan" placeholder="Jabatan (opsional)"
                    class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
-            <button type="submit" class="w-full bg-primary text-on-primary rounded-lg py-2 text-sm font-bold">Simpan personil</button>
+            <div class="flex gap-2">
+              <button type="submit" class="flex-1 bg-primary text-on-primary rounded-lg py-2 text-sm font-bold">Simpan personil</button>
+              <button type="button" id="btn-batal-personil" class="hidden px-4 bg-surface-container text-on-surface rounded-lg py-2 text-sm font-bold border border-outline-variant/40" onclick="batalEditPersonil()">Batal</button>
+            </div>
           </form>
           <div id="daftar-personil-kelola" class="pt-2 border-t border-outline-variant/10 space-y-1.5 max-h-64 overflow-y-auto"></div>
         </div>
@@ -620,15 +626,37 @@
     function renderKelola() {
       $('daftar-alat-kelola').innerHTML = alatList.length
         ? alatList.map((a) => `
-          <div class="flex items-center justify-between text-xs py-1">
-            <span class="truncate">${esc(a.nama_alat)} <span class="text-on-surface-variant">— ${esc(a.kategori)}</span></span>
-            <span class="text-[10px] font-bold ${a.status === 'dipinjam' ? 'text-tertiary' : 'text-secondary'} shrink-0 ml-2">${a.status}</span>
+          <div class="flex items-center justify-between text-xs py-1.5 gap-2">
+            <div class="flex-1 min-w-0">
+              <span class="truncate">${esc(a.nama_alat)} <span class="text-on-surface-variant">— ${esc(a.kategori)}</span></span>
+              <span class="text-[10px] font-bold ${a.status === 'dipinjam' ? 'text-tertiary' : 'text-secondary'} shrink-0 ml-2">${a.status}</span>
+            </div>
+            <div class="flex gap-1 shrink-0">
+              <button onclick="editAlat('${esc(a.id_alat)}')" class="text-primary hover:bg-primary/10 rounded p-1" title="Edit">
+                <span class="material-symbols-outlined text-sm">edit</span>
+              </button>
+              <button onclick="hapusAlat('${esc(a.id_alat)}')" class="text-error hover:bg-error/10 rounded p-1" title="Hapus" ${a.status === 'dipinjam' ? 'disabled' : ''}>
+                <span class="material-symbols-outlined text-sm">delete</span>
+              </button>
+            </div>
           </div>`).join('')
         : '<p class="text-xs text-on-surface-variant">Belum ada alat.</p>';
 
       $('daftar-personil-kelola').innerHTML = personilList.length
         ? personilList.map((p) => `
-          <div class="text-xs py-1">${esc(p.nama)}${p.jabatan ? ` <span class="text-on-surface-variant">— ${esc(p.jabatan)}</span>` : ''}</div>`).join('')
+          <div class="flex items-center justify-between text-xs py-1.5 gap-2">
+            <div class="flex-1 min-w-0">
+              <span>${esc(p.nama)}${p.jabatan ? ` <span class="text-on-surface-variant">— ${esc(p.jabatan)}</span>` : ''}</span>
+            </div>
+            <div class="flex gap-1 shrink-0">
+              <button onclick="editPersonil('${esc(p.id_personil)}')" class="text-primary hover:bg-primary/10 rounded p-1" title="Edit">
+                <span class="material-symbols-outlined text-sm">edit</span>
+              </button>
+              <button onclick="hapusPersonil('${esc(p.id_personil)}')" class="text-error hover:bg-error/10 rounded p-1" title="Hapus">
+                <span class="material-symbols-outlined text-sm">delete</span>
+              </button>
+            </div>
+          </div>`).join('')
         : '<p class="text-xs text-on-surface-variant">Belum ada personil.</p>';
     }
 
@@ -643,14 +671,32 @@
         const btn = e.target.querySelector('[type=submit]');
         btn.disabled = true; btn.textContent = 'Menyimpan…';
         try {
-          await addAlat(fd);
+          if (editingAlatId) {
+            // Mode edit
+            const updated = alatList.map(a => a.id_alat === editingAlatId
+              ? { ...a, ...fd, updated_at: new Date().toISOString() }
+              : a);
+            await apiSave('alat_master', updated);
+            toast('Alat diupdate');
+            editingAlatId = null;
+          } else {
+            // Mode tambah baru
+            await addAlat(fd);
+            toast('Alat baru tersimpan');
+          }
+          
           e.target.reset();
           formAlat.kategori.innerHTML = KATEGORI_ALAT.map((k) => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
           formAlat.kondisi.innerHTML = KONDISI_ALAT.map((k) => `<option value="${k.key}">${esc(k.label)}</option>`).join('');
           await muat();
-          toast('Alat baru tersimpan');
+          
+          // Reset button
+          btn.textContent = 'Simpan alat';
+          btn.classList.remove('bg-tertiary');
+          btn.classList.add('bg-primary');
+          $('btn-batal-alat').classList.add('hidden');
         } catch (err) { alert('Gagal: ' + err.message); }
-        finally { btn.disabled = false; btn.textContent = 'Simpan alat'; }
+        finally { btn.disabled = false; btn.textContent = editingAlatId ? 'Update alat' : 'Simpan alat'; }
       });
 
       $('form-personil').addEventListener('submit', async (e) => {
@@ -659,16 +705,154 @@
         const btn = e.target.querySelector('[type=submit]');
         btn.disabled = true; btn.textContent = 'Menyimpan…';
         try {
-          await addPersonil(fd);
+          if (editingPersonilId) {
+            // Mode edit
+            const updated = personilList.map(p => p.id_personil === editingPersonilId
+              ? { ...p, ...fd, updated_at: new Date().toISOString() }
+              : p);
+            await apiSave('personil_master', updated);
+            toast('Personil diupdate');
+            editingPersonilId = null;
+          } else {
+            // Mode tambah baru
+            await addPersonil(fd);
+            toast('Personil baru tersimpan');
+          }
+          
           e.target.reset();
           await muat();
-          toast('Personil baru tersimpan');
+          
+          // Reset button
+          btn.textContent = 'Simpan personil';
+          btn.classList.remove('bg-tertiary');
+          btn.classList.add('bg-primary');
+          $('btn-batal-personil').classList.add('hidden');
         } catch (err) { alert('Gagal: ' + err.message); }
-        finally { btn.disabled = false; btn.textContent = 'Simpan personil'; }
+        finally { btn.disabled = false; btn.textContent = editingPersonilId ? 'Update personil' : 'Simpan personil'; }
       });
     }
 
-    // ---------- Bootstrap ----------
+    // ---------- Edit & Hapus Alat ----------
+    let editingAlatId = null;
+
+    function editAlat(idAlat) {
+      const alat = alatList.find(a => a.id_alat === idAlat);
+      if (!alat) return;
+      
+      editingAlatId = idAlat;
+      const form = $('form-alat');
+      form.nama_alat.value = alat.nama_alat;
+      form.kategori.value = alat.kategori;
+      form.kondisi.value = alat.kondisi;
+      form.catatan.value = alat.catatan || '';
+      
+      const btn = form.querySelector('[type=submit]');
+      btn.textContent = 'Update alat';
+      btn.classList.remove('bg-primary');
+      btn.classList.add('bg-tertiary');
+      
+      $('btn-batal-alat').classList.remove('hidden');
+      
+      // Scroll to form
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function batalEditAlat() {
+      editingAlatId = null;
+      const form = $('form-alat');
+      form.reset();
+      form.kategori.innerHTML = KATEGORI_ALAT.map((k) => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+      form.kondisi.innerHTML = KONDISI_ALAT.map((k) => `<option value="${k.key}">${esc(k.label)}</option>`).join('');
+      
+      const btn = form.querySelector('[type=submit]');
+      btn.textContent = 'Simpan alat';
+      btn.classList.remove('bg-tertiary');
+      btn.classList.add('bg-primary');
+      
+      $('btn-batal-alat').classList.add('hidden');
+    }
+
+    async function hapusAlat(idAlat) {
+      const alat = alatList.find(a => a.id_alat === idAlat);
+      if (!alat) return;
+      
+      if (alat.status === 'dipinjam') {
+        alert('Tidak bisa hapus alat yang sedang dipinjam.');
+        return;
+      }
+      
+      if (!confirm(`Hapus alat "${alat.nama_alat}"?`)) return;
+      
+      try {
+        const updated = alatList.filter(a => a.id_alat !== idAlat);
+        await apiSave('alat_master', updated);
+        await muat();
+        toast('Alat dihapus');
+      } catch (err) {
+        alert('Gagal hapus: ' + err.message);
+      }
+    }
+
+    // ---------- Edit & Hapus Personil ----------
+    let editingPersonilId = null;
+
+    function editPersonil(idPersonil) {
+      const personil = personilList.find(p => p.id_personil === idPersonil);
+      if (!personil) return;
+      
+      editingPersonilId = idPersonil;
+      const form = $('form-personil');
+      form.nama.value = personil.nama;
+      form.jabatan.value = personil.jabatan || '';
+      
+      const btn = form.querySelector('[type=submit]');
+      btn.textContent = 'Update personil';
+      btn.classList.remove('bg-primary');
+      btn.classList.add('bg-tertiary');
+      
+      $('btn-batal-personil').classList.remove('hidden');
+      
+      // Scroll to form
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function batalEditPersonil() {
+      editingPersonilId = null;
+      const form = $('form-personil');
+      form.reset();
+      
+      const btn = form.querySelector('[type=submit]');
+      btn.textContent = 'Simpan personil';
+      btn.classList.remove('bg-tertiary');
+      btn.classList.add('bg-primary');
+      
+      $('btn-batal-personil').classList.add('hidden');
+    }
+
+    async function hapusPersonil(idPersonil) {
+      const personil = personilList.find(p => p.id_personil === idPersonil);
+      if (!personil) return;
+      
+      // Cek apakah personil sedang meminjam
+      const sedangPinjam = peminjamanList.some(pm => pm.id_personil === idPersonil && pm.status === 'dipinjam');
+      if (sedangPinjam) {
+        alert(`Tidak bisa hapus "${personil.nama}" karena sedang meminjam alat.`);
+        return;
+      }
+      
+      if (!confirm(`Hapus personil "${personil.nama}"?`)) return;
+      
+      try {
+        const updated = personilList.filter(p => p.id_personil !== idPersonil);
+        await apiSave('personil_master', updated);
+        await muat();
+        toast('Personil dihapus');
+      } catch (err) {
+        alert('Gagal hapus: ' + err.message);
+      }
+    }
+
+    // ---------- Init ----------
     async function muat() {
       try {
         [alatList, personilList, peminjamanList] = await Promise.all([loadAlat(), loadPersonil(), loadPeminjaman()]);
