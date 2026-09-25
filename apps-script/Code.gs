@@ -23,6 +23,7 @@ const SHEET_HEADERS = {
   kondisi_log: ['timestamp', 'id_peralatan', 'kondisi', 'catatan', 'oleh'],
   tower_master: ['id_tower', 'penghantar', 'nomor', 'lat', 'lng', 'alamat', 'ground_patrol', 'status', 'updated_at'],
   tower_anomali_log: ['timestamp', 'id_tower', 'jenis_anomali', 'catatan', 'status', 'oleh'],
+  kerawanan_log: ['id_kerawanan', 'id_tower', 'jenis', 'tingkat', 'deskripsi', 'tindak_lanjut', 'pic', 'status', 'tanggal_identifikasi', 'updated_at'],
   counter_log: ['timestamp', 'id_peralatan', 'jenis_counter', 'nilai', 'oleh'],
   jaring_master: ['id_jaring', 'baris', 'kolom', 'bay', 'ukuran', 'samping', 'kondisi', 'tahun_pasang', 'catatan', 'updated_at'],
   jaring_kerusakan_log: ['timestamp', 'id_jaring', 'kondisi', 'jenis_kerusakan', 'catatan', 'oleh'],
