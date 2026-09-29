@@ -277,7 +277,19 @@ function uploadFile(path, fileName, mimeType, base64) {
   const bytes = Utilities.base64Decode(base64);
   const blob = Utilities.newBlob(bytes, mimeType, fileName);
   const file = folder.createFile(blob);
-  return { id: file.getId(), name: file.getName(), url: file.getUrl() };
+  
+  // Set file sharing ke PUBLIC (Anyone with the link can view)
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  
+  // Return direct download URL untuk Telegram
+  const fileId = file.getId();
+  const directUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+  
+  return { 
+    id: fileId, 
+    name: file.getName(), 
+    url: directUrl  // Direct download URL, bukan view URL
+  };
 }
 
 // ---------- Notifikasi Telegram ----------
