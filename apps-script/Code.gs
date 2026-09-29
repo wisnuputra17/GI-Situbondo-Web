@@ -47,6 +47,11 @@ function doGet(e) {
       return jsonOut(setupTelegram());
     }
     
+    // Auto-detect & save telegram chat IDs
+    if (params.setup === 'telegram-auto') {
+      return jsonOut(autoSetupTelegram());
+    }
+    
     if (params.action === 'ping') {
       return jsonOut({ ok: true, message: 'PLN GI Suite backend aktif' });
     }
@@ -322,7 +327,7 @@ function setupTelegram() {
   const props = PropertiesService.getScriptProperties();
   
   const token = '8910259474:AAH8Uvi3DDxUP95Gddkapsf3ytJ1o9b6qRk';
-  const chatIds = '2138968822,6531471803';
+  const chatIds = '6531471803,2138968822,1250414366';
   const accessPassword = 'Situbondo1987';
   
   props.setProperty('TELEGRAM_BOT_TOKEN', token);
@@ -377,6 +382,98 @@ function setupTelegram() {
     chatIds: chatIds,
     accessPassword: accessPassword
   };
+}
+
+/**
+ * AUTO-DETECT Telegram Chat IDs dari getUpdates dan langsung save ke Properties
+ */
+function autoSetupTelegram() {
+  const props = PropertiesService.getScriptProperties();
+  
+  // Get token yang sudah tersimpan (atau set default)
+  let token = props.getProperty('TELEGRAM_BOT_TOKEN');
+  
+  if (!token || token === '') {
+    // Fallback: pakai token hardcoded jika belum ada
+    token = '8910259474:AAH8Uvi3DDxUP95Gddkapsf3ytJ1o9b6qRk';
+    props.setProperty('TELEGRAM_BOT_TOKEN', token);
+  }
+  
+  try {
+    // Fetch updates dari Telegram Bot API
+    const url = `https://api.telegram.org/bot${token}/getUpdates`;
+    const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    const result = JSON.parse(response.getContentText());
+    
+    if (!result.ok) {
+      return {
+        ok: false,
+        error: 'Telegram API error: ' + (result.description || 'Unknown error'),
+        hint: 'Pastikan bot token benar dan valid'
+      };
+    }
+    
+    const updates = result.result || [];
+    
+    if (updates.length === 0) {
+      return {
+        ok: false,
+        error: 'Belum ada orang yang /start ke bot',
+        hint: 'Minta semua user untuk kirim /start ke bot terlebih dahulu',
+        tokenUsed: token.substring(0, 20) + '...'
+      };
+    }
+    
+    // Extract unique chat IDs
+    const chatUsers = {};
+    updates.forEach(update => {
+      const msg = update.message || {};
+      const chat = msg.chat || {};
+      
+      if (chat.id) {
+        const chatId = String(chat.id);
+        chatUsers[chatId] = {
+          name: (chat.first_name || '') + ' ' + (chat.last_name || ''),
+          username: chat.username || '-'
+        };
+      }
+    });
+    
+    const allChatIds = Object.keys(chatUsers);
+    const chatIdsString = allChatIds.join(',');
+    
+    // Save ke Script Properties
+    props.setProperty('TELEGRAM_CHAT_IDS', chatIdsString);
+    
+    // Ensure password juga ada
+    if (!props.getProperty('ACCESS_PASSWORD')) {
+      props.setProperty('ACCESS_PASSWORD', 'Situbondo1987');
+    }
+    
+    Logger.log('✅ Auto-setup Telegram berhasil:');
+    Logger.log('   Token: ' + token.substring(0, 20) + '...');
+    Logger.log('   Chat IDs: ' + chatIdsString);
+    Logger.log('   Total users: ' + allChatIds.length);
+    
+    return {
+      ok: true,
+      message: `Auto-detect berhasil! ${allChatIds.length} chat ID tersimpan`,
+      users: Object.keys(chatUsers).map(id => ({
+        id: id,
+        name: chatUsers[id].name.trim(),
+        username: chatUsers[id].username
+      })),
+      chatIds: chatIdsString,
+      totalUsers: allChatIds.length
+    };
+    
+  } catch (error) {
+    return {
+      ok: false,
+      error: 'Gagal fetch Telegram API: ' + error.message,
+      tokenUsed: token.substring(0, 20) + '...'
+    };
+  }
 }
 
 // ---------- Setup Properties ----------
