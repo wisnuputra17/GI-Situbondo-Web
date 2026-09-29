@@ -1,12 +1,29 @@
 /**
  * shared/api.js
- * Wrapper komunikasi ke backend Apps Script (Sheets + Drive).
- * Ganti CONFIG.API_URL setelah deploy Web App (lihat README.md).
+ * Hybrid API: GitHub JSON (read) + Apps Script (write)
+ * Read from GitHub CDN (fast), Write to Apps Script (instant validation)
  */
 
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbyYY9G3RxiwBoWvAtVZsNBn-bC4KeJuG2NEVksGtvRhMFuCYMOa25hlp7znq__0pw4r1A/exec'
+  API_URL: 'https://script.google.com/macros/s/AKfycbyYY9G3RxiwBoWvAtVZsNBn-bC4KeJuG2NEVksGtvRhMFuCYMOa25hlp7znq__0pw4r1A/exec',
+  USE_GITHUB: true // Toggle untuk fallback ke Sheets
 };
+
+// Sheets yang READ dari GitHub (static/jarang berubah)
+const GITHUB_SHEETS = [
+  'tower_master',
+  'kerawanan_log',
+  'profil_gi'
+];
+
+// Sheets yang READ/WRITE dari Apps Script (dynamic/sering berubah)
+const DYNAMIC_SHEETS = [
+  'alat_master',
+  'personil_master',
+  'peminjaman_log',
+  'tower_anomali_log',
+  'counter_log'
+];
 
 const PW_KEY = 'pln_gi_pw';
 
@@ -84,8 +101,34 @@ async function apiPost(action, payload = {}) {
   return json.data;
 }
 
-// ---------- Kontrak API data terstruktur (Sheets) ----------
-const apiLoad = (sheet) => apiGet('load', { sheet });
+// ---------- Kontrak API data terstruktur (Hybrid) ----------
+
+/**
+ * Load data dari GitHub (static) atau Apps Script (dynamic)
+ * @param {string} sheet - Nama sheet
+ * @param {boolean} forceAppsScript - Force load dari Apps Script
+ * @returns {Promise<Array>} Data array
+ */
+async function apiLoad(sheet, forceAppsScript = false) {
+  // Check if should use GitHub
+  const useGitHub = CONFIG.USE_GITHUB && GITHUB_SHEETS.includes(sheet) && !forceAppsScript;
+  
+  if (useGitHub) {
+    try {
+      console.log(`📖 Loading ${sheet} from GitHub...`);
+      const data = await loadFromGitHub(`${sheet}.json`);
+      return data;
+    } catch (error) {
+      console.warn(`⚠️  GitHub load failed, fallback to Apps Script:`, error);
+      // Fallback to Apps Script
+    }
+  }
+  
+  // Load from Apps Script (dynamic sheets or fallback)
+  console.log(`📖 Loading ${sheet} from Apps Script...`);
+  return apiGet('load', { sheet });
+}
+
 const apiSave = (sheet, rows) => apiPost('save', { sheet, payload: rows });
 const apiAppend = (sheet, row) => apiPost('append', { sheet, payload: row });
 const apiClear = (sheet) => apiPost('clear', { sheet });
