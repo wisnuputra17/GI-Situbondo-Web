@@ -77,6 +77,10 @@
       </div>
 
       <div class="absolute top-6 right-6 flex gap-2 z-[500]">
+        <button id="btn-jarak" class="bg-primary text-on-primary rounded-lg shadow-md px-4 py-3 flex items-center gap-2 text-sm font-bold">
+          <span class="material-symbols-outlined text-base">straighten</span>
+          Jarak & Gangguan
+        </button>
         <button id="btn-seed" class="bg-tertiary text-on-primary rounded-lg shadow-md px-4 py-3 flex items-center gap-2 text-sm font-bold">
           <span class="material-symbols-outlined text-base">cloud_upload</span>
           Impor data tower
@@ -117,6 +121,7 @@
   <script src="../../shared/gi-data.js"></script>
     <script src="./tower-seed.js"></script>
   <script src="./db.js"></script>
+  <script src="./jarak-gangguan.js"></script>
   <script>
     const GI_FALLBACK = [-7.717441, 114.0191368]; // koordinat GI Situbondo (dikonfirmasi Wisnu)
     const PENGHANTAR_COLOR = {
@@ -781,6 +786,9 @@
 
       document.getElementById('btn-seed').addEventListener('click', showSeedConfirmModal);
       document.getElementById('btn-list').addEventListener('click', showTowerListModal);
+      document.getElementById('btn-jarak').addEventListener('click', () => {
+        addDistancePanel();
+      });
 
       await refreshAll();
 
