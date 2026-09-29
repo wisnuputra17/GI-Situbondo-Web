@@ -1,0 +1,74 @@
+[
+  {
+    "id_pinjam": "PJM-MUM50WEM",
+    "id_alat": "ALT-MUM3O32U",
+    "id_personil": "PER-FAJAR",
+    "status": "dikembalikan",
+    "tanggal_pinjam": "2026-09-29T03:49:36.142Z",
+    "foto_pinjam_url": "https://drive.google.com/uc?export=view&id=1VFCIcqqPonLM4bUN_qcacrE2v1YiOE7l",
+    "catatan_pinjam": "",
+    "tanggal_kembali": "2026-09-29T03:53:21.930Z",
+    "foto_kembali_url": "https://drive.google.com/uc?export=view&id=1uXTJzpAdQ9zRVGGsjWaAxCZF2_Sto65E",
+    "catatan_kembali": ""
+  },
+  {
+    "id_pinjam": "PJM-MUM3ZSO4",
+    "id_alat": "ALT-MUM3O32U",
+    "id_personil": "PER-FAJAR",
+    "status": "dikembalikan",
+    "tanggal_pinjam": "2026-09-29T03:20:45.028Z",
+    "foto_pinjam_url": "https://drive.google.com/uc?export=view&id=1VCQPe0u-sPh8UGpWRIEx4G6rceb6AQIt",
+    "catatan_pinjam": "",
+    "tanggal_kembali": "2026-09-29T03:39:20.266Z",
+    "foto_kembali_url": "https://drive.google.com/uc?export=view&id=1l3yswi5ntXL8m7AGh00dqLy79Fl3DsoO",
+    "catatan_kembali": ""
+  },
+  {
+    "id_pinjam": "PJM-MUM3OO8T",
+    "id_alat": "ALT-MUM3O32U",
+    "id_personil": "PER-FAJAR",
+    "status": "dikembalikan",
+    "tanggal_pinjam": "2026-09-29T03:12:06.077Z",
+    "foto_pinjam_url": "https://drive.google.com/file/d/1TPWQPwfPdv3rH93e-Vetzd3CEB9yWZ_H/view?usp=drivesdk",
+    "catatan_pinjam": "",
+    "tanggal_kembali": "2026-09-29T03:16:36.503Z",
+    "foto_kembali_url": "https://drive.google.com/file/d/12L874aCvtSVYWVveWdJTcYcX51eyG9VT/view?usp=drivesdk",
+    "catatan_kembali": ""
+  },
+  {
+    "id_pinjam": "PJM-MUM3GNII",
+    "id_alat": "ALT-MUM3F349",
+    "id_personil": "PER-FAJAR",
+    "status": "dipinjam",
+    "tanggal_pinjam": "2026-09-29T03:05:51.882Z",
+    "foto_pinjam_url": "https://drive.google.com/file/d/1WI1BtN6xk5pfCWFuMklAjzDD5UkM7JlZ/view?usp=drivesdk",
+    "catatan_pinjam": "",
+    "tanggal_kembali": "",
+    "foto_kembali_url": "",
+    "catatan_kembali": ""
+  },
+  {
+    "id_pinjam": "PJM-MUM0PMOR",
+    "id_alat": "ALT-MUM0NMGY",
+    "id_personil": "PER-FAJAR",
+    "status": "dikembalikan",
+    "tanggal_pinjam": "2026-09-29T01:48:51.867Z",
+    "foto_pinjam_url": "https://drive.google.com/file/d/1MaeyK2vRPtZguARosWErwH7yV8h7yYIT/view?usp=drivesdk",
+    "catatan_pinjam": "",
+    "tanggal_kembali": "2026-09-29T01:49:49.721Z",
+    "foto_kembali_url": "https://drive.google.com/file/d/1MRWgTSEifVdf1rAdRX4018rZrHotJBUM/view?usp=drivesdk",
+    "catatan_kembali": ""
+  },
+  {
+    "id_pinjam": "PJM-MUE0V4P0",
+    "id_alat": "ALT-MUE07WAI",
+    "id_personil": "PER-WISNU",
+    "status": "dikembalikan",
+    "tanggal_pinjam": "2026-09-23T11:30:59.076Z",
+    "foto_pinjam_url": "https://drive.google.com/file/d/1ZwL5E_jtX2wdqmuajsyR25SZtX4aDFUi/view?usp=drivesdk",
+    "catatan_pinjam": "",
+    "tanggal_kembali": "2026-09-23T11:31:43.282Z",
+    "foto_kembali_url": "https://drive.google.com/file/d/13VHdb5CAg-Rh1EugfA3YwTDU3OpXQBzT/view?usp=drivesdk",
+    "catatan_kembali": ""
+  }
+]

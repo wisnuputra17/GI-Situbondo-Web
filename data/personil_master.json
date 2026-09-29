@@ -1,0 +1,26 @@
+[
+  {
+    "id_personil": "PER-FAJAR",
+    "nama": "Fajar Bagus",
+    "jabatan": "Teknisi Senior",
+    "updated_at": "2026-09-29T03:08:15.686Z"
+  },
+  {
+    "id_personil": "PER-WISNU",
+    "nama": "Wisnu Putra",
+    "jabatan": "Engineer",
+    "updated_at": "2026-09-29T03:08:15.687Z"
+  },
+  {
+    "id_personil": "PER-ADM01",
+    "nama": "Admin 3",
+    "jabatan": "Administrator",
+    "updated_at": "2026-09-29T03:08:15.687Z"
+  },
+  {
+    "id_personil": "PER-ADM02",
+    "nama": "Admin 4",
+    "jabatan": "Supervisor",
+    "updated_at": "2026-09-29T03:08:15.687Z"
+  }
+]
