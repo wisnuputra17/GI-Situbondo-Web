@@ -270,6 +270,49 @@
       applyLabelVisibility();
     }
 
+    // ---------- Draw Kerawanan Circles ----------
+    function drawKerawananCircles() {
+      // Hapus circles lama
+      kerawananCircles.forEach(circle => map.removeLayer(circle));
+      kerawananCircles = [];
+
+      // Filter kerawanan aktif berdasarkan toggle
+      const activeData = allKerawanan.filter(k => activeKerawanan.has(k.jenis));
+
+      activeData.forEach(k => {
+        const tower = allTowers.find(t => t.id_tower === k.id_tower);
+        if (!tower || !tower.lat || !tower.lng) return;
+
+        const cfg = KERAWANAN_CONFIG[k.jenis];
+        if (!cfg) return;
+
+        const opacity = TINGKAT_OPACITY[k.tingkat] || 0.3;
+
+        const circle = L.circle([tower.lat, tower.lng], {
+          radius: 150, // meter
+          color: cfg.color,
+          fillColor: cfg.color,
+          fillOpacity: opacity,
+          weight: 2,
+          opacity: 0.8
+        });
+
+        // Tooltip on hover
+        circle.bindTooltip(`${cfg.emoji} <b>${cfg.label}</b><br>Tingkat: ${k.tingkat.toUpperCase()}<br>Tower: ${tower.id_tower}`, {
+          sticky: true
+        });
+
+        // Click untuk show detail
+        circle.on('click', () => {
+          const marker = towerMarkers.find(m => m.towerData && m.towerData.id_tower === k.id_tower);
+          if (marker) marker.openPopup();
+        });
+
+        circle.addTo(map);
+        kerawananCircles.push(circle);
+      });
+    }
+
     /**
      * Label nomor tower hanya ditampilkan mulai LABEL_MIN_ZOOM. Di bawah itu
      * 417 label akan saling menumpuk dan justru tidak terbaca.
@@ -553,9 +596,14 @@
 
     async function refreshAll() {
       try {
-        const [towers, anomalies] = await Promise.all([loadTowers(), loadTowerAnomalies()]);
+        const [towers, anomalies, kerawanan] = await Promise.all([
+          loadTowers(), 
+          loadTowerAnomalies(),
+          apiLoad('kerawanan_log')
+        ]);
         allTowers = towers;
         openAnomalies = groupOpenAnomalies(anomalies);
+        allKerawanan = kerawanan.filter(k => k && k.id_kerawanan && k.status === 'aktif'); // hanya aktif
 
         // Tower berkoordinat rusak tidak lagi menjatuhkan peta, tapi user
         // tetap harus tahu — kalau diam saja, tower hilang dari peta tanpa
@@ -573,6 +621,7 @@
       } catch (err) {
         allTowers = [];
         openAnomalies = {};
+        allKerawanan = [];
         showError(err.message + ' — tombol "Impor data tower" tetap bisa dicoba.');
       }
 
@@ -584,7 +633,9 @@
       document.getElementById('summary-anomali-count').textContent = formatNumber(allTowers.filter((t) => t.status === 'anomali').length);
 
       renderPenghantarFilter();
+      renderKerawananFilter();
       drawTowers();
+      drawKerawananCircles();
     }
 
     async function bootstrapMap() {
