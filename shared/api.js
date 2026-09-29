@@ -5,7 +5,7 @@
  */
 
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbx07-2NrcfJ6tCkXSbn2z3rrzTYs9IrOS6HkkyGIP6S9phyvIQDz0_mdI5nP9Y8B5nmxw/exec'
+  API_URL: 'https://script.google.com/macros/s/AKfycbyAakVyBqFidvndjYt5FdyC3uZjXWdxy_-b8brGlimmusB0BWmI-Nhw6kzzS2auAhI_eg/exec'
 };
 
 const PW_KEY = 'pln_gi_pw';

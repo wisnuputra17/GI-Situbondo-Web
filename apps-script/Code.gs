@@ -290,15 +290,11 @@ function uploadFile(path, fileName, mimeType, base64) {
  * tersimpan walau notifikasi gagal) — hanya dicatat di return value.
  */
 function notifyTelegram(message) {
-  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
-  const chatIdsStr = PropertiesService.getScriptProperties().getProperty('TELEGRAM_CHAT_IDS');
-  if (!token || !chatIdsStr) {
-    return { sent: false, reason: 'TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_IDS belum diset di Script Properties' };
-  }
+  const token = '8910259474:AAH8Uvi3DDxUP95Gddkapsf3ytJ1o9b6qRk';
+  const chatIds = ['6531471803', '2138968822', '1250414366']; // Wisnu, Fajar, Ayie
   
-  const chatIds = chatIdsStr.split(',').map(id => id.trim()).filter(Boolean);
-  if (chatIds.length === 0) {
-    return { sent: false, reason: 'TELEGRAM_CHAT_IDS kosong atau format salah' };
+  if (!token || chatIds.length === 0) {
+    return { sent: false, reason: 'Token atau chat IDs tidak tersedia' };
   }
   
   const results = [];
@@ -327,16 +323,11 @@ function notifyTelegram(message) {
  * @param {string} photoUrl - URL foto publik (Google Drive atau URL lain)
  */
 function notifyTelegramWithPhoto(caption, photoUrl) {
-  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
-  const chatIdsStr = PropertiesService.getScriptProperties().getProperty('TELEGRAM_CHAT_IDS');
+  const token = '8910259474:AAH8Uvi3DDxUP95Gddkapsf3ytJ1o9b6qRk';
+  const chatIds = ['6531471803', '2138968822', '1250414366']; // Wisnu, Fajar, Ayie
   
-  if (!token || !chatIdsStr) {
-    return { sent: false, reason: 'TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_IDS belum diset' };
-  }
-  
-  const chatIds = chatIdsStr.split(',').map(id => id.trim()).filter(Boolean);
-  if (chatIds.length === 0) {
-    return { sent: false, reason: 'TELEGRAM_CHAT_IDS kosong' };
+  if (!token || chatIds.length === 0) {
+    return { sent: false, reason: 'Token atau chat IDs tidak tersedia' };
   }
   
   const results = [];
