@@ -231,7 +231,7 @@
               ? `<button data-resolve="${t.id_tower}" class="col-span-2 bg-secondary text-on-secondary text-[11px] font-bold uppercase tracking-wide py-2 rounded">Tandai selesai</button>`
               : `<button data-anomali="${t.id_tower}" class="bg-error text-on-error text-[11px] font-bold uppercase tracking-wide py-2 rounded">Catat anomali</button>`}
             <button data-kerawanan="${t.id_tower}" class="bg-tertiary text-on-primary text-[11px] font-bold uppercase tracking-wide py-2 rounded">Catat kerawanan</button>
-            <a href="https://www.google.com/maps?q=${t.lat},${t.lng}" target="_blank" rel="noopener" class="col-span-2 px-3 py-2 border border-outline-variant/40 rounded text-[11px] font-bold text-on-surface-variant text-center">Google Maps</a>
+            <a href="https://www.google.com/maps?q=${t.lat},${t.lng}" target="_blank" rel="noopener" class="col-span-2 px-3 py-2 border border-outline-variant/40 rounded text-[11px] font-bold text-on-surface text-center hover:bg-surface-container">Google Maps</a>
           </div>
         </div>`;
     }
@@ -456,7 +456,7 @@
             <p class="text-xs text-on-surface-variant mb-4 font-mono">${t.id_tower} — ${t.penghantar} #${t.nomor}</p>
             <form id="anomali-form" class="space-y-3">
               <div>
-                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Jenis anomali</label>
+                <label class="block text-[11px] font-bold text-on-surface uppercase mb-1">Jenis anomali</label>
                 <select name="jenis_anomali" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm" required>
                   <option value="">— pilih —</option>
                   <option>Isolator retak/pecah</option>
@@ -471,11 +471,11 @@
                 </select>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Catatan</label>
+                <label class="block text-[11px] font-bold text-on-surface uppercase mb-1">Catatan</label>
                 <textarea name="catatan" rows="3" placeholder="Detail temuan…" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm"></textarea>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Dicatat oleh</label>
+                <label class="block text-[11px] font-bold text-on-surface uppercase mb-1">Dicatat oleh</label>
                 <input name="oleh" value="Wisnu" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm">
               </div>
               <div class="flex gap-2 pt-2">
@@ -518,14 +518,14 @@
             <p class="text-xs text-on-surface-variant mb-4 font-mono">${t.id_tower} — ${t.penghantar} #${t.nomor}</p>
             <form id="kerawanan-form" class="space-y-3">
               <div>
-                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Jenis Kerawanan *</label>
+                <label class="block text-[11px] font-bold text-on-surface uppercase mb-1">Jenis Kerawanan *</label>
                 <select name="jenis" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm" required>
                   <option value="">— pilih jenis —</option>
                   ${jenisOptions}
                 </select>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Tingkat Risiko *</label>
+                <label class="block text-[11px] font-bold text-on-surface uppercase mb-1">Tingkat Risiko *</label>
                 <div class="grid grid-cols-2 gap-2">
                   <label class="flex items-center gap-2 cursor-pointer border border-outline-variant/40 rounded px-3 py-2 hover:bg-surface-container">
                     <input type="radio" name="tingkat" value="rendah" required>
@@ -546,15 +546,15 @@
                 </div>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Deskripsi *</label>
+                <label class="block text-[11px] font-bold text-on-surface uppercase mb-1">Deskripsi *</label>
                 <textarea name="deskripsi" rows="3" placeholder="Jelaskan kondisi dan lokasi rawan…" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm" required></textarea>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Tindak Lanjut</label>
+                <label class="block text-[11px] font-bold text-on-surface uppercase mb-1">Tindak Lanjut</label>
                 <textarea name="tindak_lanjut" rows="2" placeholder="Rencana mitigasi/penanganan…" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm"></textarea>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">PIC (Penanggung Jawab)</label>
+                <label class="block text-[11px] font-bold text-on-surface uppercase mb-1">PIC (Penanggung Jawab)</label>
                 <input name="pic" value="${t.ground_patrol || 'Wisnu'}" class="w-full border border-outline-variant/40 rounded px-3 py-2 text-sm">
               </div>
               <div class="flex gap-2 pt-2">
@@ -624,10 +624,10 @@
               <table class="w-full text-left">
                 <thead class="bg-surface-container-low sticky top-0">
                   <tr>
-                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface-variant uppercase">ID Tower</th>
-                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface-variant uppercase">Kecamatan</th>
-                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface-variant uppercase">Ground Patrol</th>
-                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface-variant uppercase">Status</th>
+                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface uppercase">ID Tower</th>
+                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface uppercase">Kecamatan</th>
+                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface uppercase">Ground Patrol</th>
+                    <th class="px-3 py-2 text-[10px] font-bold text-on-surface uppercase">Status</th>
                   </tr>
                 </thead>
                 <tbody id="list-body">${rows}</tbody>

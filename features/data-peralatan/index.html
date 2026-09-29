@@ -667,13 +667,13 @@
                 <form id="form-r" class="bg-surface-container-low rounded-lg p-3 space-y-2.5 mb-4">
                   <div class="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label class="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">Kondisi</label>
+                      <label class="block text-[10px] font-bold text-on-surface uppercase mb-1">Kondisi</label>
                       <select name="kondisi" id="sel-kondisi" required class="w-full bg-surface-container-lowest border border-outline-variant/40 rounded px-2.5 py-2 text-xs text-on-surface">
                         ${KONDISI_JARING.map((k) => `<option value="${k.key}" ${j.kondisi === k.key ? 'selected' : ''}>${k.label}</option>`).join('')}
                       </select>
                     </div>
                     <div>
-                      <label class="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">Jenis kerusakan</label>
+                      <label class="block text-[10px] font-bold text-on-surface uppercase mb-1">Jenis kerusakan</label>
                       <select name="jenis_kerusakan" id="sel-jenis" class="w-full bg-surface-container-lowest border border-outline-variant/40 rounded px-2.5 py-2 text-xs text-on-surface">
                         <option value="">— tidak ada —</option>
                         ${JENIS_KERUSAKAN.map((x) => `<option>${esc(x)}</option>`).join('')}
@@ -752,7 +752,7 @@
 
     // ---------- form ----------
     const inp = (name, label, val, extra = '') =>
-      `<div><label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">${label}</label>
+      `<div><label class="block text-[11px] font-bold text-on-surface uppercase mb-1">${label}</label>
        <input name="${name}" value="${esc(val)}" ${extra} class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface"></div>`;
 
     function formSwitchgear(id) {
@@ -767,7 +767,7 @@
                 ${inp('id_peralatan', 'ID peralatan *', g('id_peralatan'), 'required placeholder="TRF-01"')}
                 ${inp('bay', 'Bay / Penyulang', g('bay'), 'placeholder="Bay Trafo 1"')}
               </div>
-              <div><label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Jenis *</label>
+              <div><label class="block text-[11px] font-bold text-on-surface uppercase mb-1">Jenis *</label>
                 <select name="jenis" required class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
                   ${JENIS_PERALATAN.map((j) => `<option ${p && p.jenis === j ? 'selected' : ''}>${esc(j)}</option>`).join('')}
                 </select></div>
@@ -777,11 +777,11 @@
                 ${inp('kapasitas', 'Kapasitas', g('kapasitas'), 'placeholder="60 MVA"')}
                 ${inp('tahun_pasang', 'Tahun pasang', g('tahun_pasang'), 'placeholder="1998"')}
               </div>
-              <div><label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Status</label>
+              <div><label class="block text-[11px] font-bold text-on-surface uppercase mb-1">Status</label>
                 <select name="status" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">
                   ${STATUS_PERALATAN.map((s) => `<option value="${s.key}" ${p && p.status === s.key ? 'selected' : ''}>${s.label}</option>`).join('')}
                 </select></div>
-              <div><label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Catatan</label>
+              <div><label class="block text-[11px] font-bold text-on-surface uppercase mb-1">Catatan</label>
                 <textarea name="catatan" rows="2" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">${esc(g('catatan'))}</textarea></div>
               <div class="flex gap-2 pt-2">
                 <button type="button" id="batal" class="flex-1 border border-outline-variant/40 rounded-lg py-2 text-sm font-medium">Batal</button>
@@ -818,7 +818,7 @@
             <p class="text-xs text-on-surface-variant mb-4 font-mono">${esc(j.id_jaring)} · ${esc(j.ukuran)} m</p>
             <form id="form-j" class="space-y-3">
               ${inp('tahun_pasang', 'Tahun pasang', j.tahun_pasang, 'placeholder="2019" inputmode="numeric"')}
-              <div><label class="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Catatan</label>
+              <div><label class="block text-[11px] font-bold text-on-surface uppercase mb-1">Catatan</label>
                 <textarea name="catatan" rows="3" class="w-full bg-surface-container-low border border-outline-variant/40 rounded px-3 py-2 text-sm text-on-surface">${esc(j.catatan)}</textarea></div>
               <p class="text-[11px] text-on-surface-variant">Kondisi jaring diubah lewat pencatatan pemeriksaan, bukan di sini — supaya setiap perubahan punya riwayat.</p>
               <div class="flex gap-2 pt-1">
