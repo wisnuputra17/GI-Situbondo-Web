@@ -303,7 +303,7 @@ function uploadFile(path, fileName, mimeType, base64) {
  */
 function notifyTelegram(message) {
   const token = '8910259474:AAH8Uvi3DDxUP95Gddkapsf3ytJ1o9b6qRk';
-  const chatIds = ['6531471803', '2138968822', '1250414366']; // Wisnu, Fajar, Ayie
+  const chatIds = ['6531471803', '2138968822', '1250414366', '7828499635']; // Wisnu, Fajar, Ayie, Novi
   
   if (!token || chatIds.length === 0) {
     return { sent: false, reason: 'Token atau chat IDs tidak tersedia' };
@@ -336,7 +336,7 @@ function notifyTelegram(message) {
  */
 function notifyTelegramWithPhoto(caption, photoUrl) {
   const token = '8910259474:AAH8Uvi3DDxUP95Gddkapsf3ytJ1o9b6qRk';
-  const chatIds = ['6531471803', '2138968822', '1250414366']; // Wisnu, Fajar, Ayie
+  const chatIds = ['6531471803', '2138968822', '1250414366', '7828499635']; // Wisnu, Fajar, Ayie, Novi
   
   if (!token || chatIds.length === 0) {
     return { sent: false, reason: 'Token atau chat IDs tidak tersedia' };
