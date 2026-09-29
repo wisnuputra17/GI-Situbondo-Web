@@ -65,6 +65,7 @@ function hitungJarak(lat1, lng1, lat2, lng2) {
 
 /**
  * Cari tower yang berada pada jarak tertentu dari GI
+ * UPDATED: Menggunakan data jarak REAL dari TDS ULTG (jarak_dari_gi field)
  */
 async function cariTowerTerdekat() {
   const jarakInput = document.getElementById('dist-gangguan');
@@ -80,11 +81,6 @@ async function cariTowerTerdekat() {
   resultDiv.classList.remove('hidden');
   
   try {
-    // Ambil posisi GI
-    const giProfile = await loadGIProfile();
-    const giLat = parseFloat(giProfile.lat);
-    const giLng = parseFloat(giProfile.lng);
-    
     // Ambil semua tower
     const towers = allTowers || []; // Gunakan data tower yang sudah di-load
     
@@ -93,11 +89,13 @@ async function cariTowerTerdekat() {
       return;
     }
     
-    // Hitung jarak setiap tower dari GI
-    const towersWithDistance = towers.map(t => ({
-      ...t,
-      jarakDariGI: hitungJarak(giLat, giLng, parseFloat(t.lat), parseFloat(t.lng))
-    }));
+    // Filter tower yang punya data jarak_dari_gi (dari TDS ULTG)
+    const towersWithDistance = towers
+      .filter(t => t.jarak_dari_gi && !isNaN(parseFloat(t.jarak_dari_gi)))
+      .map(t => ({
+        ...t,
+        jarakDariGI: parseFloat(t.jarak_dari_gi) // REAL distance from Excel
+      }));
     
     // Cari tower terdekat dengan jarak gangguan (toleransi ±200m)
     const toleransi = 200;
