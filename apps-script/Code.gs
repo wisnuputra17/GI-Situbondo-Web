@@ -89,9 +89,13 @@ function doPost(e) {
     switch (body.action) {
       case 'save':
         saveSheet(body.sheet, body.payload || []);
+        // Auto-queue untuk GitHub sync
+        addToSyncQueue(body.sheet);
         return jsonOut({ ok: true });
       case 'append':
         appendRow(body.sheet, body.payload || {});
+        // Auto-queue untuk GitHub sync
+        addToSyncQueue(body.sheet);
         return jsonOut({ ok: true });
       case 'clear':
         clearSheet(body.sheet);
@@ -542,6 +546,183 @@ function showProperties() {
     ok: true,
     properties: allProps
   };
+}
+
+// ---------- GitHub Sync ----------
+
+// Global sync queue (in-memory, reset pada cold start)
+let SYNC_QUEUE = [];
+
+/**
+ * Add sheet to sync queue
+ */
+function addToSyncQueue(sheetName) {
+  if (!SYNC_QUEUE.includes(sheetName)) {
+    SYNC_QUEUE.push(sheetName);
+    Logger.log(`📋 Added to sync queue: ${sheetName}`);
+  }
+}
+
+/**
+ * Get current sync queue
+ */
+function getSyncQueue() {
+  return SYNC_QUEUE;
+}
+
+/**
+ * Clear sync queue
+ */
+function clearSyncQueue() {
+  SYNC_QUEUE = [];
+}
+
+/**
+ * Sync single sheet to GitHub
+ * @param {string} sheetName - Sheet name to sync
+ * @returns {boolean} Success status
+ */
+function syncSheetToGitHub(sheetName) {
+  const GITHUB_TOKEN = PropertiesService.getScriptProperties().getProperty('GITHUB_TOKEN');
+  
+  if (!GITHUB_TOKEN) {
+    Logger.log('❌ GITHUB_TOKEN not set in Script Properties');
+    return false;
+  }
+  
+  const REPO = 'wisnuputra17/GI-Situbondo-Web';
+  const filePath = `data/${sheetName}.json`;
+  
+  try {
+    // 1. Load data from Sheets
+    Logger.log(`📖 Loading ${sheetName} from Sheets...`);
+    const data = loadSheet(sheetName);
+    const jsonContent = JSON.stringify(data, null, 2);
+    
+    // 2. Get current file from GitHub (need SHA for update)
+    const getUrl = `https://api.github.com/repos/${REPO}/contents/${filePath}`;
+    const getOptions = {
+      headers: { 
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      muteHttpExceptions: true
+    };
+    
+    const getResponse = UrlFetchApp.fetch(getUrl, getOptions);
+    const getCode = getResponse.getResponseCode();
+    
+    let currentSHA = null;
+    
+    if (getCode === 200) {
+      const currentFile = JSON.parse(getResponse.getContentText());
+      currentSHA = currentFile.sha;
+      Logger.log(`✅ Current SHA: ${currentSHA}`);
+    } else if (getCode === 404) {
+      Logger.log(`ℹ️  File not found, will create new`);
+    } else {
+      Logger.log(`❌ GitHub GET failed: ${getCode}`);
+      return false;
+    }
+    
+    // 3. Commit to GitHub
+    const commitPayload = {
+      message: `Auto-sync ${sheetName} - ${new Date().toISOString()}`,
+      content: Utilities.base64Encode(jsonContent)
+    };
+    
+    if (currentSHA) {
+      commitPayload.sha = currentSHA;
+    }
+    
+    const putOptions = {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      payload: JSON.stringify(commitPayload),
+      muteHttpExceptions: true
+    };
+    
+    const putResponse = UrlFetchApp.fetch(getUrl, putOptions);
+    const putCode = putResponse.getResponseCode();
+    
+    if (putCode === 200 || putCode === 201) {
+      Logger.log(`✅ Synced ${sheetName} to GitHub`);
+      return true;
+    } else {
+      const errorBody = putResponse.getContentText();
+      Logger.log(`❌ GitHub PUT failed: ${putCode} - ${errorBody}`);
+      return false;
+    }
+    
+  } catch (error) {
+    Logger.log(`❌ Error syncing ${sheetName}: ${error}`);
+    return false;
+  }
+}
+
+/**
+ * Scheduled sync function (triggered every 5 minutes)
+ */
+function scheduledSyncToGitHub() {
+  const queue = getSyncQueue();
+  
+  if (queue.length === 0) {
+    Logger.log('ℹ️  No sheets to sync');
+    return;
+  }
+  
+  Logger.log(`🚀 Syncing ${queue.length} sheets: ${queue.join(', ')}`);
+  
+  let successCount = 0;
+  
+  queue.forEach(sheetName => {
+    const success = syncSheetToGitHub(sheetName);
+    if (success) successCount++;
+  });
+  
+  Logger.log(`📊 Sync complete: ${successCount}/${queue.length} successful`);
+  
+  // Clear queue
+  clearSyncQueue();
+}
+
+/**
+ * Manual sync all static sheets
+ */
+function manualSyncAllToGitHub() {
+  const staticSheets = ['tower_master', 'kerawanan_log', 'profil_gi'];
+  
+  Logger.log(`🚀 Manual sync: ${staticSheets.join(', ')}`);
+  
+  staticSheets.forEach(sheet => {
+    syncSheetToGitHub(sheet);
+  });
+}
+
+/**
+ * Create sync trigger (run once during setup)
+ */
+function createSyncTrigger() {
+  // Delete existing triggers
+  ScriptApp.getProjectTriggers().forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'scheduledSyncToGitHub') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+  
+  // Create new trigger: every 5 minutes
+  ScriptApp.newTrigger('scheduledSyncToGitHub')
+    .timeBased()
+    .everyMinutes(5)
+    .create();
+    
+  Logger.log('✅ Sync trigger created (every 5 min)');
+  
+  return { ok: true, message: 'Trigger created' };
 }
 
 // ---------- Debug ----------
