@@ -5,7 +5,7 @@
  */
 
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbxmMRazxzpeqruHn8M767mRy08UEB2fdyQrJM9jaBkGLT0xm_jhmPsAFTgY1vrqHMxhhA/exec'
+  API_URL: 'https://script.google.com/macros/s/AKfycbx07-2NrcfJ6tCkXSbn2z3rrzTYs9IrOS6HkkyGIP6S9phyvIQDz0_mdI5nP9Y8B5nmxw/exec'
 };
 
 const PW_KEY = 'pln_gi_pw';
@@ -99,6 +99,7 @@ const apiRenameFile = (fileId, newName) => apiPost('renameFile', { fileId, newNa
 const apiCreateFolder = (path, name) => apiPost('createFolder', { path, name });
 const apiDeleteFolder = (folderId) => apiPost('deleteFolder', { folderId });
 const apiNotifyTelegram = (message) => apiPost('notifyTelegram', { message });
+const apiNotifyTelegramWithPhoto = (caption, photoUrl) => apiPost('notifyTelegramWithPhoto', { caption, photoUrl });
 
 async function apiPing() {
   try {

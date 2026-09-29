@@ -79,6 +79,11 @@ function doPost(e) {
       return jsonOut({ ok: true, data: notifyTelegram(body.message) });
     }
     
+    // notifyTelegramWithPhoto bypass password check
+    if (body.action === 'notifyTelegramWithPhoto') {
+      return jsonOut({ ok: true, data: notifyTelegramWithPhoto(body.caption, body.photoUrl) });
+    }
+    
     checkPassword(body.password);
 
     switch (body.action) {
@@ -307,6 +312,49 @@ function notifyTelegram(message) {
       });
       const body = JSON.parse(res.getContentText());
       results.push({ chatId: chatId, sent: !!body.ok, reason: body.ok ? '' : (body.description || 'gagal tanpa keterangan') });
+    } catch (err) {
+      results.push({ chatId: chatId, sent: false, reason: err.message });
+    }
+  });
+  
+  const allSent = results.every(r => r.sent);
+  return { sent: allSent, results: results };
+}
+
+/**
+ * Kirim notifikasi DENGAN FOTO ke Telegram
+ * @param {string} caption - Teks caption
+ * @param {string} photoUrl - URL foto publik (Google Drive atau URL lain)
+ */
+function notifyTelegramWithPhoto(caption, photoUrl) {
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  const chatIdsStr = PropertiesService.getScriptProperties().getProperty('TELEGRAM_CHAT_IDS');
+  
+  if (!token || !chatIdsStr) {
+    return { sent: false, reason: 'TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_IDS belum diset' };
+  }
+  
+  const chatIds = chatIdsStr.split(',').map(id => id.trim()).filter(Boolean);
+  if (chatIds.length === 0) {
+    return { sent: false, reason: 'TELEGRAM_CHAT_IDS kosong' };
+  }
+  
+  const results = [];
+  chatIds.forEach(chatId => {
+    try {
+      const res = UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify({
+          chat_id: chatId,
+          photo: photoUrl,
+          caption: caption,
+          parse_mode: 'HTML'
+        }),
+        muteHttpExceptions: true
+      });
+      const body = JSON.parse(res.getContentText());
+      results.push({ chatId: chatId, sent: !!body.ok, reason: body.ok ? '' : (body.description || 'gagal') });
     } catch (err) {
       results.push({ chatId: chatId, sent: false, reason: err.message });
     }

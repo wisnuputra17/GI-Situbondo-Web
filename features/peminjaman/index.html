@@ -266,6 +266,23 @@
         console.error('❌ Notifikasi Telegram error:', err.message);
       }
     }
+    
+    /** Kirim notifikasi DENGAN FOTO ke Telegram */
+    async function kirimNotifDenganFoto(caption, photoUrl) {
+      try {
+        console.log('📤 Kirim notif dengan foto:', photoUrl);
+        const hasil = await apiNotifyTelegramWithPhoto(caption, photoUrl);
+        console.log('📥 Notif photo response:', hasil);
+        
+        if (hasil.sent === true) {
+          console.log('✅ Notif foto terkirim ke semua');
+        } else {
+          console.warn('⚠️  Notif foto gagal:', hasil.reason || 'Unknown');
+        }
+      } catch (err) {
+        console.error('❌ Notifikasi foto error:', err.message);
+      }
+    }
 
     function setTab(m) {
       mode = m;
@@ -492,7 +509,12 @@
           const alat = alatList.find((a) => a.id_alat === idAlat);
           const personil = personilList.find((p) => p.id_personil === idPersonil);
           toast(`${alat.nama_alat} berhasil dipinjam oleh ${personil.nama}`);
-          if (alat && personil) await kirimNotif(teksNotifPinjam(alat, personil));
+          
+          // Kirim notifikasi DENGAN FOTO
+          if (alat && personil) {
+            const caption = teksNotifPinjam(alat, personil);
+            await kirimNotifDenganFoto(caption, fotoUrl);
+          }
 
           e.target.reset();
           $('preview-pinjam').classList.add('hidden');
@@ -607,8 +629,11 @@
           const personil = personilList.find(p => p.id_personil === pinjaman.id_personil);
           toast(`${alat ? alat.nama_alat : 'Alat'} berhasil dikembalikan`);
           
+          // Kirim notifikasi DENGAN FOTO pengembalian
           const notifText = teksNotifKembali(alat, personil, kondisi);
-          if (notifText) await kirimNotif(notifText);
+          if (notifText) {
+            await kirimNotifDenganFoto(notifText, fotoUrl);
+          }
 
           e.target.reset();
           $('preview-kembali').classList.add('hidden');
