@@ -5,7 +5,7 @@
  */
 
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbx6ap5bnvvbmDtbaQoJWBR-tZp_ZQA8YYOvCYuhE53XW52k9gjNnmop-Z9D_o_0ilwwdA/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycby2_ofl7bhQNFT_xxCJpiPxFr9oCbxNXNrjf-dpWkugv8_E1c9bqALc6n9ycZpGv27wBA/exec',
   USE_GITHUB: true // Toggle untuk fallback ke Sheets
 };
 
